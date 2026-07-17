@@ -1,20 +1,20 @@
 {
-  "port": 20004,
+  "port": 20005,
   "database": {
-    "host": "127.0.0.1",
+    "host": "bloret-core",
     "port": 5432,
-    "user": "bloret",
-    "password": "bloret",
-    "name": "translation_collector",
+    "user": "translationcollector",
+    "password": "8Ht62iQdxyncGPW2",
+    "name": "translationcollector",
     "ssl": false
   },
   "sessionSecret": "dev-only-session-secret-change-me-32chars",
   "cookieSecure": false,
   "appName": "Bloret Translation",
   "passport": {
-    "appId": "",
-    "appSecret": "",
+    "appId": "bp_cf505bdc5bb83be6",
+    "appSecret": "bs_988f0fc459295dc361f2d80d5222982496508ae91ca37f46",
     "baseUrl": "https://passport.bloret.net",
-    "redirectUri": "http://localhost:3000/auth/callback"
+    "redirectUri": "http://100.64.0.6:20005/auth/callback"
   }
 }

@@ -1,0 +1,30 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "permissions": [
+    {
+      "action": "shell",
+      "resource": "node --check \"D:\\MyFiles\\Documents\\projects\\blora-design-2\\blora.js\"",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git add *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "git commit *",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "\"/c/Program Files/Google/Chrome/Application/chrome.exe\" --headless=new --disable-gpu --hide-scrollbars --window-size=760,400 --virtual-time-budget=6000 --screenshot=old.png \"file:///D:/MyFiles/Documents/projects/blora-design-2/_verify_tmp/sel-old.html\"",
+      "effect": "allow"
+    },
+    {
+      "action": "shell",
+      "resource": "\"/c/Program Files/Google/Chrome/Application/chrome.exe\" --headless=new --disable-gpu --hide-scrollbars --window-size=760,400 --virtual-time-budget=6000 --screenshot=new.png \"file:///D:/MyFiles/Documents/projects/blora-design-2/_verify_tmp/sel-new.html\"",
+      "effect": "allow"
+    }
+  ]
+}

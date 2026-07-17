@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="../blora.css">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@700&family=Noto+Sans+SC:wght@400&display=swap" rel="stylesheet">
+<style>
+  body { padding: 24px 48px; }
+  .hero-title { font-family: var(--blora-font-serif); font-size: 64px; font-weight: 700; line-height: 1.2; letter-spacing: -0.02em; color: var(--blora-ink); text-align: center; margin: 0 0 20px; }
+  p { max-width: 34em; margin: 0 auto; line-height: var(--blora-leading-normal); color: var(--blora-ink-light); }
+</style>
+<script>
+  const v = new URLSearchParams(location.search).get('v') || 'a';
+  const CSS = {
+    a: '',  /* 现状:tea-light 40% */
+    b: '::selection { background: color-mix(in srgb, var(--blora-tea-light) 28%, transparent); }',
+    c: '::selection { color: var(--blora-seal); background: color-mix(in srgb, var(--blora-tea-light) 12%, transparent); }',
+    d: '.hero-title { line-height: 1.45 !important; }',
+  };
+  document.write('<style>' + CSS[v] + '</style>');
+</script>
+</head>
+<body>
+  <h1 class="hero-title">Blora Design<br>UI 设计规范</h1>
+  <p>正文段落作对照:行高 1.6 大于字体自然高度,相邻行的选区矩形本就不重叠,所以正文的选中效果从来没有加深带,也没有降部遮挡,typography 一词的 y p g 均完整。</p>
+  <script>
+    const sel = getSelection();
+    sel.removeAllRanges();
+    sel.selectAllChildren(document.body);
+  </script>
+</body>
+</html>
