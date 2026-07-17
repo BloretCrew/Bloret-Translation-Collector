@@ -6,7 +6,7 @@
 - UI： [Blora Design 2](./docs/blora-design-2/)
 - 栈：**Express + EJS** · TypeScript · PostgreSQL · Drizzle ORM
 
-> 无需 `next build`：生产环境直接 `npm start` / `bash start.sh` 即可。
+> 生产启动为 **Express + 预编译 dist**（无 Next.js）。首次 `npm start` 会自动 `esbuild` 一次，之后冷启动应在数秒内完成。
 
 ## 本地启动
 
@@ -62,7 +62,8 @@ npm run db:generate && npm run db:migrate
 # 开发（tsx watch 热重载）
 npm run dev
 
-# 生产（无需 build）
+# 生产
+npm run build   # 可选；npm start 发现 dist 过期时会自动构建
 npm start
 # 或 MCSM 面板：
 bash start.sh
@@ -86,7 +87,8 @@ bash start.sh
 | 命令 | 说明 |
 |------|------|
 | `npm run dev` | 开发（热重载） |
-| `npm start` | 生产启动 |
+| `npm run build` | 打包 `dist/server.mjs`（加速冷启动） |
+| `npm start` | 生产启动（优先跑 dist） |
 | `npm run lint` | TypeScript 类型检查 |
 | `npm run db:push` | 推送 schema 到数据库 |
 | `npm run db:generate` | 生成迁移 |

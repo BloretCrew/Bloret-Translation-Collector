@@ -152,6 +152,7 @@ export function applyConfigToProcessEnv(): AppConfig {
   process.env.PASSPORT_BASE_URL = c.passport.baseUrl;
   process.env.OAUTH_REDIRECT_URI = c.passport.redirectUri;
   process.env.APP_NAME = c.appName;
-  process.env.PORT = String(c.port);
+  // Don't clobber PORT if the starter already injected it
+  if (!process.env.PORT) process.env.PORT = String(c.port);
   return c;
 }

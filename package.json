@@ -6,8 +6,8 @@
   "scripts": {
     "dev": "node scripts/run-dev.mjs",
     "start": "node scripts/run-start.mjs",
-    "start:raw": "tsx src/server.ts",
-    "build": "echo 'No frontend build required (Express + EJS)'",
+    "start:raw": "node dist/server.mjs",
+    "build": "node scripts/build.mjs",
     "lint": "tsc --noEmit",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "tsx src/lib/db/migrate.ts",
@@ -20,6 +20,7 @@
   "dependencies": {
     "drizzle-orm": "^0.44.2",
     "ejs": "^3.1.10",
+    "esbuild": "^0.25.12",
     "express": "^5.1.0",
     "iron-session": "^8.0.4",
     "postgres": "^3.4.7",

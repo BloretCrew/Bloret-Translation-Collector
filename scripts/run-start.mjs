@@ -1,9 +1,10 @@
 #!/usr/bin/env node
 /**
- * Production starter: load config.json → inject env → tsx server
+ * Production starter: load config.json → inject env → run bundled server
+ * (falls back to building dist/ if missing)
  */
-import { spawn } from "child_process";
-import { existsSync } from "fs";
+import { spawn, spawnSync } from "child_process";
+import { existsSync, statSync } from "fs";
 import { join } from "path";
 import { configToEnv, loadConfigFile, root } from "./lib-config.mjs";
 
@@ -18,10 +19,33 @@ if (!config) {
 const port = Number(config.port) || 3000;
 const env = configToEnv(config, { NODE_ENV: "production" });
 
-const tsxBin = join(root, "node_modules", ".bin", "tsx");
-if (!existsSync(tsxBin)) {
-  console.error("[ERROR] 未找到 tsx，请先在项目目录执行: npm install");
-  process.exit(1);
+const distServer = join(root, "dist", "server.mjs");
+const entryTs = join(root, "src", "server.ts");
+const buildScript = join(root, "scripts", "build.mjs");
+
+function needsBuild() {
+  if (!existsSync(distServer)) return true;
+  try {
+    const distM = statSync(distServer).mtimeMs;
+    // rebuild if any top-level src entry is newer (cheap heuristic)
+    if (statSync(entryTs).mtimeMs > distM) return true;
+    return false;
+  } catch {
+    return true;
+  }
+}
+
+if (needsBuild()) {
+  console.log("[INFO] 未找到最新 dist，正在构建…");
+  const r = spawnSync(process.execPath, [buildScript], {
+    cwd: root,
+    env: process.env,
+    stdio: "inherit",
+  });
+  if (r.status !== 0) {
+    console.error("[ERROR] 构建失败。也可手动执行: npm run build");
+    process.exit(r.status ?? 1);
+  }
 }
 
 const db = config.database || {};
@@ -31,7 +55,7 @@ console.log(
 );
 console.log(`[INFO] 启动 Express 于端口 ${port} …`);
 
-const child = spawn(tsxBin, ["src/server.ts"], {
+const child = spawn(process.execPath, [distServer], {
   cwd: root,
   env: { ...env, PORT: String(port) },
   stdio: "inherit",

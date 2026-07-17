@@ -10,9 +10,10 @@ if [ ! -f config.json ]; then
   exit 1
 fi
 
-if [ ! -x node_modules/.bin/tsx ] && [ ! -f node_modules/.bin/tsx ]; then
-  echo "[ERROR] 未找到 tsx，请先执行: npm install"
+if [ ! -d node_modules ]; then
+  echo "[ERROR] 未找到 node_modules，请先执行: npm install"
   exit 1
 fi
 
+# First start may build dist/server.mjs (esbuild); later starts are plain node
 exec node scripts/run-start.mjs
