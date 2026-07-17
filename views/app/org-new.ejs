@@ -3,8 +3,7 @@
 <main class="app-main">
   <div class="blora-container blora-container--wide">
     <div class="app-narrow blora-stack blora-stack--lg">
-      <% var crumbs = [{ label: '组织', href: '/app' }, { label: '新建' }]; %>
-      <%- include('../partials/breadcrumbs') %>
+      <%- include('../partials/breadcrumbs', { crumbs: [{ label: '组织', href: '/app' }, { label: '新建' }] }) %>
       <header class="app-page-header">
         <div class="app-page-header__copy">
           <h1 class="blora-h2">新建组织</h1>
@@ -36,5 +35,4 @@
     </div>
   </div>
 </main>
-<% var scripts = ['/js/forms.js']; %>
-<%- include('../partials/foot') %>
+<%- include('../partials/foot', { scripts: ['/js/forms.js'] }) %>
