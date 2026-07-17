@@ -4,42 +4,20 @@
  * Usage: node scripts/run-start.mjs
  */
 import { spawn } from "child_process";
-import { existsSync, readFileSync } from "fs";
-import { dirname, join } from "path";
-import { fileURLToPath } from "url";
+import { existsSync } from "fs";
+import { join } from "path";
+import { configToEnv, loadConfigFile, root } from "./lib-config.mjs";
 
-const root = join(dirname(fileURLToPath(import.meta.url)), "..");
-const configPath = join(root, "config.json");
+const { path: configPath, config } = loadConfigFile();
 
-if (!existsSync(configPath)) {
+if (!config) {
   console.error(`[ERROR] 找不到配置文件: ${configPath}`);
   console.error("请复制 config.example.json 为 config.json 并修改。");
   process.exit(1);
 }
 
-let config;
-try {
-  config = JSON.parse(readFileSync(configPath, "utf8"));
-} catch (e) {
-  console.error("[ERROR] config.json 解析失败:", e.message);
-  process.exit(1);
-}
-
 const port = Number(config.port) || 3000;
-const env = {
-  ...process.env,
-  NODE_ENV: "production",
-  DATABASE_URL: config.databaseUrl ?? "",
-  SESSION_SECRET: config.sessionSecret ?? "dev-only-session-secret-change-me-32chars",
-  COOKIE_SECURE: config.cookieSecure === true ? "true" : "false",
-  PASSPORT_APP_ID: config.passport?.appId ?? "",
-  PASSPORT_APP_SECRET: config.passport?.appSecret ?? "",
-  PASSPORT_BASE_URL: config.passport?.baseUrl ?? "https://passport.bloret.net",
-  OAUTH_REDIRECT_URI:
-    config.passport?.redirectUri ?? `http://localhost:${port}/auth/callback`,
-  NEXT_PUBLIC_APP_NAME: config.appName ?? "Bloret Translation",
-  PORT: String(port),
-};
+const env = configToEnv(config, { NODE_ENV: "production" });
 
 const nextBin = join(root, "node_modules", ".bin", "next");
 if (!existsSync(nextBin)) {
@@ -47,7 +25,11 @@ if (!existsSync(nextBin)) {
   process.exit(1);
 }
 
+const db = config.database || {};
 console.log(`[INFO] 使用配置: ${configPath}`);
+console.log(
+  `[INFO] 数据库: ${db.user || "?"}@${db.host || "?"}:${db.port || "?"} / ${db.name || "?"}`,
+);
 console.log(`[INFO] 启动 Next.js 于端口 ${port} …`);
 
 const child = spawn(nextBin, ["start", "-p", String(port)], {

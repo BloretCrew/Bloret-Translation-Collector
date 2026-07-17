@@ -25,8 +25,13 @@ cp config.example.json config.json
 
 | 字段 | 说明 |
 |------|------|
-| `port` | 监听端口，默认 `3000` |
-| `databaseUrl` | PostgreSQL 连接串 |
+| `port` | 应用监听端口，默认 `3000` |
+| `database.host` | 数据库主机 |
+| `database.port` | 数据库端口，默认 `5432` |
+| `database.user` | 数据库用户名 |
+| `database.password` | 数据库密码 |
+| `database.name` | 数据库名 |
+| `database.ssl` | 是否 SSL，默认 `false` |
 | `sessionSecret` | 会话加密密钥（≥32 字符） |
 | `cookieSecure` | HTTPS 时为 `true`；HTTP 面板部署请用 `false` |
 | `appName` | 应用显示名 |

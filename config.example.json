@@ -1,6 +1,13 @@
 {
   "port": 3000,
-  "databaseUrl": "postgresql://bloret:bloret@127.0.0.1:5432/translation_collector",
+  "database": {
+    "host": "127.0.0.1",
+    "port": 5432,
+    "user": "bloret",
+    "password": "bloret",
+    "name": "translation_collector",
+    "ssl": false
+  },
   "sessionSecret": "change-me-to-a-long-random-string-at-least-32-chars",
   "cookieSecure": false,
   "appName": "Bloret Translation",
