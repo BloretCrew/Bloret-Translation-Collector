@@ -5,17 +5,18 @@
 import { spawn } from "child_process";
 import { join } from "path";
 import { configToEnv, loadConfigFile, root } from "./lib-config.mjs";
+import { Logger } from "./lib-logger.mjs";
 
 const { path: configPath, config } = loadConfigFile();
 if (!config) {
-  console.warn(`[WARN] ${configPath} 不存在，使用默认配置`);
+  Logger.warn(`${configPath} 不存在，使用默认配置`);
 }
 
 const port = Number(config?.port) || 3000;
 const env = configToEnv(config, { NODE_ENV: "development" });
 
 const tsxBin = join(root, "node_modules", ".bin", "tsx");
-console.log(`[INFO] 开发模式启动 (port ${port}) …`);
+Logger.info(`开发模式启动 (port ${port}) …`);
 
 const child = spawn(tsxBin, ["watch", "src/server.ts"], {
   cwd: root,

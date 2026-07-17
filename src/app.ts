@@ -3,6 +3,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { sessionMiddleware } from "@/lib/auth/session";
 import { loadConfig } from "@/lib/config";
+import { Logger } from "@/lib/logger";
 import { authRouter } from "@/routes/auth";
 import { apiRouter } from "@/routes/api";
 import { pagesRouter } from "@/routes/pages";
@@ -21,6 +22,15 @@ export function createApp() {
   app.use(express.json({ limit: "2mb" }));
   app.use(express.urlencoded({ extended: false }));
   app.use(sessionMiddleware);
+
+  // CONSOLE-LOG-SPEC: request access log
+  app.use((req, res, next) => {
+    const start = Date.now();
+    res.on("finish", () => {
+      Logger.request(req, res, Date.now() - start);
+    });
+    next();
+  });
 
   app.use((req, res, next) => {
     res.locals.appName = config.appName;
@@ -49,15 +59,16 @@ export function createApp() {
     return res.status(404).render("404", { title: "未找到" });
   });
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  app.use((err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
-    console.error(err);
-    const message = err instanceof Error ? err.message : "服务器错误";
-    if (req.path.startsWith("/api/")) {
-      return res.status(500).json({ error: message, code: "INTERNAL" });
-    }
-    return res.status(500).render("error", { title: "出错了", message });
-  });
+  app.use(
+    (err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
+      Logger.error(err instanceof Error ? err : String(err));
+      const message = err instanceof Error ? err.message : "服务器错误";
+      if (req.path.startsWith("/api/")) {
+        return res.status(500).json({ error: message, code: "INTERNAL" });
+      }
+      return res.status(500).render("error", { title: "出错了", message });
+    },
+  );
 
   return app;
 }

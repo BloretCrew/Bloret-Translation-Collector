@@ -8,6 +8,7 @@ import postgres from "postgres";
 import * as schema from "../src/lib/db/schema";
 import { flattenJson } from "../src/lib/json-i18n";
 import { applyConfigToProcessEnv } from "../src/lib/config";
+import { Logger } from "../src/lib/logger";
 
 async function main() {
   const config = applyConfigToProcessEnv();
@@ -123,20 +124,20 @@ async function main() {
         })),
       );
     }
-    console.log(`Created file with ${entries.length} strings`);
+    Logger.success(`已创建示例文件，共 ${entries.length} 条字符串`);
   } else {
-    console.log("Sample file already exists, skipped");
+    Logger.info("示例文件已存在，跳过");
   }
 
-  console.log("Seed complete.");
-  console.log("  Login:  /auth/login?user=dev-user");
-  console.log("  Org:    /app/o/demo");
-  console.log("  Project:/app/o/demo/p/sample-app");
+  Logger.success("Seed 完成");
+  Logger.info("  Login:  /auth/login?user=dev-user");
+  Logger.info("  Org:    /app/o/demo");
+  Logger.info("  Project:/app/o/demo/p/sample-app");
 
   await client.end();
 }
 
 main().catch((e) => {
-  console.error(e);
+  Logger.error(e);
   process.exit(1);
 });

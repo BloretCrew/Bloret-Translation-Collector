@@ -1,6 +1,7 @@
 import { existsSync, readFileSync } from "fs";
 import { join } from "path";
 import { z } from "zod";
+import { Logger } from "@/lib/logger";
 
 const databaseSchema = z.object({
   host: z.string().min(1).default("127.0.0.1"),
@@ -93,16 +94,16 @@ export function loadConfig(): AppConfig {
     try {
       raw = JSON.parse(readFileSync(path, "utf8"));
     } catch (e) {
-      console.error(`Failed to parse ${path}:`, e);
+      Logger.error(`解析配置失败 ${path}:`, e);
       throw new Error(`Invalid config.json at ${path}`);
     }
   } else {
-    console.warn("config.json not found, using built-in defaults");
+    Logger.warn("config.json 不存在，使用内置默认配置");
   }
 
   const parsed = configSchema.safeParse(raw);
   if (!parsed.success) {
-    console.error("Invalid config.json:", parsed.error.flatten().fieldErrors);
+    Logger.error("config.json 无效:", parsed.error.flatten().fieldErrors);
     throw new Error("Invalid config.json");
   }
 

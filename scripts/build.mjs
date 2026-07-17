@@ -7,6 +7,7 @@ import { build } from "esbuild";
 import { mkdirSync } from "fs";
 import { dirname, join } from "path";
 import { fileURLToPath } from "url";
+import { Logger } from "./lib-logger.mjs";
 
 const root = join(dirname(fileURLToPath(import.meta.url)), "..");
 const outfile = join(root, "dist", "server.mjs");
@@ -29,7 +30,7 @@ await build({
   alias: {
     "@": join(root, "src"),
   },
-  logLevel: "info",
+  logLevel: "warning",
   sourcemap: true,
   banner: {
     // Allow CJS deps that call require("tty") etc. inside an ESM bundle
@@ -38,4 +39,4 @@ const require = __btcCreateRequire(import.meta.url);`,
   },
 });
 
-console.log(`[INFO] Built ${outfile} in ${Date.now() - t0}ms`);
+Logger.success(`Built ${outfile} in ${Date.now() - t0}ms`);

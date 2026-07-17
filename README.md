@@ -5,6 +5,7 @@
 - 登录： [Bloret PassPort](https://passport.bloret.net/) OAuth（见 `docs/OauthAPI.md`）
 - UI： [Blora Design 2](./docs/blora-design-2/)
 - 栈：**Express + EJS** · TypeScript · PostgreSQL · Drizzle ORM
+- 日志：遵循 [CONSOLE-LOG-SPEC](https://github.com/BloretCrew/CONSOLE-LOG-SPEC)（`Logger` + `./log/BTC-*.log`）
 
 > 生产启动为 **Express + 预编译 dist**（无 Next.js）。首次 `npm start` 会自动 `esbuild` 一次，之后冷启动应在数秒内完成。
 

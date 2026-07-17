@@ -46,6 +46,7 @@ import {
   getProjectProgress,
   upsertSourceFile,
 } from "@/lib/services/files";
+import { Logger } from "@/lib/logger";
 
 export const orgsRouter = Router();
 
@@ -123,7 +124,7 @@ orgsRouter.post("/v1/orgs", async (req, res, next) => {
       if (msg.includes("unique") || msg.includes("duplicate")) {
         return jsonError(res, "组织 slug 已存在", 409);
       }
-      console.error(e);
+      Logger.error(e);
       return jsonError(res, "创建失败", 500);
     }
   } catch (err) {
@@ -454,7 +455,7 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects", async (req, res, next) => {
       if (msg.includes("unique") || msg.includes("duplicate")) {
         return jsonError(res, "项目 slug 已存在", 409);
       }
-      console.error(e);
+      Logger.error(e);
       return jsonError(res, "创建失败", 500);
     }
   } catch (err) {

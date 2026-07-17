@@ -6,12 +6,12 @@ cd "$(dirname "$0")"
 export PATH="/root/.nvm/versions/node/v24.13.1/bin:/usr/local/bin:/usr/bin:$PATH"
 
 if [ ! -f config.json ]; then
-  echo "[ERROR] 缺少 config.json，请复制 config.example.json 为 config.json"
+  echo -e "\033[31m[ERROR]\033[0m 缺少 config.json，请复制 config.example.json 为 config.json"
   exit 1
 fi
 
 if [ ! -d node_modules ]; then
-  echo "[ERROR] 未找到 node_modules，请先执行: npm install"
+  echo -e "\033[31m[ERROR]\033[0m 未找到 node_modules，请先执行: npm install"
   exit 1
 fi
 

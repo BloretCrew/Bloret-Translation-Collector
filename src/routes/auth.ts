@@ -4,6 +4,7 @@ import { getOAuthAuthorizeUrl, verifyOAuthCode } from "@/lib/auth/passport";
 import { isPassportConfigured, getEnv } from "@/lib/env";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
+import { Logger } from "@/lib/logger";
 
 export const authRouter = Router();
 
@@ -131,7 +132,7 @@ authRouter.get("/auth/callback", async (req, res, next) => {
       setCookie(res, "btc_oauth_next", "", { maxAgeSec: 0, secure: getEnv().COOKIE_SECURE });
       return res.redirect(nextPath);
     } catch (err) {
-      console.error("OAuth callback error:", err);
+      Logger.error("OAuth 回调失败:", err);
       const message = err instanceof Error ? encodeURIComponent(err.message) : "oauth_failed";
       return res.redirect(`/?error=${message}`);
     }
