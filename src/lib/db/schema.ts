@@ -1,0 +1,249 @@
+import {
+  boolean,
+  integer,
+  jsonb,
+  pgEnum,
+  pgTable,
+  text,
+  timestamp,
+  uniqueIndex,
+  uuid,
+  index,
+} from "drizzle-orm/pg-core";
+import { relations } from "drizzle-orm";
+
+export const memberRoleEnum = pgEnum("member_role", [
+  "owner",
+  "manager",
+  "translator",
+  "viewer",
+]);
+
+export const projectVisibilityEnum = pgEnum("project_visibility", [
+  "private",
+  "org",
+]);
+
+export const translationStatusEnum = pgEnum("translation_status", [
+  "empty",
+  "draft",
+  "translated",
+]);
+
+export const users = pgTable("users", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  username: text("username").notNull().unique(),
+  avatarUrl: text("avatar_url"),
+  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+});
+
+export const organizations = pgTable(
+  "organizations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    slug: text("slug").notNull().unique(),
+    name: text("name").notNull(),
+    description: text("description"),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("organizations_created_by_idx").on(t.createdBy)],
+);
+
+export const organizationMembers = pgTable(
+  "organization_members",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    role: memberRoleEnum("role").notNull().default("translator"),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("organization_members_org_user_uidx").on(t.orgId, t.userId),
+    index("organization_members_user_idx").on(t.userId),
+  ],
+);
+
+export const projects = pgTable(
+  "projects",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    slug: text("slug").notNull(),
+    name: text("name").notNull(),
+    description: text("description"),
+    sourceLocale: text("source_locale").notNull().default("en"),
+    visibility: projectVisibilityEnum("visibility").notNull().default("org"),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("projects_org_slug_uidx").on(t.orgId, t.slug),
+    index("projects_org_idx").on(t.orgId),
+  ],
+);
+
+export const projectLanguages = pgTable(
+  "project_languages",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    locale: text("locale").notNull(),
+    enabled: boolean("enabled").notNull().default(true),
+  },
+  (t) => [uniqueIndex("project_languages_project_locale_uidx").on(t.projectId, t.locale)],
+);
+
+export const sourceFiles = pgTable(
+  "source_files",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    path: text("path").notNull(),
+    format: text("format").notNull().default("json"),
+    sourceRevision: integer("source_revision").notNull().default(1),
+    rawSource: jsonb("raw_source").notNull().$type<Record<string, unknown>>(),
+    contentHash: text("content_hash"),
+    orphanedKeys: jsonb("orphaned_keys").$type<string[]>().default([]),
+    updatedBy: uuid("updated_by").references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("source_files_project_path_uidx").on(t.projectId, t.path),
+    index("source_files_project_idx").on(t.projectId),
+  ],
+);
+
+export const stringUnits = pgTable(
+  "string_units",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    fileId: uuid("file_id")
+      .notNull()
+      .references(() => sourceFiles.id, { onDelete: "cascade" }),
+    keyPath: text("key_path").notNull(),
+    sourceText: text("source_text").notNull(),
+    context: text("context"),
+    sortOrder: integer("sort_order").notNull().default(0),
+    orphaned: boolean("orphaned").notNull().default(false),
+  },
+  (t) => [
+    uniqueIndex("string_units_file_key_uidx").on(t.fileId, t.keyPath),
+    index("string_units_file_idx").on(t.fileId),
+  ],
+);
+
+export const translations = pgTable(
+  "translations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    stringId: uuid("string_id")
+      .notNull()
+      .references(() => stringUnits.id, { onDelete: "cascade" }),
+    locale: text("locale").notNull(),
+    text: text("text").notNull().default(""),
+    status: translationStatusEnum("status").notNull().default("empty"),
+    updatedBy: uuid("updated_by").references(() => users.id),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("translations_string_locale_uidx").on(t.stringId, t.locale),
+    index("translations_locale_idx").on(t.locale),
+  ],
+);
+
+// Relations
+export const usersRelations = relations(users, ({ many }) => ({
+  memberships: many(organizationMembers),
+}));
+
+export const organizationsRelations = relations(organizations, ({ many, one }) => ({
+  members: many(organizationMembers),
+  projects: many(projects),
+  creator: one(users, {
+    fields: [organizations.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const organizationMembersRelations = relations(organizationMembers, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [organizationMembers.orgId],
+    references: [organizations.id],
+  }),
+  user: one(users, {
+    fields: [organizationMembers.userId],
+    references: [users.id],
+  }),
+}));
+
+export const projectsRelations = relations(projects, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [projects.orgId],
+    references: [organizations.id],
+  }),
+  languages: many(projectLanguages),
+  files: many(sourceFiles),
+  creator: one(users, {
+    fields: [projects.createdBy],
+    references: [users.id],
+  }),
+}));
+
+export const projectLanguagesRelations = relations(projectLanguages, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectLanguages.projectId],
+    references: [projects.id],
+  }),
+}));
+
+export const sourceFilesRelations = relations(sourceFiles, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [sourceFiles.projectId],
+    references: [projects.id],
+  }),
+  strings: many(stringUnits),
+}));
+
+export const stringUnitsRelations = relations(stringUnits, ({ one, many }) => ({
+  file: one(sourceFiles, {
+    fields: [stringUnits.fileId],
+    references: [sourceFiles.id],
+  }),
+  translations: many(translations),
+}));
+
+export const translationsRelations = relations(translations, ({ one }) => ({
+  stringUnit: one(stringUnits, {
+    fields: [translations.stringId],
+    references: [stringUnits.id],
+  }),
+}));
+
+export type User = typeof users.$inferSelect;
+export type Organization = typeof organizations.$inferSelect;
+export type OrganizationMember = typeof organizationMembers.$inferSelect;
+export type Project = typeof projects.$inferSelect;
+export type SourceFile = typeof sourceFiles.$inferSelect;
+export type StringUnit = typeof stringUnits.$inferSelect;
+export type Translation = typeof translations.$inferSelect;
+export type MemberRole = (typeof memberRoleEnum.enumValues)[number];

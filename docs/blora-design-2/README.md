@@ -1,0 +1,130 @@
+# Blora Design
+
+> 一套以令牌驱动、暗色友好、零依赖为目标的 Web UI 设计系统。
+
+Blora Design 提供完整的设计规范、CSS 框架与全部 Web 控件的示例，可读、可塑、可复用。
+
+```
+底色 → 沉稳之底    文字 → 结构之骨    主色 → 点睛之笔
+```
+
+---
+
+## 特性
+
+- **三色根**：底色、文字、主色三个色根，搭建稳定配色层级
+- **零依赖**：纯 CSS + 原生 JS，不绑构建工具
+- **令牌驱动**：70+ CSS 变量，一键换肤 / 暗色模式
+- **28 类组件**：覆盖常见 Web 控件场景
+- **特色元素**：印章标识、飞白分隔、墨晕背景、圆点加载
+- **可访问性**：WCAG AA 对比度、浮层/标签页/树键盘可达、reduced-motion
+- **响应式**：桌面 / 平板 / 移动 ≥ 320px 不破版
+
+---
+
+## 速览
+
+打开 `index.html` 即可浏览全部组件：
+
+```bash
+# 任选一种本地预览
+python -m http.server 8000
+#   → http://localhost:8000
+
+npx serve .
+#   → http://localhost:3000
+```
+
+或直接双击 `index.html` 在浏览器中打开。
+
+---
+
+## 文件
+
+```
+blora-design-2/
+├── blora.css        # 框架本体 · 设计令牌 + 全部组件样式
+├── blora.js         # 交互层 · Tab/Modal/Drawer/Toast/Carousel…
+├── index.html       # 组件全集展示（28 类，按类别分组）
+└── docs/
+    ├── standards.md  # 设计规范（哲学/色彩/字体/间距/动效/无障碍）
+    └── framework.md  # 框架文档（安装/令牌/组件 API/JS 用法）
+```
+
+---
+
+## 30 秒上手
+
+```html
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="blora.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@400;500;600&family=JetBrains+Mono&display=swap" rel="stylesheet">
+  <title>我的页面</title>
+</head>
+<body class="blora-page blora-scope">
+  <div class="blora-container blora-stack">
+    <h1 class="blora-h1">页面标题</h1>
+    <p class="blora-text-lead">页面的引导说明文字。</p>
+    <div class="blora-row">
+      <button class="blora-btn blora-btn--primary">确定</button>
+      <button class="blora-btn blora-btn--outline">描边</button>
+    </div>
+    <hr class="blora-brush">
+    <div class="blora-card">
+      <h3 class="blora-card__title">卡片标题</h3>
+      <p class="blora-card__body">卡片正文内容示例。</p>
+    </div>
+  </div>
+  <script src="blora.js"></script>
+</body>
+</html>
+```
+
+---
+
+## 组件清单
+
+| 类别 | 组件 |
+|------|------|
+| **基础** | 按钮 · 图标 · 排版 · 印章标识 · 飞白分隔 · 引文 · 代码 |
+| **表单** | 输入 · 多行 · 选择 · 密码 · 搜索 · 前后缀 · 数字步进 · 复选 · 单选 · 开关 · 滑块 · 范围 · 评分 · 分段 · 标签输入 · OTP · 颜色 · 上传/拖拽 |
+| **选择器** | 日期 · 时间 · 级联 · 穿梭框 |
+| **标识** | 标签 · 徽章 · 状态点 · 头像（含图片/组/徽章） |
+| **进度** | 线形 · 环形 · 条纹 · Spinner · 圆点加载 · 骨架屏 |
+| **导航** | 顶栏 · 标签页（下划线/Pills/纵向）· 面包屑 · 分页 · 步骤 · 侧栏菜单 · 下拉菜单 |
+| **数据** | 表格 · 列表 · 折叠 · 时间轴 · 树 · 统计 · 描述列表 · 轮播 · 图片（含相框/题图/灰度滤镜）· 空态 · 结果 · 日历 · 图表容器 |
+| **反馈** | 警告 · 横幅 · 消息 · 通知 · Toast · Tooltip · Popover · Popconfirm |
+| **层** | 模态（S/M/L）· 抽屉（上/下/左/右）· 命令面板 |
+| **布局** | 栅格 · 卡面 · 面板 · 分隔 · 堆叠 · 行 |
+| **主题** | 暗色模式 · 令牌换肤 |
+
+---
+
+## 设计三言
+
+1. **底色为底，文字为骨，主色为眼。**
+2. **9 成底色与文字色，5 成余下为强调与状态色。**
+3. **主色克制使用，关键处一处即可点亮全局。**
+
+详见 [`docs/standards.md`](docs/standards.md)。
+
+---
+
+## 兼容性
+
+Chrome / Edge 111+、Firefox 113+、Safari 16.2+；iOS 16.2+；Android Chrome 111+。
+依赖 CSS 变量、`color-mix()`、`backdrop-filter`、flex `gap`。
+
+---
+
+## 许可
+
+MIT © Blora Design
+
+---
+
+> 主色克制，全局皆亮。

@@ -1,0 +1,42 @@
+{
+  "name": "@bloret/blora-design",
+  "version": "1.0.0",
+  "description": "Token-driven, dark-mode ready, dependency-free Web UI design system for Bloret applications.",
+  "license": "MIT",
+  "private": false,
+  "type": "commonjs",
+  "main": "./blora.js",
+  "browser": "./blora.js",
+  "style": "./blora.css",
+  "types": "./blora.d.ts",
+  "exports": {
+    ".": {
+      "types": "./blora.d.ts",
+      "require": "./blora.js",
+      "default": "./blora.js"
+    },
+    "./blora.css": "./blora.css",
+    "./style.css": "./blora.css",
+    "./blora.js": "./blora.js",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "blora.css",
+    "blora.js",
+    "blora.d.ts",
+    "bloret-mini.svg",
+    "README.md",
+    "docs/"
+  ],
+  "scripts": {
+    "check": "node --check blora.js",
+    "test": "npm run check"
+  },
+  "keywords": [
+    "blora",
+    "bloret",
+    "design-system",
+    "ui-framework",
+    "css"
+  ]
+}
