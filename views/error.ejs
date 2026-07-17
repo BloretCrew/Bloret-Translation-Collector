@@ -1,0 +1,12 @@
+<%- include('partials/head') %>
+<%- include('partials/navbar') %>
+<main class="app-main">
+  <div class="blora-container">
+    <div class="blora-alert blora-alert--danger" role="alert">
+      <strong>出错了</strong>
+      <p class="u-mt-2"><%= typeof message !== 'undefined' ? message : '服务器内部错误' %></p>
+    </div>
+    <p class="u-mt-4"><a href="/app">返回工作台</a></p>
+  </div>
+</main>
+<%- include('partials/foot') %>

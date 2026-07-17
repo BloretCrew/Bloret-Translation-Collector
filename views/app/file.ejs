@@ -1,0 +1,67 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+<main class="app-main">
+  <div class="blora-container blora-container--wide">
+    <div class="blora-stack blora-stack--lg">
+      <% var crumbs = [
+        { label: '组织', href: '/app' },
+        { label: org.name, href: '/app/o/' + orgSlug },
+        { label: project.name, href: '/app/o/' + orgSlug + '/p/' + projectSlug },
+        { label: file.path }
+      ]; %>
+      <%- include('../partials/breadcrumbs') %>
+
+      <div class="blora-row blora-row--between">
+        <div>
+          <h1 class="blora-h2 blora-text-mono" style="font-size:1.5rem"><%= file.path %></h1>
+          <p class="blora-text-muted">
+            版本 r<%= file.sourceRevision %> ·
+            <%= localeProgress[0] ? localeProgress[0].total : 0 %> 条字符串 · 更新于 <%= updatedAtLabel %>
+          </p>
+        </div>
+        <div class="blora-row">
+          <% if (defaultLocale && canEdit) { %>
+            <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= file.id %>&locale=<%= defaultLocale %>">打开编辑器</a>
+          <% } %>
+          <% if (canUpload) { %>
+            <button type="button" id="delete-file-btn" class="blora-btn blora-btn--danger blora-btn--sm"
+              data-org-slug="<%= orgSlug %>" data-project-slug="<%= projectSlug %>" data-file-id="<%= file.id %>" data-path="<%= file.path %>">删除文件</button>
+          <% } %>
+        </div>
+      </div>
+
+      <section class="blora-stack">
+        <h2 class="blora-h3">按语言进度</h2>
+        <% if (!localeProgress.length) { %>
+          <p class="blora-text-muted">项目尚未配置目标语言</p>
+        <% } else { %>
+          <div class="progress-list">
+            <% localeProgress.forEach(function (p) { %>
+              <div class="blora-card">
+                <div class="blora-row blora-row--between" style="margin-bottom:8px">
+                  <strong><%= p.locale %></strong>
+                  <span class="blora-text-mono blora-text-faint" style="font-size:12px"><%= p.translated %>/<%= p.total %> (<%= p.percent %>%)</span>
+                </div>
+                <div class="blora-progress" data-value="<%= p.percent %>">
+                  <div class="blora-progress__bar">
+                    <div class="blora-progress__fill" style="width:<%= p.percent %>%"></div>
+                  </div>
+                </div>
+                <div class="blora-row" style="margin-top:12px">
+                  <% if (canEdit) { %>
+                    <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= file.id %>&locale=<%= p.locale %>">翻译</a>
+                  <% } %>
+                  <% if (canExport) { %>
+                    <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= p.locale %>&fileId=<%= file.id %>">导出</a>
+                  <% } %>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </section>
+    </div>
+  </div>
+</main>
+<% var scripts = ['/js/forms.js']; %>
+<%- include('../partials/foot') %>

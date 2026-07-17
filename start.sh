@@ -1,5 +1,5 @@
 #!/bin/bash
-# MCSM / 面板启动入口：读取 config.json 后启动 Next.js
+# MCSM / 面板启动入口：读取 config.json 后启动 Express
 set -e
 cd "$(dirname "$0")"
 
@@ -10,8 +10,8 @@ if [ ! -f config.json ]; then
   exit 1
 fi
 
-if [ ! -x node_modules/.bin/next ] && [ ! -f node_modules/.bin/next ]; then
-  echo "[ERROR] 未找到 next，请先执行: npm install && npm run build"
+if [ ! -x node_modules/.bin/tsx ] && [ ! -f node_modules/.bin/tsx ]; then
+  echo "[ERROR] 未找到 tsx，请先执行: npm install"
   exit 1
 fi
 

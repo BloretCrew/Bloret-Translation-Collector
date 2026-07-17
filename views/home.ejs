@@ -1,0 +1,55 @@
+<%- include('partials/head') %>
+<%- include('partials/navbar') %>
+<main class="app-main">
+  <div class="blora-container">
+    <% if (errorMsg) { %>
+      <div class="blora-alert blora-alert--danger u-mb-3" role="alert">
+        登录失败：<%= errorMsg %>
+      </div>
+    <% } %>
+
+    <section class="landing-hero">
+      <p class="blora-text-caps blora-text-seal landing-hero__eyebrow">
+        Bloret · Localization
+      </p>
+      <h1 class="landing-hero__title">翻译收集，像 Crowdin 一样协作</h1>
+      <p class="landing-hero__lead">
+        以「组织 → 项目 → 文件 → 语言」管理本地化。上传 JSON 源文案，邀请译者在线填写，
+        一键导出目标语言文件。通过 Bloret PassPort 安全登录。
+      </p>
+      <div class="blora-row landing-hero__actions">
+        <a class="blora-btn blora-btn--primary blora-btn--lg" href="/auth/login">PassPort 登录</a>
+        <a class="blora-btn blora-btn--outline blora-btn--lg" href="#features">了解能力</a>
+      </div>
+      <p class="blora-text-faint landing-hero__hint">
+        本地开发：
+        <a href="/auth/login?user=dev-user&dev=1">以 dev-user 登录</a>
+        （config.json 未配置 PassPort 时可用）
+      </p>
+    </section>
+
+    <hr class="blora-brush" />
+
+    <section id="features" class="feature-grid" aria-label="产品能力">
+      <article class="blora-card">
+        <h3 class="blora-card__title">组织与权限</h3>
+        <p class="blora-card__body blora-text-muted">
+          Owner / Manager / Translator / Viewer 四级角色，协作边界清晰。
+        </p>
+      </article>
+      <article class="blora-card">
+        <h3 class="blora-card__title">JSON 源文件</h3>
+        <p class="blora-card__body blora-text-muted">
+          支持扁平与嵌套 i18n JSON，保留结构导出，更新源文不丢已有译文。
+        </p>
+      </article>
+      <article class="blora-card">
+        <h3 class="blora-card__title">翻译工作台</h3>
+        <p class="blora-card__body blora-text-muted">
+          左 key 右译文，筛选未译、自动保存，进度一目了然。
+        </p>
+      </article>
+    </section>
+  </div>
+</main>
+<%- include('partials/foot') %>

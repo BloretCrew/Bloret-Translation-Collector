@@ -31,7 +31,6 @@ export async function verifyOAuthCode(code: string): Promise<PassportUser> {
   const res = await fetch(url.toString(), {
     method: "GET",
     headers: { Accept: "application/json" },
-    cache: "no-store",
   });
 
   if (!res.ok) {

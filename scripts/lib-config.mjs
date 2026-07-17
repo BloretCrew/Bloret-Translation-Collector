@@ -52,7 +52,7 @@ export function configToEnv(config, overrides = {}) {
     PASSPORT_BASE_URL: config?.passport?.baseUrl ?? "https://passport.bloret.net",
     OAUTH_REDIRECT_URI:
       config?.passport?.redirectUri ?? `http://localhost:${port}/auth/callback`,
-    NEXT_PUBLIC_APP_NAME: config?.appName ?? "Bloret Translation",
+    APP_NAME: config?.appName ?? "Bloret Translation",
     PORT: String(port),
   };
 }

@@ -1,0 +1,46 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+<main class="app-main">
+  <div class="blora-container blora-container--wide">
+    <div class="app-narrow blora-stack blora-stack--lg">
+      <% var crumbs = [{ label: '组织', href: '/app' }, { label: org.name, href: '/app/o/' + orgSlug }, { label: '新建项目' }]; %>
+      <%- include('../partials/breadcrumbs') %>
+      <header class="app-page-header">
+        <div class="app-page-header__copy">
+          <h1 class="blora-h2">新建项目</h1>
+          <p class="blora-text-muted u-mt-2">配置源语言与目标语言后即可上传 JSON。</p>
+        </div>
+      </header>
+      <div class="blora-panel">
+        <form id="create-project-form" class="blora-stack" data-org-slug="<%= orgSlug %>">
+          <div id="form-error" class="blora-alert blora-alert--danger" hidden></div>
+          <label class="blora-field">
+            <span class="blora-field__label">项目名称</span>
+            <input class="blora-input" name="name" id="project-name" required placeholder="我的应用" />
+          </label>
+          <label class="blora-field">
+            <span class="blora-field__label">Slug</span>
+            <input class="blora-input" name="slug" id="project-slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" />
+          </label>
+          <div class="blora-grid blora-grid--2">
+            <label class="blora-field">
+              <span class="blora-field__label">源语言</span>
+              <input class="blora-input" name="sourceLocale" value="zh-CN" required placeholder="zh-CN" />
+            </label>
+            <label class="blora-field">
+              <span class="blora-field__label">目标语言（逗号分隔）</span>
+              <input class="blora-input" name="targetLocales" value="en, ja" required placeholder="en, ja, ko" />
+            </label>
+          </div>
+          <label class="blora-field">
+            <span class="blora-field__label">简介（可选）</span>
+            <textarea class="blora-textarea" name="description" rows="2"></textarea>
+          </label>
+          <button class="blora-btn blora-btn--primary" type="submit">创建项目</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+<% var scripts = ['/js/forms.js']; %>
+<%- include('../partials/foot') %>

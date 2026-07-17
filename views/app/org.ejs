@@ -1,0 +1,154 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+<main class="app-main">
+  <div class="blora-container blora-container--wide">
+    <div class="blora-stack blora-stack--lg">
+      <% var crumbs = [{ label: '组织', href: '/app' }, { label: org.name }]; %>
+      <%- include('../partials/breadcrumbs') %>
+
+      <header class="app-page-header">
+        <div class="app-page-header__copy">
+          <h1 class="blora-h2"><%= org.name %></h1>
+          <p class="blora-text-muted u-mt-2"><%= org.description || '暂无简介' %></p>
+        </div>
+        <div class="app-page-header__actions">
+          <span class="blora-badge blora-badge--pill"><%= roleLabel %></span>
+          <% if (canManage) { %>
+            <a class="blora-btn blora-btn--outline" href="/app/o/<%= orgSlug %>/settings">组织设置</a>
+          <% } %>
+          <% if (canManageProjects) { %>
+            <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/projects/new">新建项目</a>
+          <% } %>
+        </div>
+      </header>
+
+      <section class="app-section">
+        <h2 class="blora-h3">项目</h2>
+        <% if (!projects.length) { %>
+          <div class="blora-empty">
+            <div class="blora-empty__title">尚无项目</div>
+            <div class="blora-empty__desc">创建项目后即可上传源文件并开始翻译</div>
+            <% if (canManageProjects) { %>
+              <div class="app-empty-actions">
+                <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/projects/new">创建项目</a>
+              </div>
+            <% } %>
+          </div>
+        <% } else { %>
+          <div class="blora-table-wrap">
+            <table class="blora-table blora-table--striped">
+              <thead>
+                <tr>
+                  <th>名称</th>
+                  <th>源语言</th>
+                  <th>目标语言</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% projects.forEach(function (p) { %>
+                  <tr>
+                    <td>
+                      <a href="/app/o/<%= orgSlug %>/p/<%= p.slug %>"><%= p.name %></a>
+                      <div class="blora-text-faint blora-text-mono u-text-xs u-mt-2"><%= p.slug %></div>
+                    </td>
+                    <td><span class="blora-badge"><%= p.sourceLocale %></span></td>
+                    <td>
+                      <div class="blora-row u-gap-1">
+                        <% (p.targetLocales || []).forEach(function (l) { %>
+                          <span class="blora-badge"><%= l %></span>
+                        <% }) %>
+                      </div>
+                    </td>
+                    <td>
+                      <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= p.slug %>">打开</a>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+      </section>
+
+      <section class="app-section">
+        <h2 class="blora-h3">成员</h2>
+        <div id="member-list" data-org-slug="<%= orgSlug %>" data-can-manage="<%= canManage ? '1' : '0' %>" data-current-user="<%= currentUserId %>">
+          <div id="member-error" class="blora-alert blora-alert--danger" hidden></div>
+          <div class="blora-table-wrap">
+            <table class="blora-table">
+              <thead>
+                <tr>
+                  <th>用户</th>
+                  <th>角色</th>
+                  <% if (canManage) { %><th>操作</th><% } %>
+                </tr>
+              </thead>
+              <tbody>
+                <% members.forEach(function (m) { %>
+                  <tr data-user-id="<%= m.userId %>">
+                    <td>
+                      <div class="blora-row blora-row--center" style="gap:8px">
+                        <% if (m.avatarUrl) { %>
+                          <img src="<%= m.avatarUrl %>" alt="" width="28" height="28" style="border-radius:999px" />
+                        <% } else { %>
+                          <span class="blora-avatar blora-avatar--sm"><%= m.username[0].toUpperCase() %></span>
+                        <% } %>
+                        <%= m.username %>
+                        <% if (m.userId === currentUserId) { %>
+                          <span class="blora-badge blora-badge--pill" style="font-size:10px">我</span>
+                        <% } %>
+                      </div>
+                    </td>
+                    <td>
+                      <% if (canManage && m.role !== 'owner') { %>
+                        <select class="blora-select member-role" data-user-id="<%= m.userId %>">
+                          <option value="manager" <%= m.role === 'manager' ? 'selected' : '' %>>管理员</option>
+                          <option value="translator" <%= m.role === 'translator' ? 'selected' : '' %>>译者</option>
+                          <option value="viewer" <%= m.role === 'viewer' ? 'selected' : '' %>>访客</option>
+                        </select>
+                      <% } else { %>
+                        <%= roleLabels[m.role] %>
+                      <% } %>
+                    </td>
+                    <% if (canManage) { %>
+                      <td>
+                        <% if (m.role !== 'owner') { %>
+                          <button type="button" class="blora-btn blora-btn--danger blora-btn--xs member-remove" data-user-id="<%= m.userId %>" data-username="<%= m.username %>">移除</button>
+                        <% } %>
+                      </td>
+                    <% } %>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <% if (canManage) { %>
+          <div class="blora-panel">
+            <div class="blora-panel__header"><h3 class="blora-h4">添加成员</h3></div>
+            <form id="add-member-form" class="blora-row" style="align-items:flex-end;flex-wrap:wrap" data-org-slug="<%= orgSlug %>">
+              <div id="add-member-error" class="blora-alert blora-alert--danger" style="width:100%" hidden></div>
+              <label class="blora-field" style="flex:1;min-width:160px">
+                <span class="blora-field__label">PassPort 用户名</span>
+                <input class="blora-input" name="username" required placeholder="username" />
+              </label>
+              <label class="blora-field">
+                <span class="blora-field__label">角色</span>
+                <select class="blora-select" name="role">
+                  <option value="manager">管理员</option>
+                  <option value="translator" selected>译者</option>
+                  <option value="viewer">访客</option>
+                </select>
+              </label>
+              <button class="blora-btn blora-btn--primary" type="submit">添加成员</button>
+            </form>
+          </div>
+        <% } %>
+      </section>
+    </div>
+  </div>
+</main>
+<% var scripts = ['/js/forms.js']; %>
+<%- include('../partials/foot') %>

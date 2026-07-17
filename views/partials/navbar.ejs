@@ -1,0 +1,33 @@
+<nav class="blora-navbar app-navbar" aria-label="主导航">
+  <div class="blora-navbar__brand">
+    <a href="<%= session && session.isLoggedIn ? '/app' : '/' %>" class="app-navbar__brand-link">
+      <img src="/blora/bloret-mini.svg" alt="" width="28" height="28" />
+      <span><%= appName || 'Bloret Translation' %></span>
+    </a>
+  </div>
+  <div class="blora-navbar__menu">
+    <% if (session && session.isLoggedIn) { %>
+      <a class="blora-navbar__link" href="/app">我的组织</a>
+      <div class="blora-dropdown">
+        <button class="blora-btn blora-btn--ghost blora-btn--sm" data-blora-dropdown-trigger type="button">
+          <% if (session.avatarUrl) { %>
+            <img src="<%= session.avatarUrl %>" alt="" width="24" height="24" class="app-navbar__avatar-img" />
+          <% } else { %>
+            <span class="blora-avatar blora-avatar--sm app-navbar__avatar-fallback">
+              <%= (session.username || '?')[0].toUpperCase() %>
+            </span>
+          <% } %>
+          <%= session.username %>
+          <span aria-hidden> ▾</span>
+        </button>
+        <div class="blora-dropdown-menu">
+          <a class="blora-dropdown-menu__item" href="/app">工作台</a>
+          <div class="blora-dropdown-menu__sep"></div>
+          <a class="blora-dropdown-menu__item" href="/auth/logout">退出登录</a>
+        </div>
+      </div>
+    <% } else { %>
+      <a class="blora-btn blora-btn--primary blora-btn--sm" href="/auth/login">PassPort 登录</a>
+    <% } %>
+  </div>
+</nav>

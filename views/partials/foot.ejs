@@ -1,0 +1,9 @@
+  <script src="/blora/blora.js"></script>
+  <script src="/js/app.js"></script>
+  <% if (typeof scripts !== 'undefined' && scripts && scripts.length) { %>
+    <% scripts.forEach(function (src) { %>
+      <script src="<%= src %>"></script>
+    <% }) %>
+  <% } %>
+</body>
+</html>

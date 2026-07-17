@@ -1,25 +1,25 @@
-import { NextResponse } from "next/server";
+import type { Response } from "express";
 
-export function jsonOk<T>(data: T, init?: ResponseInit) {
-  return NextResponse.json(data, { status: 200, ...init });
+export function jsonOk<T>(res: Response, data: T, status = 200) {
+  return res.status(status).json(data);
 }
 
-export function jsonCreated<T>(data: T) {
-  return NextResponse.json(data, { status: 201 });
+export function jsonCreated<T>(res: Response, data: T) {
+  return res.status(201).json(data);
 }
 
-export function jsonError(message: string, status = 400, code?: string) {
-  return NextResponse.json({ error: message, code }, { status });
+export function jsonError(res: Response, message: string, status = 400, code?: string) {
+  return res.status(status).json({ error: message, code });
 }
 
-export function unauthorized(message = "未登录") {
-  return jsonError(message, 401, "UNAUTHORIZED");
+export function unauthorized(res: Response, message = "未登录") {
+  return jsonError(res, message, 401, "UNAUTHORIZED");
 }
 
-export function forbidden(message = "无权限") {
-  return jsonError(message, 403, "FORBIDDEN");
+export function forbidden(res: Response, message = "无权限") {
+  return jsonError(res, message, 403, "FORBIDDEN");
 }
 
-export function notFound(message = "未找到") {
-  return jsonError(message, 404, "NOT_FOUND");
+export function notFound(res: Response, message = "未找到") {
+  return jsonError(res, message, 404, "NOT_FOUND");
 }

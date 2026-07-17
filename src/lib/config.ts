@@ -107,10 +107,8 @@ export function loadConfig(): AppConfig {
   }
 
   const data = parsed.data;
-  // Prefer split database fields; fall back to legacy databaseUrl if provided alone
   const databaseUrl =
-    data.databaseUrl &&
-    !(raw as { database?: unknown }).database
+    data.databaseUrl && !(raw as { database?: unknown }).database
       ? data.databaseUrl
       : buildDatabaseUrl(data.database);
 
@@ -143,7 +141,7 @@ export function isPassportConfigured(): boolean {
   return Boolean(env.PASSPORT_APP_ID && env.PASSPORT_APP_SECRET);
 }
 
-/** Apply config into process.env so Edge middleware / child tools can read them */
+/** Apply config into process.env for child tools / convenience */
 export function applyConfigToProcessEnv(): AppConfig {
   const c = loadConfig();
   process.env.DATABASE_URL = c.databaseUrl;
@@ -153,7 +151,7 @@ export function applyConfigToProcessEnv(): AppConfig {
   process.env.PASSPORT_APP_SECRET = c.passport.appSecret;
   process.env.PASSPORT_BASE_URL = c.passport.baseUrl;
   process.env.OAUTH_REDIRECT_URI = c.passport.redirectUri;
-  process.env.NEXT_PUBLIC_APP_NAME = c.appName;
+  process.env.APP_NAME = c.appName;
   process.env.PORT = String(c.port);
   return c;
 }

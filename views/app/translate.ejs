@@ -1,0 +1,103 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+<main class="app-main">
+  <div class="blora-container blora-container--wide">
+    <div class="blora-stack blora-stack--lg">
+      <% var crumbs = [
+        { label: '组织', href: '/app' },
+        { label: org.name, href: '/app/o/' + orgSlug },
+        { label: project.name, href: '/app/o/' + orgSlug + '/p/' + projectSlug },
+        { label: '翻译' }
+      ]; %>
+      <%- include('../partials/breadcrumbs') %>
+      <header class="app-page-header">
+        <div class="app-page-header__copy">
+          <h1 class="blora-h2">翻译工作台</h1>
+          <p class="blora-text-muted u-mt-2"><%= project.name %> · 源 <%= project.sourceLocale %> → <%= locale %></p>
+        </div>
+      </header>
+
+      <div
+        id="translation-editor"
+        data-org-slug="<%= orgSlug %>"
+        data-project-slug="<%= projectSlug %>"
+        data-file-id="<%= fileId %>"
+        data-locale="<%= locale %>"
+        data-can-edit="<%= canEdit ? '1' : '0' %>"
+      >
+        <div class="editor-toolbar">
+          <label class="blora-field">
+            <span class="blora-field__label">文件</span>
+            <select class="blora-select" id="editor-file">
+              <% files.forEach(function (f) { %>
+                <option value="<%= f.id %>" <%= f.id === fileId ? 'selected' : '' %>><%= f.path %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label class="blora-field">
+            <span class="blora-field__label">语言</span>
+            <select class="blora-select" id="editor-locale">
+              <% locales.forEach(function (l) { %>
+                <option value="<%= l %>" <%= l === locale ? 'selected' : '' %>><%= l %></option>
+              <% }) %>
+            </select>
+          </label>
+          <label class="blora-field">
+            <span class="blora-field__label">筛选</span>
+            <select class="blora-select" id="editor-filter">
+              <option value="all">全部</option>
+              <option value="empty">未翻译</option>
+              <option value="translated">已翻译</option>
+            </select>
+          </label>
+          <label class="blora-field blora-field--grow">
+            <span class="blora-field__label">搜索</span>
+            <input class="blora-input" id="editor-q" placeholder="key 或源文" />
+          </label>
+          <button class="blora-btn blora-btn--secondary" type="button" id="editor-refresh">刷新</button>
+          <span class="blora-text-faint blora-text-mono u-text-xs" id="editor-count">0/0</span>
+        </div>
+
+        <div id="editor-error" class="blora-alert blora-alert--danger" hidden></div>
+        <div id="editor-loading" class="blora-stack app-loading">
+          <div class="blora-skeleton blora-skeleton--title"></div>
+          <div class="blora-skeleton blora-skeleton--block"></div>
+        </div>
+        <div id="editor-empty" class="blora-empty" hidden>
+          <div class="blora-empty__title">没有匹配的字符串</div>
+          <div class="blora-empty__desc">试试调整筛选或搜索条件</div>
+        </div>
+        <div id="editor-body" class="editor-layout" hidden>
+          <div class="editor-list" id="editor-list" role="listbox" aria-label="字符串列表"></div>
+          <div class="editor-panel">
+            <div id="editor-panel-empty" class="blora-text-muted">选择左侧字符串开始翻译</div>
+            <div id="editor-panel-active" hidden>
+              <div class="editor-meta-block">
+                <div class="blora-text-caps blora-text-faint">Key</div>
+                <div class="blora-text-mono" id="editor-key" style="word-break:break-all"></div>
+              </div>
+              <div class="editor-meta-block u-mt-3">
+                <div class="blora-text-caps blora-text-faint">源文</div>
+                <div class="blora-panel" id="editor-source"></div>
+              </div>
+              <label class="blora-field u-mt-3">
+                <span class="blora-field__label">
+                  译文 (<span id="editor-locale-label"><%= locale %></span>)
+                  <span class="save-hint" id="editor-save-hint">自动保存</span>
+                </span>
+                <textarea class="blora-textarea" id="editor-draft" rows="6" <%= canEdit ? '' : 'readonly' %>></textarea>
+              </label>
+              <div class="blora-row u-mt-3">
+                <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" id="editor-prev">上一条</button>
+                <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" id="editor-next">下一条</button>
+                <span class="blora-text-faint u-text-xs">Ctrl/⌘ + Enter 下一条</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</main>
+<% var scripts = ['/js/editor.js']; %>
+<%- include('../partials/foot') %>

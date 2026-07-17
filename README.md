@@ -4,7 +4,9 @@
 
 - 登录： [Bloret PassPort](https://passport.bloret.net/) OAuth（见 `docs/OauthAPI.md`）
 - UI： [Blora Design 2](./docs/blora-design-2/)
-- 栈：Next.js 15 · TypeScript · PostgreSQL · Drizzle ORM
+- 栈：**Express + EJS** · TypeScript · PostgreSQL · Drizzle ORM
+
+> 无需 `next build`：生产环境直接 `npm start` / `bash start.sh` 即可。
 
 ## 本地启动
 
@@ -57,11 +59,10 @@ npm run db:generate && npm run db:migrate
 ### 5. 启动
 
 ```bash
-# 开发
+# 开发（tsx watch 热重载）
 npm run dev
 
-# 生产（需先 build）
-npm run build
+# 生产（无需 build）
 npm start
 # 或 MCSM 面板：
 bash start.sh
@@ -84,8 +85,9 @@ bash start.sh
 
 | 命令 | 说明 |
 |------|------|
-| `npm run dev` | 开发 |
-| `npm run build` / `start` | 生产构建与启动 |
+| `npm run dev` | 开发（热重载） |
+| `npm start` | 生产启动 |
+| `npm run lint` | TypeScript 类型检查 |
 | `npm run db:push` | 推送 schema 到数据库 |
 | `npm run db:generate` | 生成迁移 |
 | `npm run db:seed` | 写入 demo 组织/项目/示例 JSON |
@@ -98,22 +100,19 @@ bash start.sh
 | `/` | 落地页 |
 | `/app` | 组织列表 |
 | `/app/o/[org]` | 组织：项目与成员 |
-| `/app/o/[org]/settings` | 组织设置（Owner） |
-| `/app/o/[org]/p/[project]` | 项目：进度与文件 |
-| `/app/o/[org]/p/[project]/settings` | 项目设置 / 语言 / 删除 |
-| `/app/o/[org]/p/[project]/files/[id]` | 文件详情与按语言进度 |
+| `/app/o/[org]/p/[project]` | 项目：进度、源文件、上传 |
 | `/app/o/[org]/p/[project]/translate` | 翻译工作台 |
+| `/api/health` | 健康检查 |
+| `/api/v1/*` | JSON API |
 
-## 目录
+## 目录结构
 
 ```
-src/app/           # 页面与 API Route Handlers
-src/components/    # UI 组件
-src/lib/           # auth / db / json-i18n / permissions
-public/blora/      # Blora CSS/JS
-docs/              # OAuth 与设计系统文档
+src/
+  server.ts          # 入口
+  app.ts             # Express 应用
+  routes/            # 页面 + API + Auth
+  lib/               # 配置、DB、权限、业务
+views/               # EJS 模板
+public/              # 静态资源（Blora、CSS、JS）
 ```
-
-## 许可证
-
-私有 / 按 Bloret 项目约定。

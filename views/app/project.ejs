@@ -1,0 +1,142 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+<main class="app-main">
+  <div class="blora-container blora-container--wide">
+    <div class="blora-stack blora-stack--lg">
+      <% var crumbs = [{ label: '组织', href: '/app' }, { label: org.name, href: '/app/o/' + orgSlug }, { label: project.name }]; %>
+      <%- include('../partials/breadcrumbs') %>
+
+      <header class="app-page-header">
+        <div class="app-page-header__copy">
+          <h1 class="blora-h2"><%= project.name %></h1>
+          <p class="blora-text-muted u-mt-2">
+            源语言 <span class="blora-badge"><%= project.sourceLocale %></span>
+            · <%= totalStrings %> 条字符串
+          </p>
+        </div>
+        <div class="app-page-header__actions">
+          <% if (canUpload) { %>
+            <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/settings">项目设置</a>
+          <% } %>
+          <% if (defaultFile && defaultLocale && canEdit) { %>
+            <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= defaultFile %>&locale=<%= defaultLocale %>">开始翻译</a>
+          <% } %>
+          <% if (canExport && targetLocales.length) { %>
+            <div class="blora-dropdown">
+              <button type="button" class="blora-btn blora-btn--outline" data-blora-dropdown-trigger>导出 ▾</button>
+              <div class="blora-dropdown-menu">
+                <% targetLocales.forEach(function (locale) { %>
+                  <a class="blora-dropdown-menu__item" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= locale %>">导出 <%= locale %></a>
+                <% }) %>
+              </div>
+            </div>
+          <% } %>
+        </div>
+      </header>
+
+      <section class="app-section">
+        <h2 class="blora-h3">语言进度</h2>
+        <% if (!targetLocales.length) { %>
+          <p class="blora-text-muted">尚未配置目标语言</p>
+        <% } else { %>
+          <div class="progress-list">
+            <% localeProgress.forEach(function (p) { %>
+              <div class="blora-card">
+                <div class="progress-list__meta">
+                  <strong><%= p.locale %></strong>
+                  <span class="blora-text-mono blora-text-faint u-text-xs"><%= p.translated %>/<%= p.total %> (<%= p.percent %>%)</span>
+                </div>
+                <div class="blora-progress" data-value="<%= p.percent %>">
+                  <div class="blora-progress__bar">
+                    <div class="blora-progress__fill" style="width:<%= p.percent %>%"></div>
+                  </div>
+                </div>
+                <div class="blora-row progress-list__actions">
+                  <% if (defaultFile) { %>
+                    <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= defaultFile %>&locale=<%= p.locale %>">翻译</a>
+                  <% } %>
+                  <% if (canExport) { %>
+                    <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= p.locale %>">导出</a>
+                  <% } %>
+                </div>
+              </div>
+            <% }) %>
+          </div>
+        <% } %>
+      </section>
+
+      <section class="app-section">
+        <h2 class="blora-h3">源文件</h2>
+        <% if (!files.length) { %>
+          <div class="blora-empty">
+            <div class="blora-empty__title">尚无源文件</div>
+            <div class="blora-empty__desc">上传 JSON 以解析字符串</div>
+          </div>
+        <% } else { %>
+          <div class="blora-table-wrap">
+            <table class="blora-table blora-table--striped">
+              <thead>
+                <tr>
+                  <th>路径</th>
+                  <th>字符串</th>
+                  <th>版本</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                <% files.forEach(function (f) { %>
+                  <tr>
+                    <td class="blora-text-mono">
+                      <a href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/files/<%= f.id %>"><%= f.path %></a>
+                    </td>
+                    <td><%= f.stringCount %></td>
+                    <td>r<%= f.sourceRevision %></td>
+                    <td>
+                      <div class="blora-row u-gap-1">
+                        <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/files/<%= f.id %>">详情</a>
+                        <% if (defaultLocale) { %>
+                          <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= f.id %>&locale=<%= defaultLocale %>">编辑</a>
+                        <% } %>
+                      </div>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          </div>
+        <% } %>
+
+        <% if (canUpload) { %>
+          <div class="blora-panel">
+            <div class="blora-panel__header"><h3 class="blora-h4">上传 / 更新 JSON</h3></div>
+            <form id="upload-file-form" class="blora-stack" data-org-slug="<%= orgSlug %>" data-project-slug="<%= projectSlug %>">
+              <div id="form-error" class="blora-alert blora-alert--danger" hidden></div>
+              <div id="form-warnings" class="blora-alert blora-alert--warning" hidden></div>
+              <label class="blora-field">
+                <span class="blora-field__label">文件路径</span>
+                <input class="blora-input" name="path" id="file-path" required pattern="[a-zA-Z0-9_./-]+\.json" value="locales/common.json" />
+              </label>
+              <label class="blora-field">
+                <span class="blora-field__label">从本地选择 JSON</span>
+                <input class="blora-input" type="file" id="file-pick" accept="application/json,.json" />
+              </label>
+              <label class="blora-field">
+                <span class="blora-field__label">JSON 内容</span>
+                <textarea class="blora-textarea blora-text-mono" name="content" id="file-content" rows="12" required style="font-size:13px">{
+  "hello": "你好",
+  "nav": {
+    "home": "首页"
+  }
+}
+</textarea>
+              </label>
+              <button class="blora-btn blora-btn--primary" type="submit">上传 / 更新源文件</button>
+            </form>
+          </div>
+        <% } %>
+      </section>
+    </div>
+  </div>
+</main>
+<% var scripts = ['/js/forms.js']; %>
+<%- include('../partials/foot') %>

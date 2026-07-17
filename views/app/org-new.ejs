@@ -1,0 +1,40 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+<main class="app-main">
+  <div class="blora-container blora-container--wide">
+    <div class="app-narrow blora-stack blora-stack--lg">
+      <% var crumbs = [{ label: '组织', href: '/app' }, { label: '新建' }]; %>
+      <%- include('../partials/breadcrumbs') %>
+      <header class="app-page-header">
+        <div class="app-page-header__copy">
+          <h1 class="blora-h2">新建组织</h1>
+          <p class="blora-text-muted u-mt-2">组织是项目与成员的容器，类似 Crowdin Organization。</p>
+        </div>
+      </header>
+      <div class="blora-panel">
+        <form id="create-org-form" class="blora-stack">
+          <div id="form-error" class="blora-alert blora-alert--danger" hidden></div>
+          <label class="blora-field">
+            <span class="blora-field__label">组织名称</span>
+            <input class="blora-input" name="name" id="org-name" required maxlength="80" placeholder="例如 Bloret Studio" />
+          </label>
+          <label class="blora-field">
+            <span class="blora-field__label">Slug（URL 标识）</span>
+            <input class="blora-input" name="slug" id="org-slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="bloret-studio" />
+            <span class="blora-field__hint">仅小写字母、数字与连字符</span>
+          </label>
+          <label class="blora-field">
+            <span class="blora-field__label">简介（可选）</span>
+            <textarea class="blora-textarea" name="description" id="org-desc" rows="3" maxlength="500"></textarea>
+          </label>
+          <div class="blora-row">
+            <button class="blora-btn blora-btn--primary" type="submit">创建组织</button>
+            <a class="blora-btn blora-btn--ghost" href="/app">取消</a>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</main>
+<% var scripts = ['/js/forms.js']; %>
+<%- include('../partials/foot') %>

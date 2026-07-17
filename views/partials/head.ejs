@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%
+    const _app = appName || 'Bloret Translation';
+    const _title = typeof title !== 'undefined' ? title : '';
+    if (_title && _title !== _app) {
+      %><%= _title %> · <%= _app %><%
+    } else {
+      %><%= _app %><%
+    }
+  %></title>
+  <meta name="description" content="Bloret 翻译收集平台 — 组织 · 项目 · 文件 · 语言" />
+  <link rel="icon" href="/favicon.svg" />
+  <script>
+    (() => {
+      const root = document.documentElement;
+      try {
+        window.BloraConfig = {
+          colorModeStorageKey: 'btc-theme',
+          paletteStorageKey: 'btc-palette',
+        };
+        root.dataset.bloraPalette = 'mono';
+        delete root.dataset.bloraThemeStyle;
+        try {
+          localStorage.setItem('btc-palette', 'mono');
+          localStorage.removeItem('btc-style-theme');
+        } catch (_) {}
+        const mode = localStorage.getItem('btc-theme');
+        if (mode === 'dark' || (!mode && matchMedia('(prefers-color-scheme: dark)').matches)) {
+          root.classList.add('blora-dark');
+        }
+      } catch (e) {}
+    })();
+  </script>
+  <link rel="stylesheet" href="/blora/blora.css" />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/app.css" />
+</head>
+<body class="blora-page blora-scope">

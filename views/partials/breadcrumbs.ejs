@@ -1,0 +1,16 @@
+<% if (typeof crumbs !== 'undefined' && crumbs && crumbs.length) { %>
+<nav class="blora-breadcrumb app-breadcrumb" aria-label="面包屑">
+  <% crumbs.forEach(function (item, i) { %>
+    <span class="app-breadcrumb__item">
+      <% if (i > 0) { %>
+        <span class="blora-breadcrumb__sep" aria-hidden>/</span>
+      <% } %>
+      <% if (i === crumbs.length - 1 || !item.href) { %>
+        <span class="blora-breadcrumb__current"><%= item.label %></span>
+      <% } else { %>
+        <a class="blora-breadcrumb__link" href="<%= item.href %>"><%= item.label %></a>
+      <% } %>
+    </span>
+  <% }) %>
+</nav>
+<% } %>
