@@ -44,13 +44,11 @@ export default async function HomePage({ searchParams }: Props) {
                 了解能力
               </Link>
             </div>
-            {(process.env.NODE_ENV !== "production" || !process.env.PASSPORT_APP_ID) && (
-              <p className="blora-text-faint" style={{ marginTop: 16, fontSize: 13 }}>
-                本地开发：{" "}
-                <a href="/auth/login?user=dev-user&dev=1">以 dev-user 登录</a>
-                （未配置 PassPort 时可用）
-              </p>
-            )}
+            <p className="blora-text-faint" style={{ marginTop: 16, fontSize: 13 }}>
+              本地开发：{" "}
+              <a href="/auth/login?user=dev-user&dev=1">以 dev-user 登录</a>
+              （config.json 未配置 PassPort 时可用）
+            </p>
           </section>
 
           <hr className="blora-brush" />

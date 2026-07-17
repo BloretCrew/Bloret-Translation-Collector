@@ -12,6 +12,10 @@ function isPublic(pathname: string): boolean {
   return false;
 }
 
+/**
+ * Middleware runs on Edge — cannot read config.json via fs.
+ * scripts/run-start.mjs / start.sh inject SESSION_SECRET & COOKIE_SECURE from config.json.
+ */
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 

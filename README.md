@@ -14,49 +14,55 @@
 npm install
 ```
 
-### 2. 数据库
+### 2. 配置文件
+
+所有运行配置集中在项目根目录 **`config.json`**（可从 `config.example.json` 复制）：
 
 ```bash
-docker compose up -d
-cp .env.example .env
-# 编辑 .env：至少配置 SESSION_SECRET（≥32 字符）
+cp config.example.json config.json
+# 编辑 config.json
 ```
 
-生成并应用 schema（开发可用 push）：
+| 字段 | 说明 |
+|------|------|
+| `port` | 监听端口，默认 `3000` |
+| `databaseUrl` | PostgreSQL 连接串 |
+| `sessionSecret` | 会话加密密钥（≥32 字符） |
+| `cookieSecure` | HTTPS 时为 `true`；HTTP 面板部署请用 `false` |
+| `appName` | 应用显示名 |
+| `passport.appId` / `appSecret` | Bloret PassPort OAuth |
+| `passport.baseUrl` | 默认 `https://passport.bloret.net` |
+| `passport.redirectUri` | 回调地址，须与 PassPort 白名单一致 |
+
+### 3. 数据库
 
 ```bash
+docker compose up -d   # 或使用已有 PostgreSQL
 npm run db:push
 # 或
 npm run db:generate && npm run db:migrate
 ```
 
-### 3. PassPort OAuth（可选）
+### 4. PassPort OAuth（可选）
 
-在 PassPort 注册应用，回调地址：
+在 PassPort 注册应用，回调地址与 `config.json` 中 `passport.redirectUri` 一致，权限建议：`user:name`、`user:head`。
 
-```
-http://localhost:3000/auth/callback
-```
+**未配置 OAuth 时**：`/auth/login?user=dev-user&dev=1` 开发登录。
 
-权限建议：`user:name`、`user:head`。
-
-在 `.env` 中填写：
-
-```
-PASSPORT_APP_ID=...
-PASSPORT_APP_SECRET=...
-OAUTH_REDIRECT_URI=http://localhost:3000/auth/callback
-```
-
-**未配置 OAuth 时**：访问 `/auth/login` 会使用开发登录（用户名默认 `dev-user`，可用 `?user=alice` 指定）。
-
-### 4. 开发服务器
+### 5. 启动
 
 ```bash
+# 开发
 npm run dev
+
+# 生产（需先 build）
+npm run build
+npm start
+# 或 MCSM 面板：
+bash start.sh
 ```
 
-打开 http://localhost:3000
+打开 http://localhost:3000（端口以 `config.json` 为准）
 
 ## 功能（MVP）
 

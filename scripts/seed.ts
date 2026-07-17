@@ -7,12 +7,11 @@ import { drizzle } from "drizzle-orm/postgres-js";
 import postgres from "postgres";
 import * as schema from "../src/lib/db/schema";
 import { flattenJson } from "../src/lib/json-i18n";
-
-const url =
-  process.env.DATABASE_URL ?? "postgresql://bloret:bloret@127.0.0.1:5432/translation_collector";
+import { applyConfigToProcessEnv } from "../src/lib/config";
 
 async function main() {
-  const client = postgres(url, { max: 1 });
+  const config = applyConfigToProcessEnv();
+  const client = postgres(config.databaseUrl, { max: 1 });
   const db = drizzle(client, { schema });
 
   let [user] = await db

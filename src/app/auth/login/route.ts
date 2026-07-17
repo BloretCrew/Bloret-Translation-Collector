@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
   const allowDev = process.env.NODE_ENV !== "production" || request.nextUrl.searchParams.has("dev");
   if (!allowDev) {
     return NextResponse.json(
-      { error: "PassPort OAuth 未配置。请设置 PASSPORT_APP_ID / PASSPORT_APP_SECRET。" },
+      { error: "PassPort OAuth 未配置。请在 config.json 中填写 passport.appId / passport.appSecret，或使用 ?dev=1 开发登录。" },
       { status: 503 },
     );
   }

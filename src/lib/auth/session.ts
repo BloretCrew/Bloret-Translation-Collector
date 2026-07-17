@@ -14,10 +14,7 @@ export const defaultSession: SessionData = {
 };
 
 export function isCookieSecure(): boolean {
-  if (process.env.COOKIE_SECURE === "true") return true;
-  if (process.env.COOKIE_SECURE === "false") return false;
-  // Default secure in production (HTTPS). Set COOKIE_SECURE=false for local `next start` over HTTP.
-  return process.env.NODE_ENV === "production";
+  return getEnv().COOKIE_SECURE;
 }
 
 export function getSessionOptions(): SessionOptions {
