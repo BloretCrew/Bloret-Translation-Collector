@@ -21,12 +21,15 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `(() => {
   const root = document.documentElement;
   try {
-    let theme = localStorage.getItem('btc-style-theme') || 'modern';
-    const palette = localStorage.getItem('btc-palette') || 'cinnabar';
+    // Product default: Studio theme + Dusk palette (palette key "studio")
+    let theme = localStorage.getItem('btc-style-theme') || 'studio';
+    let palette = localStorage.getItem('btc-palette') || 'studio';
     const mode = localStorage.getItem('btc-theme');
     if (theme === 'carbon') theme = 'modern';
     if (theme !== 'classic') root.dataset.bloraThemeStyle = theme;
+    else delete root.dataset.bloraThemeStyle;
     if (palette !== 'cinnabar') root.dataset.bloraPalette = palette;
+    else delete root.dataset.bloraPalette;
     if (mode === 'dark' || (!mode && matchMedia('(prefers-color-scheme: dark)').matches)) {
       root.classList.add('blora-dark');
     }
