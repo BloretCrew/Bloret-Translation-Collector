@@ -5,9 +5,12 @@ export function AppNavbar({ session }: { session: SessionData | null }) {
   const initial = session?.username?.[0]?.toUpperCase() ?? "?";
 
   return (
-    <nav className="blora-navbar">
+    <nav className="blora-navbar app-navbar" aria-label="主导航">
       <div className="blora-navbar__brand">
-        <Link href={session?.isLoggedIn ? "/app" : "/"} className="blora-row blora-row--center" style={{ gap: "0.5rem", textDecoration: "none", color: "inherit" }}>
+        <Link
+          href={session?.isLoggedIn ? "/app" : "/"}
+          className="app-navbar__brand-link"
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src="/blora/bloret-mini.svg" alt="" width={28} height={28} />
           <span>Bloret Translation</span>
@@ -20,7 +23,11 @@ export function AppNavbar({ session }: { session: SessionData | null }) {
               我的组织
             </Link>
             <div className="blora-dropdown">
-              <button className="blora-btn blora-btn--ghost blora-btn--sm" data-blora-dropdown-trigger type="button">
+              <button
+                className="blora-btn blora-btn--ghost blora-btn--sm"
+                data-blora-dropdown-trigger
+                type="button"
+              >
                 {session.avatarUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -28,10 +35,10 @@ export function AppNavbar({ session }: { session: SessionData | null }) {
                     alt=""
                     width={24}
                     height={24}
-                    style={{ borderRadius: "999px", marginRight: 6, verticalAlign: "middle" }}
+                    className="app-navbar__avatar-img"
                   />
                 ) : (
-                  <span className="blora-avatar blora-avatar--sm" style={{ marginRight: 6 }}>
+                  <span className="blora-avatar blora-avatar--sm app-navbar__avatar-fallback">
                     {initial}
                   </span>
                 )}

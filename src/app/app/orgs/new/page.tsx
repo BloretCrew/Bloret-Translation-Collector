@@ -6,10 +6,14 @@ export default function NewOrgPage() {
   return (
     <div className="app-narrow blora-stack blora-stack--lg">
       <Breadcrumbs items={[{ label: "组织", href: "/app" }, { label: "新建" }]} />
-      <div>
-        <h1 className="blora-h2">新建组织</h1>
-        <p className="blora-text-muted">组织是项目与成员的容器，类似 Crowdin Organization。</p>
-      </div>
+      <header className="app-page-header">
+        <div className="app-page-header__copy">
+          <h1 className="blora-h2">新建组织</h1>
+          <p className="blora-text-muted u-mt-2">
+            组织是项目与成员的容器，类似 Crowdin Organization。
+          </p>
+        </div>
+      </header>
       <div className="blora-panel">
         <CreateOrgForm />
       </div>

@@ -21,7 +21,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `(() => {
   const root = document.documentElement;
   try {
-    // Product lock: Mono palette (blora-design-2 key "mono")
+    // Product lock: blora-design-2 Mono palette
     window.BloraConfig = {
       colorModeStorageKey: 'btc-theme',
       paletteStorageKey: 'btc-palette',
@@ -30,6 +30,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     delete root.dataset.bloraThemeStyle;
     try {
       localStorage.setItem('btc-palette', 'mono');
+      localStorage.removeItem('btc-style-theme');
     } catch (_) {}
     const mode = localStorage.getItem('btc-theme');
     if (mode === 'dark' || (!mode && matchMedia('(prefers-color-scheme: dark)').matches)) {
@@ -41,10 +42,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         />
         {/* eslint-disable-next-line @next/next/no-css-tags */}
         <link rel="stylesheet" href="/blora/blora.css" />
-        {/* fonts loaded via stylesheet link intentionally for Blora */}
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
           rel="stylesheet"
         />
       </head>

@@ -40,15 +40,19 @@ export default async function ProjectSettingsPage({ params }: Props) {
           { label: "设置" },
         ]}
       />
-      <div className="blora-row blora-row--between">
-        <h1 className="blora-h2">项目设置</h1>
-        <Link
-          className="blora-btn blora-btn--ghost"
-          href={`/app/o/${orgSlug}/p/${projectSlug}`}
-        >
-          返回项目
-        </Link>
-      </div>
+      <header className="app-page-header">
+        <div className="app-page-header__copy">
+          <h1 className="blora-h2">项目设置</h1>
+        </div>
+        <div className="app-page-header__actions">
+          <Link
+            className="blora-btn blora-btn--ghost"
+            href={`/app/o/${orgSlug}/p/${projectSlug}`}
+          >
+            返回项目
+          </Link>
+        </div>
+      </header>
       <div className="blora-panel">
         <ProjectSettingsForm
           orgSlug={orgSlug}

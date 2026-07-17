@@ -65,12 +65,15 @@ export default async function OrgPage({ params }: Props) {
           { label: access.org.name },
         ]}
       />
-      <div className="blora-row blora-row--between">
-        <div>
+
+      <header className="app-page-header">
+        <div className="app-page-header__copy">
           <h1 className="blora-h2">{access.org.name}</h1>
-          <p className="blora-text-muted">{access.org.description || "暂无简介"}</p>
+          <p className="blora-text-muted u-mt-2">
+            {access.org.description || "暂无简介"}
+          </p>
         </div>
-        <div className="blora-row">
+        <div className="app-page-header__actions">
           <span className="blora-badge blora-badge--pill">{ROLE_LABELS[access.role]}</span>
           {canManageOrg(access.role) && (
             <Link className="blora-btn blora-btn--outline" href={`/app/o/${orgSlug}/settings`}>
@@ -86,21 +89,23 @@ export default async function OrgPage({ params }: Props) {
             </Link>
           )}
         </div>
-      </div>
+      </header>
 
-      <section className="blora-stack">
+      <section className="app-section">
         <h2 className="blora-h3">项目</h2>
         {projectList.length === 0 ? (
           <div className="blora-empty">
             <div className="blora-empty__title">尚无项目</div>
+            <div className="blora-empty__desc">创建项目后即可上传源文件并开始翻译</div>
             {canManageProjects(access.role) && (
-              <Link
-                className="blora-btn blora-btn--primary"
-                href={`/app/o/${orgSlug}/projects/new`}
-                style={{ marginTop: 12 }}
-              >
-                创建项目
-              </Link>
+              <div className="app-empty-actions">
+                <Link
+                  className="blora-btn blora-btn--primary"
+                  href={`/app/o/${orgSlug}/projects/new`}
+                >
+                  创建项目
+                </Link>
+              </div>
             )}
           </div>
         ) : (
@@ -119,7 +124,7 @@ export default async function OrgPage({ params }: Props) {
                   <tr key={p.id}>
                     <td>
                       <Link href={`/app/o/${orgSlug}/p/${p.slug}`}>{p.name}</Link>
-                      <div className="blora-text-faint blora-text-mono" style={{ fontSize: 12 }}>
+                      <div className="blora-text-faint blora-text-mono u-text-xs u-mt-2">
                         {p.slug}
                       </div>
                     </td>
@@ -127,11 +132,13 @@ export default async function OrgPage({ params }: Props) {
                       <span className="blora-badge">{p.sourceLocale}</span>
                     </td>
                     <td>
-                      {(langMap.get(p.id) ?? []).map((l) => (
-                        <span key={l} className="blora-badge" style={{ marginRight: 4 }}>
-                          {l}
-                        </span>
-                      ))}
+                      <div className="blora-row u-gap-1">
+                        {(langMap.get(p.id) ?? []).map((l) => (
+                          <span key={l} className="blora-badge">
+                            {l}
+                          </span>
+                        ))}
+                      </div>
                     </td>
                     <td>
                       <Link
@@ -149,7 +156,7 @@ export default async function OrgPage({ params }: Props) {
         )}
       </section>
 
-      <section className="blora-stack">
+      <section className="app-section">
         <h2 className="blora-h3">成员</h2>
         <MemberList
           orgSlug={orgSlug}
@@ -159,9 +166,9 @@ export default async function OrgPage({ params }: Props) {
         />
         {canManageOrg(access.role) && (
           <div className="blora-panel">
-            <h3 className="blora-h4" style={{ marginBottom: 12 }}>
-              添加成员
-            </h3>
+            <div className="blora-panel__header">
+              <h3 className="blora-h4">添加成员</h3>
+            </div>
             <AddMemberForm orgSlug={orgSlug} />
           </div>
         )}

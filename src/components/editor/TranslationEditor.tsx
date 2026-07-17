@@ -135,10 +135,19 @@ export function TranslationEditor({
     if (next) selectString(next);
   }
 
+  const saveHintClass =
+    saveState === "saving"
+      ? " is-saving"
+      : saveState === "saved"
+        ? " is-saved"
+        : saveState === "error"
+          ? " is-error"
+          : "";
+
   return (
     <div className="blora-stack">
       <div className="editor-toolbar">
-        <label className="blora-field" style={{ margin: 0 }}>
+        <label className="blora-field">
           <span className="blora-field__label">文件</span>
           <select
             className="blora-select"
@@ -156,7 +165,7 @@ export function TranslationEditor({
             ))}
           </select>
         </label>
-        <label className="blora-field" style={{ margin: 0 }}>
+        <label className="blora-field">
           <span className="blora-field__label">语言</span>
           <select
             className="blora-select"
@@ -174,7 +183,7 @@ export function TranslationEditor({
             ))}
           </select>
         </label>
-        <label className="blora-field" style={{ margin: 0 }}>
+        <label className="blora-field">
           <span className="blora-field__label">筛选</span>
           <select
             className="blora-select"
@@ -186,7 +195,7 @@ export function TranslationEditor({
             <option value="translated">已翻译</option>
           </select>
         </label>
-        <label className="blora-field" style={{ margin: 0, flex: 1, minWidth: 160 }}>
+        <label className="blora-field blora-field--grow">
           <span className="blora-field__label">搜索</span>
           <input
             className="blora-input"
@@ -201,17 +210,21 @@ export function TranslationEditor({
         <button className="blora-btn blora-btn--secondary" type="button" onClick={() => void load()}>
           刷新
         </button>
-        <span className="blora-text-faint blora-text-mono" style={{ fontSize: 12 }}>
+        <span className="blora-text-faint blora-text-mono u-text-xs">
           {strings.length}/{total}
         </span>
       </div>
 
       {error && <div className="blora-alert blora-alert--danger">{error}</div>}
       {loading ? (
-        <div className="blora-text-muted">加载中…</div>
+        <div className="blora-stack app-loading">
+          <div className="blora-skeleton blora-skeleton--title" />
+          <div className="blora-skeleton blora-skeleton--block" />
+        </div>
       ) : strings.length === 0 ? (
         <div className="blora-empty">
           <div className="blora-empty__title">没有匹配的字符串</div>
+          <div className="blora-empty__desc">试试调整筛选或搜索条件</div>
         </div>
       ) : (
         <div className="editor-layout">
@@ -225,7 +238,9 @@ export function TranslationEditor({
               >
                 <span
                   className={`status-dot ${
-                    s.status === "translated" && s.translation ? "status-dot--done" : "status-dot--empty"
+                    s.status === "translated" && s.translation
+                      ? "status-dot--done"
+                      : "status-dot--empty"
                   }`}
                 />
                 <div className="editor-list__key">{s.keyPath}</div>
@@ -237,33 +252,20 @@ export function TranslationEditor({
           <div className="editor-panel">
             {active ? (
               <>
-                <div>
+                <div className="editor-meta-block">
                   <div className="blora-text-caps blora-text-faint">Key</div>
                   <div className="blora-text-mono" style={{ wordBreak: "break-all" }}>
                     {active.keyPath}
                   </div>
                 </div>
-                <div>
+                <div className="editor-meta-block">
                   <div className="blora-text-caps blora-text-faint">源文</div>
-                  <div className="blora-panel" style={{ padding: 12, marginTop: 4 }}>
-                    {active.sourceText}
-                  </div>
+                  <div className="blora-panel">{active.sourceText}</div>
                 </div>
                 <label className="blora-field">
                   <span className="blora-field__label">
                     译文 ({locale})
-                    <span
-                      className={`save-hint${
-                        saveState === "saving"
-                          ? " is-saving"
-                          : saveState === "saved"
-                            ? " is-saved"
-                            : saveState === "error"
-                              ? " is-error"
-                              : ""
-                      }`}
-                      style={{ marginLeft: 12 }}
-                    >
+                    <span className={`save-hint${saveHintClass}`}>
                       {saveState === "saving"
                         ? "保存中…"
                         : saveState === "saved"
@@ -304,9 +306,7 @@ export function TranslationEditor({
                   >
                     下一条
                   </button>
-                  <span className="blora-text-faint" style={{ fontSize: 12 }}>
-                    Ctrl/⌘ + Enter 下一条
-                  </span>
+                  <span className="blora-text-faint u-text-xs">Ctrl/⌘ + Enter 下一条</span>
                 </div>
               </>
             ) : (

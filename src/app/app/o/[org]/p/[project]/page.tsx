@@ -61,16 +61,16 @@ export default async function ProjectPage({ params }: Props) {
         ]}
       />
 
-      <div className="blora-row blora-row--between">
-        <div>
+      <header className="app-page-header">
+        <div className="app-page-header__copy">
           <h1 className="blora-h2">{access.project.name}</h1>
-          <p className="blora-text-muted">
+          <p className="blora-text-muted u-mt-2">
             源语言 <span className="blora-badge">{access.project.sourceLocale}</span>
             {" · "}
             {progress.totalStrings} 条字符串
           </p>
         </div>
-        <div className="blora-row">
+        <div className="app-page-header__actions">
           {canUploadFiles(access.role) && (
             <Link
               className="blora-btn blora-btn--ghost"
@@ -95,9 +95,9 @@ export default async function ProjectPage({ params }: Props) {
             />
           )}
         </div>
-      </div>
+      </header>
 
-      <section className="blora-stack">
+      <section className="app-section">
         <h2 className="blora-h3">语言进度</h2>
         {targetLocales.length === 0 ? (
           <p className="blora-text-muted">尚未配置目标语言</p>
@@ -110,9 +110,9 @@ export default async function ProjectPage({ params }: Props) {
               const percent = total === 0 ? 0 : Math.round((translated / total) * 100);
               return (
                 <div key={locale} className="blora-card">
-                  <div className="blora-row blora-row--between" style={{ marginBottom: 8 }}>
+                  <div className="progress-list__meta">
                     <strong>{locale}</strong>
-                    <span className="blora-text-mono blora-text-faint" style={{ fontSize: 12 }}>
+                    <span className="blora-text-mono blora-text-faint u-text-xs">
                       {translated}/{total} ({percent}%)
                     </span>
                   </div>
@@ -124,7 +124,7 @@ export default async function ProjectPage({ params }: Props) {
                       />
                     </div>
                   </div>
-                  <div className="blora-row" style={{ marginTop: 12 }}>
+                  <div className="blora-row progress-list__actions">
                     {defaultFile && (
                       <Link
                         className="blora-btn blora-btn--ghost blora-btn--xs"
@@ -149,7 +149,7 @@ export default async function ProjectPage({ params }: Props) {
         )}
       </section>
 
-      <section className="blora-stack">
+      <section className="app-section">
         <h2 className="blora-h3">源文件</h2>
         {files.length === 0 ? (
           <div className="blora-empty">
@@ -177,21 +177,23 @@ export default async function ProjectPage({ params }: Props) {
                     </td>
                     <td>{f.stringCount}</td>
                     <td>r{f.sourceRevision}</td>
-                    <td className="blora-row" style={{ gap: 4 }}>
-                      <Link
-                        className="blora-btn blora-btn--ghost blora-btn--xs"
-                        href={`/app/o/${orgSlug}/p/${projectSlug}/files/${f.id}`}
-                      >
-                        详情
-                      </Link>
-                      {defaultLocale && (
+                    <td>
+                      <div className="blora-row u-gap-1">
                         <Link
                           className="blora-btn blora-btn--ghost blora-btn--xs"
-                          href={`/app/o/${orgSlug}/p/${projectSlug}/translate?file=${f.id}&locale=${defaultLocale}`}
+                          href={`/app/o/${orgSlug}/p/${projectSlug}/files/${f.id}`}
                         >
-                          编辑
+                          详情
                         </Link>
-                      )}
+                        {defaultLocale && (
+                          <Link
+                            className="blora-btn blora-btn--ghost blora-btn--xs"
+                            href={`/app/o/${orgSlug}/p/${projectSlug}/translate?file=${f.id}&locale=${defaultLocale}`}
+                          >
+                            编辑
+                          </Link>
+                        )}
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -202,9 +204,9 @@ export default async function ProjectPage({ params }: Props) {
 
         {canUploadFiles(access.role) && (
           <div className="blora-panel">
-            <h3 className="blora-h4" style={{ marginBottom: 12 }}>
-              上传 / 更新 JSON
-            </h3>
+            <div className="blora-panel__header">
+              <h3 className="blora-h4">上传 / 更新 JSON</h3>
+            </div>
             <UploadFileForm orgSlug={orgSlug} projectSlug={projectSlug} />
           </div>
         )}

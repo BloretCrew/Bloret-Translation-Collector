@@ -28,7 +28,12 @@ export default async function NewProjectPage({ params }: Props) {
           { label: "新建项目" },
         ]}
       />
-      <h1 className="blora-h2">新建项目</h1>
+      <header className="app-page-header">
+        <div className="app-page-header__copy">
+          <h1 className="blora-h2">新建项目</h1>
+          <p className="blora-text-muted u-mt-2">配置源语言与目标语言后即可上传 JSON。</p>
+        </div>
+      </header>
       <div className="blora-panel">
         <CreateProjectForm orgSlug={orgSlug} />
       </div>

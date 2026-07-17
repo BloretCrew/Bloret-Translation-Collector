@@ -28,23 +28,27 @@ export default async function AppHomePage() {
 
   return (
     <div className="blora-stack blora-stack--lg">
-      <div className="blora-row blora-row--between">
-        <div>
+      <header className="app-page-header">
+        <div className="app-page-header__copy">
           <h1 className="blora-h2">我的组织</h1>
-          <p className="blora-text-muted">选择组织以管理项目与翻译</p>
+          <p className="blora-text-muted u-mt-2">选择组织以管理项目与翻译</p>
         </div>
-        <Link className="blora-btn blora-btn--primary" href="/app/orgs/new">
-          新建组织
-        </Link>
-      </div>
+        <div className="app-page-header__actions">
+          <Link className="blora-btn blora-btn--primary" href="/app/orgs/new">
+            新建组织
+          </Link>
+        </div>
+      </header>
 
       {orgs.length === 0 ? (
         <div className="blora-empty">
           <div className="blora-empty__title">还没有组织</div>
           <div className="blora-empty__desc">创建一个组织，开始收集翻译</div>
-          <Link className="blora-btn blora-btn--primary" href="/app/orgs/new" style={{ marginTop: 16 }}>
-            创建第一个组织
-          </Link>
+          <div className="app-empty-actions">
+            <Link className="blora-btn blora-btn--primary" href="/app/orgs/new">
+              创建第一个组织
+            </Link>
+          </div>
         </div>
       ) : (
         <div className="blora-grid blora-grid--3">
@@ -61,7 +65,7 @@ export default async function AppHomePage() {
               </p>
               <div className="blora-card__foot blora-row blora-row--between">
                 <span className="blora-badge blora-badge--pill">{ROLE_LABELS[org.role]}</span>
-                <span className="blora-text-faint blora-text-mono" style={{ fontSize: 12 }}>
+                <span className="blora-text-faint blora-text-mono u-text-xs">
                   {org.projectCount} 项目
                 </span>
               </div>

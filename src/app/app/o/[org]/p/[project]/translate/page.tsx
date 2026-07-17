@@ -53,12 +53,14 @@ export default async function TranslatePage({ params, searchParams }: Props) {
           { label: "翻译" },
         ]}
       />
-      <div>
-        <h1 className="blora-h2">翻译工作台</h1>
-        <p className="blora-text-muted">
-          {access.project.name} · 源 {access.project.sourceLocale} → {locale}
-        </p>
-      </div>
+      <header className="app-page-header">
+        <div className="app-page-header__copy">
+          <h1 className="blora-h2">翻译工作台</h1>
+          <p className="blora-text-muted u-mt-2">
+            {access.project.name} · 源 {access.project.sourceLocale} → {locale}
+          </p>
+        </div>
+      </header>
       <TranslationEditor
         orgSlug={orgSlug}
         projectSlug={projectSlug}
