@@ -21,15 +21,14 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             __html: `(() => {
   const root = document.documentElement;
   try {
-    // Product default: Studio theme + Dusk palette (palette key "studio")
-    let theme = localStorage.getItem('btc-style-theme') || 'studio';
-    let palette = localStorage.getItem('btc-palette') || 'studio';
+    // Product lock: Studio theme + Dusk palette (blora palette key "studio")
+    root.dataset.bloraThemeStyle = 'studio';
+    root.dataset.bloraPalette = 'studio';
+    try {
+      localStorage.setItem('btc-style-theme', 'studio');
+      localStorage.setItem('btc-palette', 'studio');
+    } catch (_) {}
     const mode = localStorage.getItem('btc-theme');
-    if (theme === 'carbon') theme = 'modern';
-    if (theme !== 'classic') root.dataset.bloraThemeStyle = theme;
-    else delete root.dataset.bloraThemeStyle;
-    if (palette !== 'cinnabar') root.dataset.bloraPalette = palette;
-    else delete root.dataset.bloraPalette;
     if (mode === 'dark' || (!mode && matchMedia('(prefers-color-scheme: dark)').matches)) {
       root.classList.add('blora-dark');
     }

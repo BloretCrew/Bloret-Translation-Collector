@@ -17,11 +17,10 @@ export function BloraInit() {
         paletteStorageKey: "btc-palette",
       });
 
-      // applyTheme without default palette, then pin Dusk explicitly
-      const applyTheme = window.Blora.applyTheme as
-        | ((name: string, target?: Element, options?: { applyDefaultPalette?: boolean }) => void)
-        | undefined;
-      applyTheme?.(DEFAULT_THEME, document.documentElement, { applyDefaultPalette: false });
+      // Pin Studio morphology, then Dusk colors (do not rely on theme default alone)
+      window.Blora.applyTheme?.(DEFAULT_THEME, document.documentElement, {
+        applyDefaultPalette: false,
+      });
       window.Blora.applyPalette?.(DEFAULT_PALETTE);
       window.Blora.init(document);
     }
