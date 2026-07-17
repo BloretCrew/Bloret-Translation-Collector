@@ -1,4 +1,4 @@
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { requireSession } from "@/lib/auth/session";
 import { requireOrgAccess } from "@/lib/access";
 import { forbidden, jsonCreated, jsonError, jsonOk, notFound, unauthorized } from "@/lib/api";
@@ -30,14 +30,16 @@ export async function GET(_req: Request, ctx: Ctx) {
   const allLangs =
     projectIds.length === 0
       ? []
-      : await db.select().from(projectLanguages);
+      : await db
+          .select()
+          .from(projectLanguages)
+          .where(inArray(projectLanguages.projectId, projectIds));
 
-  const idSet = new Set(projectIds);
   const langMap = new Map<string, string[]>();
   for (const l of allLangs) {
-    if (!idSet.has(l.projectId)) continue;
+    if (!l.enabled) continue;
     const arr = langMap.get(l.projectId) ?? [];
-    if (l.enabled) arr.push(l.locale);
+    arr.push(l.locale);
     langMap.set(l.projectId, arr);
   }
 

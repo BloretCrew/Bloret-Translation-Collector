@@ -4,8 +4,12 @@ import { BloraInit } from "@/components/layout/BloraInit";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "Bloret Translation",
+  title: {
+    default: "Bloret Translation",
+    template: "%s · Bloret Translation",
+  },
   description: "Bloret 翻译收集平台 — 组织 · 项目 · 文件 · 语言",
+  icons: { icon: "/favicon.svg" },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

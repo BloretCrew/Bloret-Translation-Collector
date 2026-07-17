@@ -3,17 +3,32 @@ import { redirect } from "next/navigation";
 import { AppNavbar } from "@/components/layout/AppNavbar";
 import { getSession } from "@/lib/auth/session";
 
-export default async function HomePage() {
+type Props = { searchParams: Promise<{ error?: string }> };
+
+export default async function HomePage({ searchParams }: Props) {
   const session = await getSession();
   if (session.isLoggedIn) {
     redirect("/app");
   }
+
+  const sp = await searchParams;
+  const errorMsg =
+    sp.error === "oauth_denied"
+      ? "你取消了授权，或 PassPort 未返回授权码。"
+      : sp.error
+        ? decodeURIComponent(sp.error)
+        : null;
 
   return (
     <>
       <AppNavbar session={null} />
       <main className="app-main">
         <div className="blora-container">
+          {errorMsg && (
+            <div className="blora-alert blora-alert--danger" role="alert" style={{ marginBottom: 24 }}>
+              登录失败：{errorMsg}
+            </div>
+          )}
           <section className="landing-hero">
             <p className="blora-text-caps blora-text-seal">Bloret · Localization</p>
             <h1>翻译收集，像 Crowdin 一样协作</h1>
@@ -29,6 +44,13 @@ export default async function HomePage() {
                 了解能力
               </Link>
             </div>
+            {(process.env.NODE_ENV !== "production" || !process.env.PASSPORT_APP_ID) && (
+              <p className="blora-text-faint" style={{ marginTop: 16, fontSize: 13 }}>
+                本地开发：{" "}
+                <a href="/auth/login?user=dev-user&dev=1">以 dev-user 登录</a>
+                （未配置 PassPort 时可用）
+              </p>
+            )}
           </section>
 
           <hr className="blora-brush" />

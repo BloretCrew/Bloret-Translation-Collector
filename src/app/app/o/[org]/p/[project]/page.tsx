@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { projectLanguages, sourceFiles, stringUnits } from "@/lib/db/schema";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { UploadFileForm } from "@/components/project/UploadFileForm";
+import { ExportMenu } from "@/components/project/ExportMenu";
 import { canUploadFiles, canEditTranslations, canExport } from "@/lib/permissions/roles";
 import { getProjectProgress } from "@/lib/services/files";
 
@@ -70,6 +71,14 @@ export default async function ProjectPage({ params }: Props) {
           </p>
         </div>
         <div className="blora-row">
+          {canUploadFiles(access.role) && (
+            <Link
+              className="blora-btn blora-btn--ghost"
+              href={`/app/o/${orgSlug}/p/${projectSlug}/settings`}
+            >
+              项目设置
+            </Link>
+          )}
           {defaultFile && defaultLocale && canEditTranslations(access.role) && (
             <Link
               className="blora-btn blora-btn--primary"
@@ -78,13 +87,12 @@ export default async function ProjectPage({ params }: Props) {
               开始翻译
             </Link>
           )}
-          {canExport(access.role) && defaultLocale && (
-            <a
-              className="blora-btn blora-btn--outline"
-              href={`/api/v1/orgs/${orgSlug}/projects/${projectSlug}/export?locale=${defaultLocale}`}
-            >
-              导出 {defaultLocale}
-            </a>
+          {canExport(access.role) && (
+            <ExportMenu
+              orgSlug={orgSlug}
+              projectSlug={projectSlug}
+              locales={targetLocales}
+            />
           )}
         </div>
       </div>
@@ -162,10 +170,20 @@ export default async function ProjectPage({ params }: Props) {
               <tbody>
                 {files.map((f) => (
                   <tr key={f.id}>
-                    <td className="blora-text-mono">{f.path}</td>
+                    <td className="blora-text-mono">
+                      <Link href={`/app/o/${orgSlug}/p/${projectSlug}/files/${f.id}`}>
+                        {f.path}
+                      </Link>
+                    </td>
                     <td>{f.stringCount}</td>
                     <td>r{f.sourceRevision}</td>
-                    <td>
+                    <td className="blora-row" style={{ gap: 4 }}>
+                      <Link
+                        className="blora-btn blora-btn--ghost blora-btn--xs"
+                        href={`/app/o/${orgSlug}/p/${projectSlug}/files/${f.id}`}
+                      >
+                        详情
+                      </Link>
                       {defaultLocale && (
                         <Link
                           className="blora-btn blora-btn--ghost blora-btn--xs"

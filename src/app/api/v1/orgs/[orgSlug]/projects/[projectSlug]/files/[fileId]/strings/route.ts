@@ -1,4 +1,4 @@
-import { and, asc, eq, ilike, or, sql } from "drizzle-orm";
+import { and, asc, eq, ilike, isNull, or, sql } from "drizzle-orm";
 import { requireSession } from "@/lib/auth/session";
 import { requireProjectAccess } from "@/lib/access";
 import { forbidden, jsonOk, notFound, unauthorized } from "@/lib/api";
@@ -43,8 +43,31 @@ export async function GET(request: Request, ctx: Ctx) {
     );
   }
 
-  // Fetch strings with left join translations for locale
-  const baseQuery = db
+  if (locale && status === "empty") {
+    conditions.push(
+      or(
+        isNull(translations.id),
+        eq(translations.status, "empty"),
+        sql`coalesce(${translations.text}, '') = ''`,
+      )!,
+    );
+  } else if (locale && status === "translated") {
+    conditions.push(eq(translations.status, "translated"));
+    conditions.push(sql`${translations.text} <> ''`);
+  }
+
+  const joinOn = and(
+    eq(translations.stringId, stringUnits.id),
+    locale ? eq(translations.locale, locale) : sql`false`,
+  );
+
+  const [countRow] = await db
+    .select({ total: sql<number>`count(*)::int` })
+    .from(stringUnits)
+    .leftJoin(translations, joinOn)
+    .where(and(...conditions));
+
+  const rows = await db
     .select({
       id: stringUnits.id,
       keyPath: stringUnits.keyPath,
@@ -54,36 +77,17 @@ export async function GET(request: Request, ctx: Ctx) {
       translationStatus: translations.status,
     })
     .from(stringUnits)
-    .leftJoin(
-      translations,
-      and(
-        eq(translations.stringId, stringUnits.id),
-        locale ? eq(translations.locale, locale) : sql`false`,
-      ),
-    )
+    .leftJoin(translations, joinOn)
     .where(and(...conditions))
     .orderBy(asc(stringUnits.sortOrder))
     .limit(pageSize)
     .offset(offset);
 
-  let rows = await baseQuery;
-
-  if (status === "empty" && locale) {
-    rows = rows.filter((r) => !r.translationText || r.translationStatus === "empty");
-  } else if (status === "translated" && locale) {
-    rows = rows.filter((r) => r.translationStatus === "translated" && r.translationText);
-  }
-
-  const [countRow] = await db
-    .select({ total: sql<number>`count(*)::int` })
-    .from(stringUnits)
-    .where(and(eq(stringUnits.fileId, fileId), eq(stringUnits.orphaned, false)));
-
   return jsonOk({
     locale,
     page,
     pageSize,
-    total: countRow?.total ?? 0,
+    total: Number(countRow?.total ?? 0),
     strings: rows.map((r) => ({
       id: r.id,
       keyPath: r.keyPath,

@@ -71,6 +71,7 @@ export function TranslationEditor({
   }, [orgSlug, projectSlug, fileId, locale, filter, q, activeId]);
 
   useEffect(() => {
+    setActiveId(null);
     void load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orgSlug, projectSlug, fileId, locale, filter]);

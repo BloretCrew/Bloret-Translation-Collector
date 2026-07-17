@@ -1,14 +1,14 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { desc, eq } from "drizzle-orm";
+import { desc, eq, inArray } from "drizzle-orm";
 import { requireSession } from "@/lib/auth/session";
 import { requireOrgAccess } from "@/lib/access";
 import { db } from "@/lib/db";
 import { organizationMembers, projectLanguages, projects, users } from "@/lib/db/schema";
 import { Breadcrumbs } from "@/components/layout/Breadcrumbs";
 import { AddMemberForm } from "@/components/org/AddMemberForm";
-import { ROLE_LABELS } from "@/lib/permissions/roles";
-import { canManageOrg, canManageProjects } from "@/lib/permissions/roles";
+import { MemberList } from "@/components/org/MemberList";
+import { ROLE_LABELS, canManageOrg, canManageProjects } from "@/lib/permissions/roles";
 
 type Props = { params: Promise<{ org: string }> };
 
@@ -29,14 +29,20 @@ export default async function OrgPage({ params }: Props) {
     .where(eq(projects.orgId, access.org.id))
     .orderBy(desc(projects.updatedAt));
 
-  const allLangs = projectList.length
-    ? await db.select().from(projectLanguages)
-    : [];
+  const projectIds = projectList.map((p) => p.id);
+  const allLangs =
+    projectIds.length === 0
+      ? []
+      : await db
+          .select()
+          .from(projectLanguages)
+          .where(inArray(projectLanguages.projectId, projectIds));
+
   const langMap = new Map<string, string[]>();
   for (const l of allLangs) {
-    if (!projectList.some((p) => p.id === l.projectId)) continue;
+    if (!l.enabled) continue;
     const arr = langMap.get(l.projectId) ?? [];
-    if (l.enabled) arr.push(l.locale);
+    arr.push(l.locale);
     langMap.set(l.projectId, arr);
   }
 
@@ -66,6 +72,11 @@ export default async function OrgPage({ params }: Props) {
         </div>
         <div className="blora-row">
           <span className="blora-badge blora-badge--pill">{ROLE_LABELS[access.role]}</span>
+          {canManageOrg(access.role) && (
+            <Link className="blora-btn blora-btn--outline" href={`/app/o/${orgSlug}/settings`}>
+              组织设置
+            </Link>
+          )}
           {canManageProjects(access.role) && (
             <Link
               className="blora-btn blora-btn--primary"
@@ -140,42 +151,12 @@ export default async function OrgPage({ params }: Props) {
 
       <section className="blora-stack">
         <h2 className="blora-h3">成员</h2>
-        <div className="blora-table-wrap">
-          <table className="blora-table">
-            <thead>
-              <tr>
-                <th>用户</th>
-                <th>角色</th>
-              </tr>
-            </thead>
-            <tbody>
-              {members.map((m) => (
-                <tr key={m.userId}>
-                  <td>
-                    <div className="blora-row blora-row--center" style={{ gap: 8 }}>
-                      {m.avatarUrl ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img
-                          src={m.avatarUrl}
-                          alt=""
-                          width={28}
-                          height={28}
-                          style={{ borderRadius: 999 }}
-                        />
-                      ) : (
-                        <span className="blora-avatar blora-avatar--sm">
-                          {m.username[0]?.toUpperCase()}
-                        </span>
-                      )}
-                      {m.username}
-                    </div>
-                  </td>
-                  <td>{ROLE_LABELS[m.role]}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <MemberList
+          orgSlug={orgSlug}
+          members={members}
+          canManage={canManageOrg(access.role)}
+          currentUserId={session.userId!}
+        />
         {canManageOrg(access.role) && (
           <div className="blora-panel">
             <h3 className="blora-h4" style={{ marginBottom: 12 }}>

@@ -31,11 +31,18 @@ export async function middleware(request: NextRequest) {
   const sessionSecret =
     process.env.SESSION_SECRET ?? "dev-only-session-secret-change-me-32chars";
 
+  const cookieSecure =
+    process.env.COOKIE_SECURE === "true"
+      ? true
+      : process.env.COOKIE_SECURE === "false"
+        ? false
+        : process.env.NODE_ENV === "production";
+
   const session = await getIronSession<SessionData>(request, response, {
     password: sessionSecret,
     cookieName: "bloret_translation_session",
     cookieOptions: {
-      secure: process.env.NODE_ENV === "production",
+      secure: cookieSecure,
       httpOnly: true,
       sameSite: "lax",
       path: "/",

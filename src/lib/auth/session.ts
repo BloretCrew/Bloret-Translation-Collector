@@ -13,13 +13,20 @@ export const defaultSession: SessionData = {
   isLoggedIn: false,
 };
 
+export function isCookieSecure(): boolean {
+  if (process.env.COOKIE_SECURE === "true") return true;
+  if (process.env.COOKIE_SECURE === "false") return false;
+  // Default secure in production (HTTPS). Set COOKIE_SECURE=false for local `next start` over HTTP.
+  return process.env.NODE_ENV === "production";
+}
+
 export function getSessionOptions(): SessionOptions {
   const env = getEnv();
   return {
     password: env.SESSION_SECRET,
     cookieName: "bloret_translation_session",
     cookieOptions: {
-      secure: process.env.NODE_ENV === "production",
+      secure: isCookieSecure(),
       httpOnly: true,
       sameSite: "lax",
       path: "/",

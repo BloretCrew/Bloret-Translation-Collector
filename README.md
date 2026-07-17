@@ -77,7 +77,21 @@ npm run dev
 | `npm run build` / `start` | 生产构建与启动 |
 | `npm run db:push` | 推送 schema 到数据库 |
 | `npm run db:generate` | 生成迁移 |
+| `npm run db:seed` | 写入 demo 组织/项目/示例 JSON |
 | `npm test` | 单元测试（JSON 管道） |
+
+## 主要页面
+
+| 路径 | 说明 |
+|------|------|
+| `/` | 落地页 |
+| `/app` | 组织列表 |
+| `/app/o/[org]` | 组织：项目与成员 |
+| `/app/o/[org]/settings` | 组织设置（Owner） |
+| `/app/o/[org]/p/[project]` | 项目：进度与文件 |
+| `/app/o/[org]/p/[project]/settings` | 项目设置 / 语言 / 删除 |
+| `/app/o/[org]/p/[project]/files/[id]` | 文件详情与按语言进度 |
+| `/app/o/[org]/p/[project]/translate` | 翻译工作台 |
 
 ## 目录
 
