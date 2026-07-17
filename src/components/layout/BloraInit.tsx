@@ -2,9 +2,8 @@
 
 import { useEffect } from "react";
 
-/** Blora product defaults: Studio theme + Dusk palette (key: studio). */
-const DEFAULT_THEME = "studio";
-const DEFAULT_PALETTE = "studio"; // display name: Dusk
+/** Blora product default: Mono palette (pure B/W + low-sat grays). */
+const DEFAULT_PALETTE = "mono";
 
 export function BloraInit() {
   useEffect(() => {
@@ -12,15 +11,12 @@ export function BloraInit() {
       if (!window.Blora) return;
 
       window.Blora.configure?.({
+        colorModeStorageKey: "btc-theme",
+        // keep legacy key accepted by design-2 configure()
         storageKey: "btc-theme",
-        themeStorageKey: "btc-style-theme",
         paletteStorageKey: "btc-palette",
       });
 
-      // Pin Studio morphology, then Dusk colors (do not rely on theme default alone)
-      window.Blora.applyTheme?.(DEFAULT_THEME, document.documentElement, {
-        applyDefaultPalette: false,
-      });
       window.Blora.applyPalette?.(DEFAULT_PALETTE);
       window.Blora.init(document);
     }
