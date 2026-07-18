@@ -191,15 +191,6 @@
     });
   }
 
-  // Locale chip visual state
-  document.querySelectorAll("[data-locale-target-picker] .locale-chip input").forEach((input) => {
-    const sync = () => {
-      input.closest(".locale-chip")?.classList.toggle("is-checked", input.checked);
-    };
-    input.addEventListener("change", sync);
-    sync();
-  });
-
   const deleteProjectBtn = document.getElementById("delete-project-btn");
   if (deleteProjectBtn) {
     deleteProjectBtn.addEventListener("click", async () => {

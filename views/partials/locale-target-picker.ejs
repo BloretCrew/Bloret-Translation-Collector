@@ -1,40 +1,115 @@
 <%#
-  Target locales multi-select as chips/checkboxes.
-  locals: selected (string[]), name (default targetLocales)
+  Crowdin-style target language transfer picker.
+  locals: selected (string[]), name (default targetLocales), modalId (optional)
 %>
 <%
   var fieldName = typeof name !== 'undefined' ? name : 'targetLocales';
-  var selectedList = Array.isArray(selected) ? selected : [];
-  var selectedSet = {};
-  selectedList.forEach(function (c) { selectedSet[c] = true; });
+  var selectedList = Array.isArray(selected) ? selected.slice() : [];
   var opts = typeof COMMON_LOCALES !== 'undefined' ? COMMON_LOCALES : [];
-  // extras not in catalog
-  var extras = selectedList.filter(function (c) {
-    return !opts.some(function (o) { return o.code === c; });
+  var modalId = typeof modalId !== 'undefined' ? modalId : 'locale-picker-modal';
+  var catalog = opts.map(function (o) {
+    return { code: o.code, label: o.label };
   });
+  selectedList.forEach(function (code) {
+    if (!catalog.some(function (o) { return o.code === code; })) {
+      catalog.push({ code: code, label: code });
+    }
+  });
+  var instanceId = modalId + '-data';
 %>
-<div class="blora-field locale-target-picker" data-locale-target-picker>
+<div
+  class="blora-field locale-transfer"
+  data-locale-transfer
+  data-field-name="<%= fieldName %>"
+  data-modal-id="<%= modalId %>"
+  data-json-id="<%= instanceId %>"
+>
   <span class="blora-field__label">目标语言</span>
-  <p class="blora-field__hint">勾选需要翻译的语言（至少一项）</p>
-  <div class="locale-chip-grid" role="group" aria-label="目标语言">
-    <% opts.forEach(function (o) { %>
-      <label class="locale-chip <%= selectedSet[o.code] ? 'is-checked' : '' %>">
-        <input
-          type="checkbox"
-          name="<%= fieldName %>"
-          value="<%= o.code %>"
-          <%= selectedSet[o.code] ? 'checked' : '' %>
-        />
-        <span class="locale-chip__text"><%= o.label %></span>
-        <span class="locale-chip__code"><%= o.code %></span>
-      </label>
+  <p class="blora-field__hint">点击「选择语言」打开对话框，将左侧语言添加到右侧即为选中</p>
+
+  <div class="locale-transfer__summary">
+    <div class="locale-transfer__tags" data-locale-tags aria-live="polite">
+      <% if (!selectedList.length) { %>
+        <span class="blora-text-faint" data-locale-empty>尚未选择语言</span>
+      <% } else { %>
+        <% selectedList.forEach(function (code) {
+          var hit = catalog.find(function (o) { return o.code === code; });
+          var label = hit ? hit.label : code;
+        %>
+          <span class="locale-tag" data-code="<%= code %>">
+            <span class="locale-tag__label"><%= label %></span>
+            <span class="locale-tag__code"><%= code %></span>
+          </span>
+        <% }) %>
+      <% } %>
+    </div>
+    <button
+      type="button"
+      class="blora-btn blora-btn--outline blora-btn--sm"
+      data-blora-modal-open="<%= modalId %>"
+    >
+      选择语言…
+    </button>
+  </div>
+
+  <div class="locale-transfer__inputs" data-locale-inputs>
+    <% selectedList.forEach(function (code) { %>
+      <input type="hidden" name="<%= fieldName %>" value="<%= code %>" />
     <% }) %>
-    <% extras.forEach(function (code) { %>
-      <label class="locale-chip is-checked">
-        <input type="checkbox" name="<%= fieldName %>" value="<%= code %>" checked />
-        <span class="locale-chip__text"><%= code %></span>
-        <span class="locale-chip__code">自定义</span>
-      </label>
-    <% }) %>
+  </div>
+
+  <script type="application/json" id="<%= instanceId %>">
+<%- JSON.stringify({ catalog: catalog, selected: selectedList }) %>
+  </script>
+</div>
+
+<div class="blora-modal blora-modal--lg" id="<%= modalId %>">
+  <div class="blora-modal__mask" data-blora-close></div>
+  <div class="blora-modal__dialog locale-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="<%= modalId %>-title">
+    <div class="blora-modal__head">
+      <h2 class="blora-modal__title" id="<%= modalId %>-title">选择目标语言</h2>
+      <button type="button" class="blora-modal__close" data-blora-close aria-label="关闭">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="blora-modal__body locale-picker-body">
+      <div class="locale-picker-panes">
+        <div class="locale-picker-pane">
+          <div class="locale-picker-pane__head">
+            <strong>全部语言</strong>
+            <span class="blora-text-faint u-text-xs" data-avail-count></span>
+          </div>
+          <input type="search" class="blora-input" data-locale-search placeholder="搜索语言名称或代码…" autocomplete="off" />
+          <ul class="locale-picker-list" data-locale-available role="listbox" aria-label="可选语言"></ul>
+          <div class="locale-picker-custom">
+            <span class="blora-field__label">添加自定义语言</span>
+            <div class="locale-picker-custom__row">
+              <input type="text" class="blora-input" data-custom-code placeholder="代码，如 yue" maxlength="16" />
+              <input type="text" class="blora-input" data-custom-label placeholder="显示名（可选）" maxlength="40" />
+              <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" data-custom-add>添加</button>
+            </div>
+            <p class="blora-field__hint">代码将作为 locale 标识写入项目</p>
+          </div>
+        </div>
+
+        <div class="locale-picker-actions">
+          <button type="button" class="blora-btn blora-btn--primary blora-btn--sm" data-move-right title="添加到已选">→</button>
+          <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" data-move-left title="从已选移除">←</button>
+        </div>
+
+        <div class="locale-picker-pane">
+          <div class="locale-picker-pane__head">
+            <strong>已选语言</strong>
+            <span class="blora-text-faint u-text-xs" data-sel-count></span>
+          </div>
+          <ul class="locale-picker-list" data-locale-selected role="listbox" aria-label="已选语言"></ul>
+          <p class="blora-text-faint u-text-xs locale-picker-tip">双击或使用中间箭头在两侧移动</p>
+        </div>
+      </div>
+    </div>
+    <div class="blora-modal__foot">
+      <button type="button" class="blora-btn blora-btn--ghost" data-blora-close>取消</button>
+      <button type="button" class="blora-btn blora-btn--primary" data-locale-confirm>确定</button>
+    </div>
   </div>
 </div>
