@@ -3,11 +3,12 @@
  * Production starter: load config.json → inject env → run bundled server
  * (falls back to building dist/ if missing)
  */
-import { spawn, spawnSync } from "child_process";
+import { spawnSync } from "child_process";
 import { existsSync, statSync } from "fs";
 import { join } from "path";
 import { configToEnv, loadConfigFile, root } from "./lib-config.mjs";
 import { Logger } from "./lib-logger.mjs";
+import { spawnManaged } from "./lib-spawn-managed.mjs";
 
 const { path: configPath, config } = loadConfigFile();
 
@@ -56,26 +57,8 @@ Logger.info(
 );
 Logger.info(`启动 Express 于端口 ${port} …`);
 
-const child = spawn(process.execPath, [distServer], {
+spawnManaged(process.execPath, [distServer], {
   cwd: root,
   env: { ...env, PORT: String(port) },
   stdio: "inherit",
-});
-
-function forwardSignal(signal) {
-  if (!child || child.killed) return;
-  child.kill(signal);
-  const timer = setTimeout(() => {
-    if (!child.killed) child.kill("SIGKILL");
-  }, 10_000);
-  timer.unref();
-}
-process.on("SIGINT", () => forwardSignal("SIGINT"));
-process.on("SIGTERM", () => forwardSignal("SIGTERM"));
-
-child.on("exit", (code, signal) => {
-  if (signal && process.listenerCount(signal) === 0) {
-    process.kill(process.pid, signal);
-  }
-  process.exit(code ?? 1);
 });
