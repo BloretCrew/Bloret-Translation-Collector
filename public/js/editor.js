@@ -1,13 +1,18 @@
+/**
+ * Crowdin-style collaboration editor:
+ * my suggestion · others' suggestions · vote · approve
+ */
 (function () {
   const root = document.getElementById("translation-editor");
   if (!root) return;
 
-  const { json } = window.BTC;
+  const { json, toast } = window.BTC;
   const orgSlug = root.dataset.orgSlug;
   const projectSlug = root.dataset.projectSlug;
   let fileId = root.dataset.fileId;
   let locale = root.dataset.locale;
   const canEdit = root.dataset.canEdit === "1";
+  const canApprove = root.dataset.canApprove === "1";
 
   const els = {
     file: document.getElementById("editor-file"),
@@ -27,32 +32,19 @@
     source: document.getElementById("editor-source"),
     draft: document.getElementById("editor-draft"),
     saveHint: document.getElementById("editor-save-hint"),
-    localeLabel: document.getElementById("editor-locale-label"),
+    saveBtn: document.getElementById("editor-save-suggestion"),
+    deleteBtn: document.getElementById("editor-delete-suggestion"),
     prev: document.getElementById("editor-prev"),
     next: document.getElementById("editor-next"),
+    suggestions: document.getElementById("editor-suggestions"),
+    workflow: document.getElementById("editor-workflow"),
   };
 
   let strings = [];
   let total = 0;
   let activeId = null;
-  let saveTimer = null;
-  let lastSavedDraft = "";
-
-  function setSaveState(state) {
-    els.saveHint.classList.remove("is-saving", "is-saved", "is-error");
-    if (state === "saving") {
-      els.saveHint.classList.add("is-saving");
-      els.saveHint.textContent = "保存中…";
-    } else if (state === "saved") {
-      els.saveHint.classList.add("is-saved");
-      els.saveHint.textContent = "已保存";
-    } else if (state === "error") {
-      els.saveHint.classList.add("is-error");
-      els.saveHint.textContent = "保存失败";
-    } else {
-      els.saveHint.textContent = canEdit ? "自动保存" : "只读";
-    }
-  }
+  let detail = null;
+  let saving = false;
 
   function showError(msg) {
     if (!msg) {
@@ -64,42 +56,55 @@
     els.error.textContent = msg;
   }
 
-  function getActive() {
-    return strings.find((s) => s.id === activeId) || null;
+  function setSaveHint(state) {
+    if (!els.saveHint) return;
+    els.saveHint.classList.remove("is-saving", "is-saved", "is-error");
+    if (state === "saving") {
+      els.saveHint.classList.add("is-saving");
+      els.saveHint.textContent = "保存中…";
+    } else if (state === "saved") {
+      els.saveHint.classList.add("is-saved");
+      els.saveHint.textContent = "建议已保存";
+    } else if (state === "error") {
+      els.saveHint.classList.add("is-error");
+      els.saveHint.textContent = "保存失败";
+    } else {
+      els.saveHint.textContent = canEdit ? "保存为建议（不会自动定稿）" : "只读";
+    }
   }
 
-  function selectString(row) {
-    activeId = row.id;
-    lastSavedDraft = row.translation || "";
-    els.draft.value = lastSavedDraft;
-    setSaveState("idle");
-    renderList();
-    els.panelEmpty.hidden = true;
-    els.panelActive.hidden = false;
-    els.key.textContent = row.keyPath;
-    els.source.textContent = row.sourceText;
+  function workflowBadge(status) {
+    if (status === "approved") return { cls: "status-dot--done", label: "已批准" };
+    if (status === "suggested") return { cls: "status-dot--suggested", label: "有建议" };
+    return { cls: "status-dot--empty", label: "未翻译" };
   }
 
   function renderList() {
     els.list.innerHTML = "";
     strings.forEach((s) => {
+      const wf = s.workflowStatus || "untranslated";
+      const badge = workflowBadge(wf);
       const btn = document.createElement("button");
       btn.type = "button";
       btn.className = `editor-list__item${s.id === activeId ? " is-active" : ""}`;
-      const done = s.status === "translated" && s.translation;
       btn.innerHTML = `
-        <span class="status-dot ${done ? "status-dot--done" : "status-dot--empty"}"></span>
+        <span class="status-dot ${badge.cls}" title="${badge.label}"></span>
         <div class="editor-list__key"></div>
         <div class="editor-list__src"></div>
+        <div class="editor-list__meta blora-text-faint u-text-xs"></div>
       `;
       btn.querySelector(".editor-list__key").textContent = s.keyPath;
       btn.querySelector(".editor-list__src").textContent = s.sourceText;
-      btn.addEventListener("click", () => selectString(s));
+      const meta = [];
+      if (s.suggestionCount) meta.push(`${s.suggestionCount} 条建议`);
+      if (wf === "approved") meta.push("已批准");
+      btn.querySelector(".editor-list__meta").textContent = meta.join(" · ");
+      btn.addEventListener("click", () => selectString(s.id));
       els.list.appendChild(btn);
     });
   }
 
-  async function load() {
+  async function loadList() {
     els.loading.hidden = false;
     els.empty.hidden = true;
     els.body.hidden = true;
@@ -109,7 +114,7 @@
       pageSize: "200",
     });
     const filter = els.filter.value;
-    if (filter !== "all") params.set("status", filter);
+    if (filter && filter !== "all") params.set("status", filter);
     if (els.q.value.trim()) params.set("q", els.q.value.trim());
 
     try {
@@ -131,11 +136,10 @@
       }
       els.body.hidden = false;
       if (!activeId || !strings.some((s) => s.id === activeId)) {
-        selectString(strings[0]);
+        await selectString(strings[0].id);
       } else {
         renderList();
-        const active = getActive();
-        if (active) selectString(active);
+        await loadDetail(activeId);
       }
     } catch {
       showError("网络错误");
@@ -143,75 +147,267 @@
     }
   }
 
-  function navigate(delta) {
-    const active = getActive();
-    if (!active) return;
-    const idx = strings.findIndex((s) => s.id === active.id);
-    const next = strings[idx + delta];
-    if (next) selectString(next);
+  async function selectString(id) {
+    activeId = id;
+    renderList();
+    els.panelEmpty.hidden = true;
+    els.panelActive.hidden = false;
+    const row = strings.find((s) => s.id === id);
+    if (row) {
+      els.key.textContent = row.keyPath;
+      els.source.textContent = row.sourceText;
+    }
+    await loadDetail(id);
   }
 
-  function scheduleSave() {
-    if (!canEdit) return;
-    const active = getActive();
-    if (!active) return;
-    const draft = els.draft.value;
-    if (draft === lastSavedDraft) {
-      setSaveState("idle");
+  async function loadDetail(stringId) {
+    detail = null;
+    els.suggestions.innerHTML = `<div class="blora-text-faint">加载建议…</div>`;
+    els.workflow.textContent = "";
+    try {
+      const { res, data } = await json(
+        `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/strings/${stringId}/translations/${encodeURIComponent(locale)}`,
+      );
+      if (!res.ok) {
+        els.suggestions.innerHTML = `<div class="blora-alert blora-alert--danger">${data.error || "加载失败"}</div>`;
+        return;
+      }
+      detail = data;
+      const mine = (data.suggestions || []).find((s) => s.isMine);
+      els.draft.value = mine ? mine.text : "";
+      setSaveHint("idle");
+
+      const wf = data.workflowStatus || "untranslated";
+      const badge = workflowBadge(wf);
+      els.workflow.innerHTML = `<span class="status-dot ${badge.cls}"></span> <strong>${badge.label}</strong>`;
+      if (wf === "approved") {
+        const approved = (data.suggestions || []).find((s) => s.isApproved);
+        if (approved) {
+          els.workflow.innerHTML += ` · 定稿：${escapeHtml(approved.text).slice(0, 80)}${approved.text.length > 80 ? "…" : ""}`;
+        }
+      }
+
+      renderSuggestions(data);
+    } catch {
+      els.suggestions.innerHTML = `<div class="blora-alert blora-alert--danger">网络错误</div>`;
+    }
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function renderSuggestions(data) {
+    const list = data.suggestions || [];
+    if (!list.length) {
+      els.suggestions.innerHTML = `<div class="blora-text-faint">暂无建议，成为第一个译者吧</div>`;
       return;
     }
-    setSaveState("saving");
-    clearTimeout(saveTimer);
-    saveTimer = setTimeout(async () => {
-      try {
-        const { res, data } = await json(
-          `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/strings/${active.id}/translations/${locale}`,
-          { method: "PUT", body: JSON.stringify({ text: draft }) },
-        );
-        if (!res.ok) {
-          setSaveState("error");
-          return;
-        }
-        lastSavedDraft = data.text;
-        strings = strings.map((s) =>
-          s.id === active.id ? { ...s, translation: data.text, status: data.status } : s,
-        );
-        setSaveState("saved");
-        renderList();
-      } catch {
-        setSaveState("error");
+    els.suggestions.innerHTML = "";
+    list.forEach((s) => {
+      const card = document.createElement("div");
+      card.className =
+        "collab-card" +
+        (s.isApproved ? " is-approved" : "") +
+        (s.isMine ? " is-mine" : "");
+      card.innerHTML = `
+        <div class="collab-card__text"></div>
+        <div class="collab-card__meta">
+          <span class="collab-card__author"></span>
+          <span class="collab-card__votes"></span>
+          <span class="collab-card__badges"></span>
+        </div>
+        <div class="collab-card__actions blora-row u-gap-1"></div>
+      `;
+      card.querySelector(".collab-card__text").textContent = s.text;
+      card.querySelector(".collab-card__author").textContent = s.authorUsername;
+      card.querySelector(".collab-card__votes").textContent = `★ ${s.voteCount}`;
+      const badges = card.querySelector(".collab-card__badges");
+      if (s.isApproved) {
+        const b = document.createElement("span");
+        b.className = "blora-badge";
+        b.textContent = "已批准";
+        badges.appendChild(b);
       }
-    }, 400);
+      if (s.isMine) {
+        const b = document.createElement("span");
+        b.className = "blora-badge blora-badge--pill";
+        b.textContent = "我的";
+        badges.appendChild(b);
+      }
+
+      const actions = card.querySelector(".collab-card__actions");
+      if (data.canVote && !s.isMine) {
+        const voteBtn = document.createElement("button");
+        voteBtn.type = "button";
+        voteBtn.className =
+          "blora-btn blora-btn--xs " +
+          (s.votedByMe ? "blora-btn--primary" : "blora-btn--outline");
+        voteBtn.textContent = s.votedByMe ? "取消投票" : "投票";
+        voteBtn.addEventListener("click", () => voteSuggestion(s.id));
+        actions.appendChild(voteBtn);
+      }
+      if (data.canApprove && !s.isApproved && s.text.trim()) {
+        const appr = document.createElement("button");
+        appr.type = "button";
+        appr.className = "blora-btn blora-btn--secondary blora-btn--xs";
+        appr.textContent = "批准";
+        appr.addEventListener("click", () => approveSuggestion(s.id));
+        actions.appendChild(appr);
+      }
+      if (data.canApprove && s.isApproved) {
+        const un = document.createElement("button");
+        un.type = "button";
+        un.className = "blora-btn blora-btn--ghost blora-btn--xs";
+        un.textContent = "取消批准";
+        un.addEventListener("click", () => unapprove());
+        actions.appendChild(un);
+      }
+
+      els.suggestions.appendChild(card);
+    });
   }
 
-  els.file.addEventListener("change", () => {
+  async function saveSuggestion() {
+    if (!canEdit || !activeId || saving) return;
+    saving = true;
+    setSaveHint("saving");
+    try {
+      const { res, data } = await json(
+        `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/strings/${activeId}/suggestions/${encodeURIComponent(locale)}`,
+        { method: "PUT", body: JSON.stringify({ text: els.draft.value }) },
+      );
+      if (!res.ok) {
+        setSaveHint("error");
+        toast?.("error", data.error || "保存失败");
+        return;
+      }
+      setSaveHint("saved");
+      toast?.("success", "建议已保存");
+      await loadList();
+      if (activeId) await loadDetail(activeId);
+    } catch {
+      setSaveHint("error");
+    } finally {
+      saving = false;
+    }
+  }
+
+  async function deleteSuggestion() {
+    if (!canEdit || !activeId) return;
+    if (!confirm("删除我的建议？")) return;
+    try {
+      const { res, data } = await json(
+        `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/strings/${activeId}/suggestions/${encodeURIComponent(locale)}`,
+        { method: "DELETE" },
+      );
+      if (!res.ok) {
+        toast?.("error", data.error || "删除失败");
+        return;
+      }
+      els.draft.value = "";
+      toast?.("success", "已删除我的建议");
+      await loadList();
+      if (activeId) await loadDetail(activeId);
+    } catch {
+      toast?.("error", "网络错误");
+    }
+  }
+
+  async function voteSuggestion(id) {
+    try {
+      const { res, data } = await json(
+        `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/suggestions/${id}/votes`,
+        { method: "POST", body: "{}" },
+      );
+      if (!res.ok) {
+        toast?.("error", data.error || "投票失败");
+        return;
+      }
+      if (activeId) await loadDetail(activeId);
+    } catch {
+      toast?.("error", "网络错误");
+    }
+  }
+
+  async function approveSuggestion(id) {
+    if (!confirm("批准该建议作为定稿译文？导出将使用此文本。")) return;
+    try {
+      const { res, data } = await json(
+        `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/suggestions/${id}/approve`,
+        { method: "POST", body: "{}" },
+      );
+      if (!res.ok) {
+        toast?.("error", data.error || "批准失败");
+        return;
+      }
+      toast?.("success", "已批准");
+      await loadList();
+      if (activeId) await loadDetail(activeId);
+    } catch {
+      toast?.("error", "网络错误");
+    }
+  }
+
+  async function unapprove() {
+    if (!activeId) return;
+    if (!confirm("取消批准？定稿将清空（建议仍保留）。")) return;
+    try {
+      const { res, data } = await json(
+        `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/strings/${activeId}/translations/${encodeURIComponent(locale)}/unapprove`,
+        { method: "POST", body: "{}" },
+      );
+      if (!res.ok) {
+        toast?.("error", data.error || "操作失败");
+        return;
+      }
+      toast?.("success", "已取消批准");
+      await loadList();
+      if (activeId) await loadDetail(activeId);
+    } catch {
+      toast?.("error", "网络错误");
+    }
+  }
+
+  function navigate(delta) {
+    if (!activeId) return;
+    const idx = strings.findIndex((s) => s.id === activeId);
+    const next = strings[idx + delta];
+    if (next) selectString(next.id);
+  }
+
+  els.file?.addEventListener("change", () => {
     const url = new URL(location.href);
     url.searchParams.set("file", els.file.value);
     location.href = url.toString();
   });
-  els.locale.addEventListener("change", () => {
+  els.locale?.addEventListener("change", () => {
     const url = new URL(location.href);
     url.searchParams.set("locale", els.locale.value);
     location.href = url.toString();
   });
-  els.filter.addEventListener("change", () => {
+  els.filter?.addEventListener("change", () => {
     activeId = null;
-    load();
+    loadList();
   });
-  els.q.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") load();
+  els.q?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") loadList();
   });
-  els.refresh.addEventListener("click", () => load());
-  els.draft.addEventListener("input", scheduleSave);
-  els.draft.addEventListener("keydown", (e) => {
+  els.refresh?.addEventListener("click", () => loadList());
+  els.saveBtn?.addEventListener("click", () => saveSuggestion());
+  els.deleteBtn?.addEventListener("click", () => deleteSuggestion());
+  els.prev?.addEventListener("click", () => navigate(-1));
+  els.next?.addEventListener("click", () => navigate(1));
+  els.draft?.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      navigate(1);
+      saveSuggestion().then(() => navigate(1));
     }
   });
-  els.prev.addEventListener("click", () => navigate(-1));
-  els.next.addEventListener("click", () => navigate(1));
 
-  els.localeLabel.textContent = locale;
-  load();
+  loadList();
 })();

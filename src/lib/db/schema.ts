@@ -15,6 +15,7 @@ import { relations } from "drizzle-orm";
 export const memberRoleEnum = pgEnum("member_role", [
   "owner",
   "manager",
+  "proofreader",
   "translator",
   "viewer",
 ]);
@@ -152,6 +153,7 @@ export const stringUnits = pgTable(
   ],
 );
 
+/** Approved / publish-ready translation mirror (one per string × locale). */
 export const translations = pgTable(
   "translations",
   {
@@ -168,6 +170,77 @@ export const translations = pgTable(
   (t) => [
     uniqueIndex("translations_string_locale_uidx").on(t.stringId, t.locale),
     index("translations_locale_idx").on(t.locale),
+  ],
+);
+
+export const workflowStatusEnum = pgEnum("workflow_status", [
+  "untranslated",
+  "suggested",
+  "approved",
+]);
+
+/** Crowdin-style suggestions: one row per author × string × locale. */
+export const translationSuggestions = pgTable(
+  "translation_suggestions",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    stringId: uuid("string_id")
+      .notNull()
+      .references(() => stringUnits.id, { onDelete: "cascade" }),
+    locale: text("locale").notNull(),
+    text: text("text").notNull().default(""),
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("translation_suggestions_author_uidx").on(t.stringId, t.locale, t.authorId),
+    index("translation_suggestions_string_locale_idx").on(t.stringId, t.locale),
+  ],
+);
+
+export const suggestionVotes = pgTable(
+  "suggestion_votes",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    suggestionId: uuid("suggestion_id")
+      .notNull()
+      .references(() => translationSuggestions.id, { onDelete: "cascade" }),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    value: integer("value").notNull().default(1),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("suggestion_votes_user_uidx").on(t.suggestionId, t.userId),
+    index("suggestion_votes_suggestion_idx").on(t.suggestionId),
+  ],
+);
+
+/** Workflow state for string × locale (approved suggestion pointer). */
+export const stringLocaleStates = pgTable(
+  "string_locale_states",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    stringId: uuid("string_id")
+      .notNull()
+      .references(() => stringUnits.id, { onDelete: "cascade" }),
+    locale: text("locale").notNull(),
+    status: workflowStatusEnum("status").notNull().default("untranslated"),
+    approvedSuggestionId: uuid("approved_suggestion_id").references(
+      () => translationSuggestions.id,
+      { onDelete: "set null" },
+    ),
+    approvedBy: uuid("approved_by").references(() => users.id),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("string_locale_states_uidx").on(t.stringId, t.locale),
+    index("string_locale_states_locale_idx").on(t.locale),
   ],
 );
 
@@ -230,12 +303,51 @@ export const stringUnitsRelations = relations(stringUnits, ({ one, many }) => ({
     references: [sourceFiles.id],
   }),
   translations: many(translations),
+  suggestions: many(translationSuggestions),
+  localeStates: many(stringLocaleStates),
 }));
 
 export const translationsRelations = relations(translations, ({ one }) => ({
   stringUnit: one(stringUnits, {
     fields: [translations.stringId],
     references: [stringUnits.id],
+  }),
+}));
+
+export const translationSuggestionsRelations = relations(
+  translationSuggestions,
+  ({ one, many }) => ({
+    stringUnit: one(stringUnits, {
+      fields: [translationSuggestions.stringId],
+      references: [stringUnits.id],
+    }),
+    author: one(users, {
+      fields: [translationSuggestions.authorId],
+      references: [users.id],
+    }),
+    votes: many(suggestionVotes),
+  }),
+);
+
+export const suggestionVotesRelations = relations(suggestionVotes, ({ one }) => ({
+  suggestion: one(translationSuggestions, {
+    fields: [suggestionVotes.suggestionId],
+    references: [translationSuggestions.id],
+  }),
+  user: one(users, {
+    fields: [suggestionVotes.userId],
+    references: [users.id],
+  }),
+}));
+
+export const stringLocaleStatesRelations = relations(stringLocaleStates, ({ one }) => ({
+  stringUnit: one(stringUnits, {
+    fields: [stringLocaleStates.stringId],
+    references: [stringUnits.id],
+  }),
+  approvedSuggestion: one(translationSuggestions, {
+    fields: [stringLocaleStates.approvedSuggestionId],
+    references: [translationSuggestions.id],
   }),
 }));
 
@@ -246,4 +358,5 @@ export type Project = typeof projects.$inferSelect;
 export type SourceFile = typeof sourceFiles.$inferSelect;
 export type StringUnit = typeof stringUnits.$inferSelect;
 export type Translation = typeof translations.$inferSelect;
+export type TranslationSuggestion = typeof translationSuggestions.$inferSelect;
 export type MemberRole = (typeof memberRoleEnum.enumValues)[number];

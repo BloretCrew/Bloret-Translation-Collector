@@ -14,6 +14,7 @@ import {
 } from "@/lib/db/schema";
 import {
   ROLE_LABELS,
+  canApproveTranslations,
   canEditTranslations,
   canExport,
   canManageOrg,
@@ -252,9 +253,10 @@ pagesRouter.get("/app/o/:org/p/:project", async (req, res, next) => {
     const localeProgress = targetLocales.map((locale) => {
       const p = progressMap.get(locale);
       const translated = p?.translated ?? 0;
+      const suggested = p?.suggested ?? 0;
       const total = progress.totalStrings;
       const percent = total === 0 ? 0 : Math.round((translated / total) * 100);
-      return { locale, translated, total, percent };
+      return { locale, translated, suggested, total, percent };
     });
 
     return res.render("app/project", {
@@ -341,9 +343,10 @@ pagesRouter.get("/app/o/:org/p/:project/files/:fileId", async (req, res, next) =
     const localeProgress = targetLocales.map((locale) => {
       const p = progressMap.get(locale);
       const translated = p?.translated ?? 0;
+      const suggested = p?.suggested ?? 0;
       const total = progress.totalStrings;
       const percent = total === 0 ? 0 : Math.round((translated / total) * 100);
-      return { locale, translated, total, percent };
+      return { locale, translated, suggested, total, percent };
     });
 
     return res.render("app/file", {
@@ -409,6 +412,7 @@ pagesRouter.get("/app/o/:org/p/:project/translate", async (req, res, next) => {
       fileId,
       locale,
       canEdit: canEditTranslations(access.role),
+      canApprove: canApproveTranslations(access.role),
     });
   } catch (e) {
     next(e);

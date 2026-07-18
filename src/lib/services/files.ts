@@ -1,6 +1,11 @@
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
-import { sourceFiles, stringUnits, translations } from "@/lib/db/schema";
+import {
+  sourceFiles,
+  stringUnits,
+  translationSuggestions,
+  translations,
+} from "@/lib/db/schema";
 import {
   computeContentHash,
   flattenJson,
@@ -147,7 +152,10 @@ export async function exportFileLocale(fileId: string, locale: string, fallbackT
 
 export type LocaleProgress = {
   locale: string;
+  /** Approved (publish-ready) count */
   translated: number;
+  /** Has at least one non-empty suggestion */
+  suggested: number;
   total: number;
   percent: number;
 };
@@ -177,7 +185,8 @@ async function progressForFileIds(fileIds: string[]): Promise<{
     return { totalStrings: 0, byLocale: [] };
   }
 
-  const translatedRows = await db
+  // Approved = translations mirror with status translated
+  const approvedRows = await db
     .select({
       locale: translations.locale,
       translated: sql<number>`count(*)::int`,
@@ -192,15 +201,45 @@ async function progressForFileIds(fileIds: string[]): Promise<{
     )
     .groupBy(translations.locale);
 
-  return {
-    totalStrings: total,
-    byLocale: translatedRows.map((r) => ({
-      locale: r.locale,
-      translated: Number(r.translated),
+  // Suggested = distinct strings with non-empty suggestions (may include approved)
+  const suggestedRows = await db
+    .select({
+      locale: translationSuggestions.locale,
+      suggested: sql<number>`count(distinct ${translationSuggestions.stringId})::int`,
+    })
+    .from(translationSuggestions)
+    .where(
+      and(
+        inArray(translationSuggestions.stringId, unitIds),
+        sql`coalesce(${translationSuggestions.text}, '') <> ''`,
+      ),
+    )
+    .groupBy(translationSuggestions.locale);
+
+  const suggestedMap = new Map(
+    suggestedRows.map((r) => [r.locale, Number(r.suggested)]),
+  );
+
+  const locales = new Set([
+    ...approvedRows.map((r) => r.locale),
+    ...suggestedRows.map((r) => r.locale),
+  ]);
+
+  const byLocale: LocaleProgress[] = [];
+  for (const locale of locales) {
+    const approved = approvedRows.find((r) => r.locale === locale);
+    const translated = Number(approved?.translated ?? 0);
+    const suggested = suggestedMap.get(locale) ?? 0;
+    byLocale.push({
+      locale,
+      translated,
+      suggested,
       total,
-      percent: total === 0 ? 0 : Math.round((Number(r.translated) / total) * 100),
-    })),
-  };
+      percent: total === 0 ? 0 : Math.round((translated / total) * 100),
+    });
+  }
+
+  return { totalStrings: total, byLocale };
 }
 
 export async function getProjectProgress(projectId: string) {

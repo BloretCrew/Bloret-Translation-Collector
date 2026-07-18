@@ -292,6 +292,68 @@
   background: var(--blora-ink-faint);
 }
 
+.status-dot--suggested {
+  background: var(--blora-info, var(--blora-seal));
+}
+
+/* —— Collaboration suggestions —— */
+.collab-panel {
+  gap: var(--blora-space-3);
+}
+
+.collab-workflow {
+  font-size: var(--blora-text-sm);
+  color: var(--blora-ink-mid);
+}
+
+.collab-suggestions__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--blora-space-3);
+  margin-top: var(--blora-space-2);
+}
+
+.collab-card {
+  border: var(--blora-border);
+  border-radius: var(--blora-radius-lg);
+  padding: var(--blora-space-3) var(--blora-space-4);
+  background: var(--blora-surface-2);
+}
+
+.collab-card.is-approved {
+  border-color: var(--blora-success, var(--blora-seal));
+  background: var(--blora-seal-tint);
+}
+
+.collab-card.is-mine {
+  box-shadow: inset 3px 0 0 var(--blora-seal);
+}
+
+.collab-card__text {
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin-bottom: var(--blora-space-2);
+  color: var(--blora-ink);
+}
+
+.collab-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--blora-space-2);
+  align-items: center;
+  font-size: var(--blora-text-xs);
+  color: var(--blora-ink-mist);
+  margin-bottom: var(--blora-space-2);
+}
+
+.collab-card__votes {
+  font-family: var(--blora-font-mono);
+}
+
+.editor-list__meta {
+  margin-top: 2px;
+}
+
 .save-hint {
   font-size: var(--blora-text-xs);
   color: var(--blora-ink-mist);

@@ -53,6 +53,7 @@
                       <% if (canManage && m.role !== 'owner') { %>
                         <select class="blora-select member-role" data-user-id="<%= m.userId %>">
                           <option value="manager" <%= m.role === 'manager' ? 'selected' : '' %>>管理员</option>
+                          <option value="proofreader" <%= m.role === 'proofreader' ? 'selected' : '' %>>审核员</option>
                           <option value="translator" <%= m.role === 'translator' ? 'selected' : '' %>>译者</option>
                           <option value="viewer" <%= m.role === 'viewer' ? 'selected' : '' %>>访客</option>
                         </select>
@@ -87,6 +88,7 @@
                 <span class="blora-field__label">角色</span>
                 <select class="blora-select" name="role">
                   <option value="manager">管理员</option>
+                  <option value="proofreader">审核员</option>
                   <option value="translator" selected>译者</option>
                   <option value="viewer">访客</option>
                 </select>

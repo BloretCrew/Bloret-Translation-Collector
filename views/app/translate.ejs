@@ -16,6 +16,7 @@
             <%= project.name %> ·
             源 <%= localeLabel(project.sourceLocale) %>
             → <%= localeLabel(locale) %>
+            · 协作：建议 · 投票 · 审核批准
           </p>
         </div>
         <div class="app-page-header__actions">
@@ -30,6 +31,7 @@
         data-file-id="<%= fileId %>"
         data-locale="<%= locale %>"
         data-can-edit="<%= canEdit ? '1' : '0' %>"
+        data-can-approve="<%= typeof canApprove !== 'undefined' && canApprove ? '1' : '0' %>"
       >
         <div class="editor-toolbar">
           <label class="blora-field">
@@ -52,8 +54,9 @@
             <span class="blora-field__label">筛选</span>
             <select class="blora-select" id="editor-filter">
               <option value="all">全部</option>
-              <option value="empty">未翻译</option>
-              <option value="translated">已翻译</option>
+              <option value="untranslated">未翻译</option>
+              <option value="pending">有建议未批准</option>
+              <option value="approved">已批准</option>
             </select>
           </label>
           <label class="blora-field blora-field--grow">
@@ -75,8 +78,8 @@
         </div>
         <div id="editor-body" class="editor-layout" hidden>
           <div class="editor-list" id="editor-list" role="listbox" aria-label="字符串列表"></div>
-          <div class="editor-panel">
-            <div id="editor-panel-empty" class="blora-text-muted">选择左侧字符串开始翻译</div>
+          <div class="editor-panel collab-panel">
+            <div id="editor-panel-empty" class="blora-text-muted">选择左侧字符串开始协作翻译</div>
             <div id="editor-panel-active" hidden>
               <div class="editor-meta-block">
                 <div class="blora-text-caps blora-text-faint">Key</div>
@@ -86,17 +89,28 @@
                 <div class="blora-text-caps blora-text-faint">源文</div>
                 <div class="blora-panel" id="editor-source"></div>
               </div>
+
+              <div class="collab-workflow u-mt-3" id="editor-workflow"></div>
+
               <label class="blora-field u-mt-3">
                 <span class="blora-field__label">
-                  译文 (<span id="editor-locale-label"><%= localeLabel(locale) %></span>)
-                  <span class="save-hint" id="editor-save-hint">自动保存</span>
+                  我的建议
+                  <span class="save-hint" id="editor-save-hint">保存为建议</span>
                 </span>
-                <textarea class="blora-textarea" id="editor-draft" rows="6" <%= canEdit ? '' : 'readonly' %>></textarea>
+                <textarea class="blora-textarea" id="editor-draft" rows="4" <%= canEdit ? '' : 'readonly' %>></textarea>
               </label>
-              <div class="blora-row u-mt-3">
+              <div class="blora-row u-mt-2">
+                <% if (canEdit) { %>
+                  <button type="button" class="blora-btn blora-btn--primary blora-btn--sm" id="editor-save-suggestion">保存建议</button>
+                  <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm" id="editor-delete-suggestion">删除我的建议</button>
+                <% } %>
                 <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" id="editor-prev">上一条</button>
                 <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" id="editor-next">下一条</button>
-                <span class="blora-text-faint u-text-xs">Ctrl/⌘ + Enter 下一条</span>
+              </div>
+
+              <div class="collab-suggestions u-mt-4">
+                <div class="blora-text-caps blora-text-faint">全部建议</div>
+                <div id="editor-suggestions" class="collab-suggestions__list"></div>
               </div>
             </div>
           </div>

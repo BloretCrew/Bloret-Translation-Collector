@@ -12,7 +12,13 @@ export const localeSchema = z
   .max(16)
   .regex(/^[a-zA-Z]{2,3}([_-][a-zA-Z0-9]+)*$/, "无效的语言代码");
 
-export const memberRoleSchema = z.enum(["owner", "manager", "translator", "viewer"]);
+export const memberRoleSchema = z.enum([
+  "owner",
+  "manager",
+  "proofreader",
+  "translator",
+  "viewer",
+]);
 
 export const createOrgSchema = z.object({
   name: z.string().min(1).max(80),
@@ -64,5 +70,10 @@ export const uploadFileSchema = z.object({
 });
 
 export const saveTranslationSchema = z.object({
+  text: z.string().max(50_000),
+});
+
+/** Crowdin-style: submit/update my suggestion */
+export const saveSuggestionSchema = z.object({
   text: z.string().max(50_000),
 });
