@@ -27,23 +27,15 @@
               <span class="blora-field__label">简介</span>
               <textarea class="blora-textarea" name="description" rows="2"><%= project.description || '' %></textarea>
             </label>
-            <div class="blora-grid blora-grid--2">
-              <label class="blora-field">
-                <span class="blora-field__label">源语言</span>
-                <input class="blora-input" name="sourceLocale" required value="<%= project.sourceLocale %>" />
-              </label>
-              <label class="blora-field">
-                <span class="blora-field__label">可见性</span>
-                <select class="blora-select" name="visibility">
-                  <option value="org" <%= project.visibility === 'org' ? 'selected' : '' %>>组织内</option>
-                  <option value="private" <%= project.visibility === 'private' ? 'selected' : '' %>>私有</option>
-                </select>
-              </label>
-            </div>
+            <%- include('../partials/locale-source-select', { value: project.sourceLocale }) %>
             <label class="blora-field">
-              <span class="blora-field__label">目标语言（逗号分隔）</span>
-              <input class="blora-input" name="targetLocales" required value="<%= targetLocales.join(', ') %>" placeholder="en, ja, ko" />
+              <span class="blora-field__label">可见性</span>
+              <select class="blora-select" name="visibility">
+                <option value="org" <%= project.visibility === 'org' ? 'selected' : '' %>>组织内</option>
+                <option value="private" <%= project.visibility === 'private' ? 'selected' : '' %>>私有</option>
+              </select>
             </label>
+            <%- include('../partials/locale-target-picker', { selected: targetLocales }) %>
             <p class="blora-text-faint" style="font-size:13px">
               Slug <code class="blora-code"><%= projectSlug %></code> 创建后不可修改。
             </p>

@@ -4,6 +4,7 @@ import { fileURLToPath } from "url";
 import { sessionMiddleware } from "@/lib/auth/session";
 import { loadConfig } from "@/lib/config";
 import { Logger } from "@/lib/logger";
+import { COMMON_LOCALES, localeLabel, localeShortLabel } from "@/lib/locales";
 import { authRouter } from "@/routes/auth";
 import { apiRouter } from "@/routes/api";
 import { pagesRouter } from "@/routes/pages";
@@ -43,6 +44,11 @@ export function createApp() {
         }
       : { isLoggedIn: false };
     res.locals.path = req.path;
+    res.locals.COMMON_LOCALES = COMMON_LOCALES;
+    res.locals.localeLabel = localeLabel;
+    res.locals.localeShortLabel = localeShortLabel;
+    res.locals.isDev =
+      process.env.NODE_ENV !== "production" || process.env.BTC_SHOW_DEV_LOGIN === "1";
     next();
   });
 

@@ -21,11 +21,13 @@
         <a class="blora-btn blora-btn--primary blora-btn--lg" href="/auth/login">PassPort 登录</a>
         <a class="blora-btn blora-btn--outline blora-btn--lg" href="#features">了解能力</a>
       </div>
+      <% if (typeof isDev !== 'undefined' && isDev) { %>
       <p class="blora-text-faint landing-hero__hint">
         本地开发：
         <a href="/auth/login?user=dev-user&dev=1">以 dev-user 登录</a>
-        （config.json 未配置 PassPort 时可用）
+        （未配置 PassPort 时可用）
       </p>
+      <% } %>
     </section>
 
     <hr class="blora-brush" />
@@ -34,7 +36,7 @@
       <article class="blora-card">
         <h3 class="blora-card__title">组织与权限</h3>
         <p class="blora-card__body blora-text-muted">
-          Owner / Manager / Translator / Viewer 四级角色，协作边界清晰。
+          所有者 / 管理员 / 译者 / 访客 四级角色，协作边界清晰。
         </p>
       </article>
       <article class="blora-card">

@@ -1,0 +1,24 @@
+<%#
+  Source locale single select.
+  locals: name (default sourceLocale), value, id (optional)
+%>
+<%
+  var fieldName = typeof name !== 'undefined' ? name : 'sourceLocale';
+  var fieldId = typeof id !== 'undefined' ? id : fieldName;
+  var current = typeof value !== 'undefined' ? value : 'zh-CN';
+  var opts = typeof COMMON_LOCALES !== 'undefined' ? COMMON_LOCALES : [];
+  var known = opts.some(function (o) { return o.code === current; });
+%>
+<label class="blora-field">
+  <span class="blora-field__label">源语言</span>
+  <select class="blora-select" name="<%= fieldName %>" id="<%= fieldId %>" required>
+    <% if (current && !known) { %>
+      <option value="<%= current %>" selected><%= current %>（自定义）</option>
+    <% } %>
+    <% opts.forEach(function (o) { %>
+      <option value="<%= o.code %>" <%= o.code === current ? 'selected' : '' %>>
+        <%= o.label %> (<%= o.code %>)
+      </option>
+    <% }) %>
+  </select>
+</label>

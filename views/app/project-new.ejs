@@ -7,7 +7,7 @@
       <header class="app-page-header">
         <div class="app-page-header__copy">
           <h1 class="blora-h2">新建项目</h1>
-          <p class="blora-text-muted u-mt-2">配置源语言与目标语言后即可上传 JSON。</p>
+          <p class="blora-text-muted u-mt-2">选择源语言与目标语言后，即可上传 JSON 开始翻译。</p>
         </div>
       </header>
       <div class="blora-panel">
@@ -17,20 +17,16 @@
             <span class="blora-field__label">项目名称</span>
             <input class="blora-input" name="name" id="project-name" required placeholder="我的应用" />
           </label>
-          <label class="blora-field">
-            <span class="blora-field__label">Slug</span>
-            <input class="blora-input" name="slug" id="project-slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" />
-          </label>
-          <div class="blora-grid blora-grid--2">
+          <details class="app-advanced">
+            <summary>高级：URL 标识 (Slug)</summary>
             <label class="blora-field">
-              <span class="blora-field__label">源语言</span>
-              <input class="blora-input" name="sourceLocale" value="zh-CN" required placeholder="zh-CN" />
+              <span class="blora-field__label">Slug</span>
+              <input class="blora-input" name="slug" id="project-slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" />
+              <span class="blora-field__hint">根据名称自动生成，一般无需修改</span>
             </label>
-            <label class="blora-field">
-              <span class="blora-field__label">目标语言（逗号分隔）</span>
-              <input class="blora-input" name="targetLocales" value="en, ja" required placeholder="en, ja, ko" />
-            </label>
-          </div>
+          </details>
+          <%- include('../partials/locale-source-select', { value: 'zh-CN' }) %>
+          <%- include('../partials/locale-target-picker', { selected: ['en'] }) %>
           <label class="blora-field">
             <span class="blora-field__label">简介（可选）</span>
             <textarea class="blora-textarea" name="description" rows="2"></textarea>

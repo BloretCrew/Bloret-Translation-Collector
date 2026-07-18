@@ -107,12 +107,13 @@
         slugEl.value = toSlug(String(fd.get("name") || "project"), "project");
         slugTouched = true;
       }
+      const locales = fd.getAll("targetLocales").map(String).filter(Boolean);
+      if (!locales.length) {
+        showError(err, "请至少选择一种目标语言");
+        return;
+      }
       btn.disabled = true;
       btn.textContent = "创建中…";
-      const locales = String(fd.get("targetLocales") || "")
-        .split(/[,，\s]+/)
-        .map((s) => s.trim())
-        .filter(Boolean);
       try {
         const { res, data } = await json(`/api/v1/orgs/${orgSlug}/projects`, {
           method: "POST",
@@ -149,11 +150,12 @@
       const err = document.getElementById("form-error");
       const btn = projectSettings.querySelector('button[type="submit"]');
       const fd = new FormData(projectSettings);
-      const locales = String(fd.get("targetLocales") || "")
-        .split(/[,，\s]+/)
-        .map((s) => s.trim())
-        .filter(Boolean);
+      const locales = fd.getAll("targetLocales").map(String).filter(Boolean);
       showError(err, "");
+      if (!locales.length) {
+        showError(err, "请至少选择一种目标语言");
+        return;
+      }
       btn.disabled = true;
       btn.textContent = "保存中…";
       try {
@@ -188,6 +190,15 @@
       }
     });
   }
+
+  // Locale chip visual state
+  document.querySelectorAll("[data-locale-target-picker] .locale-chip input").forEach((input) => {
+    const sync = () => {
+      input.closest(".locale-chip")?.classList.toggle("is-checked", input.checked);
+    };
+    input.addEventListener("change", sync);
+    sync();
+  });
 
   const deleteProjectBtn = document.getElementById("delete-project-btn");
   if (deleteProjectBtn) {
@@ -242,6 +253,14 @@
         warn.hidden = true;
         warn.innerHTML = "";
       }
+      if (!contentEl.value.trim()) {
+        showError(err, "请选择 JSON 文件或粘贴内容");
+        return;
+      }
+      if (!pathEl.value.trim()) {
+        showError(err, "请填写项目内路径");
+        return;
+      }
       btn.disabled = true;
       btn.textContent = "上传中…";
       try {
@@ -266,10 +285,25 @@
         showError(err, "网络错误");
       } finally {
         btn.disabled = false;
-        btn.textContent = "上传 / 更新源文件";
+        btn.textContent = "上传 / 更新";
       }
     });
   }
+
+  // Project page: show/hide upload panel
+  const uploadPanel = document.getElementById("upload-panel");
+  document.querySelectorAll("[data-show-upload]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (!uploadPanel) return;
+      uploadPanel.hidden = false;
+      uploadPanel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    });
+  });
+  document.querySelectorAll("[data-hide-upload]").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      if (uploadPanel) uploadPanel.hidden = true;
+    });
+  });
 
   // Delete file
   const deleteFileBtn = document.getElementById("delete-file-btn");

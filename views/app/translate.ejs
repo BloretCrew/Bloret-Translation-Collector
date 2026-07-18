@@ -12,7 +12,14 @@
       <header class="app-page-header">
         <div class="app-page-header__copy">
           <h1 class="blora-h2">翻译工作台</h1>
-          <p class="blora-text-muted u-mt-2"><%= project.name %> · 源 <%= project.sourceLocale %> → <%= locale %></p>
+          <p class="blora-text-muted u-mt-2">
+            <%= project.name %> ·
+            源 <%= localeLabel(project.sourceLocale) %>
+            → <%= localeLabel(locale) %>
+          </p>
+        </div>
+        <div class="app-page-header__actions">
+          <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>">← 返回项目</a>
         </div>
       </header>
 
@@ -34,10 +41,10 @@
             </select>
           </label>
           <label class="blora-field">
-            <span class="blora-field__label">语言</span>
+            <span class="blora-field__label">目标语言</span>
             <select class="blora-select" id="editor-locale">
               <% locales.forEach(function (l) { %>
-                <option value="<%= l %>" <%= l === locale ? 'selected' : '' %>><%= l %></option>
+                <option value="<%= l %>" <%= l === locale ? 'selected' : '' %>><%= localeLabel(l) %></option>
               <% }) %>
             </select>
           </label>
@@ -81,7 +88,7 @@
               </div>
               <label class="blora-field u-mt-3">
                 <span class="blora-field__label">
-                  译文 (<span id="editor-locale-label"><%= locale %></span>)
+                  译文 (<span id="editor-locale-label"><%= localeLabel(locale) %></span>)
                   <span class="save-hint" id="editor-save-hint">自动保存</span>
                 </span>
                 <textarea class="blora-textarea" id="editor-draft" rows="6" <%= canEdit ? '' : 'readonly' %>></textarea>

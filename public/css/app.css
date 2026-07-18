@@ -319,6 +319,124 @@
   height: 7.5rem;
 }
 
+/* —— Locale pickers —— */
+.locale-chip-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--blora-space-2);
+  margin-top: var(--blora-space-2);
+}
+
+.locale-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--blora-space-2);
+  padding: var(--blora-space-2) var(--blora-space-3);
+  border: var(--blora-border);
+  border-radius: var(--blora-radius-full);
+  background: var(--blora-surface-1);
+  cursor: pointer;
+  font-size: var(--blora-text-sm);
+  user-select: none;
+  transition: background var(--blora-dur-fast) var(--blora-ease),
+    border-color var(--blora-dur-fast) var(--blora-ease);
+}
+
+.locale-chip input {
+  margin: 0;
+}
+
+.locale-chip__code {
+  font-family: var(--blora-font-mono);
+  font-size: var(--blora-text-xs);
+  color: var(--blora-ink-mist);
+}
+
+.locale-chip.is-checked,
+.locale-chip:has(input:checked) {
+  background: var(--blora-seal-tint);
+  border-color: var(--blora-seal);
+}
+
+.locale-chip:has(input:checked) .locale-chip__code {
+  color: var(--blora-seal);
+}
+
+/* —— Compact language progress table —— */
+.progress-table .blora-progress {
+  min-width: 8rem;
+  max-width: 14rem;
+}
+
+.progress-table td {
+  vertical-align: middle;
+}
+
+/* —— Collapsible upload panel —— */
+.upload-panel[hidden] {
+  display: none !important;
+}
+
+.app-section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--blora-space-3);
+}
+
+.app-tabs {
+  display: flex;
+  gap: var(--blora-space-1);
+  border-bottom: var(--blora-border);
+  margin-bottom: var(--blora-space-4);
+}
+
+.app-tabs__link {
+  padding: var(--blora-space-2) var(--blora-space-4);
+  text-decoration: none;
+  color: var(--blora-ink-mid);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  font-weight: 500;
+}
+
+.app-tabs__link:hover {
+  color: var(--blora-ink);
+}
+
+.app-tabs__link.is-active {
+  color: var(--blora-ink);
+  border-bottom-color: var(--blora-seal);
+}
+
+.app-advanced {
+  border: var(--blora-border);
+  border-radius: var(--blora-radius-md);
+  padding: var(--blora-space-3);
+  background: var(--blora-surface-2);
+}
+
+.app-advanced > summary {
+  cursor: pointer;
+  font-size: var(--blora-text-sm);
+  color: var(--blora-ink-mid);
+}
+
+.app-advanced[open] > summary {
+  margin-bottom: var(--blora-space-3);
+}
+
+.editor-toolbar {
+  position: sticky;
+  top: 3.5rem;
+  z-index: 5;
+  background: var(--blora-surface-0, var(--blora-surface-1));
+  padding: var(--blora-space-3) 0;
+  border-bottom: var(--blora-border);
+  margin-bottom: var(--blora-space-3);
+}
+
 /* —— Utility spacing used instead of inline styles —— */
 .u-mt-2 {
   margin-top: var(--blora-space-2);

@@ -1,0 +1,40 @@
+<%#
+  Target locales multi-select as chips/checkboxes.
+  locals: selected (string[]), name (default targetLocales)
+%>
+<%
+  var fieldName = typeof name !== 'undefined' ? name : 'targetLocales';
+  var selectedList = Array.isArray(selected) ? selected : [];
+  var selectedSet = {};
+  selectedList.forEach(function (c) { selectedSet[c] = true; });
+  var opts = typeof COMMON_LOCALES !== 'undefined' ? COMMON_LOCALES : [];
+  // extras not in catalog
+  var extras = selectedList.filter(function (c) {
+    return !opts.some(function (o) { return o.code === c; });
+  });
+%>
+<div class="blora-field locale-target-picker" data-locale-target-picker>
+  <span class="blora-field__label">目标语言</span>
+  <p class="blora-field__hint">勾选需要翻译的语言（至少一项）</p>
+  <div class="locale-chip-grid" role="group" aria-label="目标语言">
+    <% opts.forEach(function (o) { %>
+      <label class="locale-chip <%= selectedSet[o.code] ? 'is-checked' : '' %>">
+        <input
+          type="checkbox"
+          name="<%= fieldName %>"
+          value="<%= o.code %>"
+          <%= selectedSet[o.code] ? 'checked' : '' %>
+        />
+        <span class="locale-chip__text"><%= o.label %></span>
+        <span class="locale-chip__code"><%= o.code %></span>
+      </label>
+    <% }) %>
+    <% extras.forEach(function (code) { %>
+      <label class="locale-chip is-checked">
+        <input type="checkbox" name="<%= fieldName %>" value="<%= code %>" checked />
+        <span class="locale-chip__text"><%= code %></span>
+        <span class="locale-chip__code">自定义</span>
+      </label>
+    <% }) %>
+  </div>
+</div>

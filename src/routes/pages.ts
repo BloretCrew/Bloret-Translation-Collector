@@ -116,17 +116,6 @@ pagesRouter.get("/app/o/:org", async (req, res, next) => {
       langMap.set(l.projectId, arr);
     }
 
-    const members = await db
-      .select({
-        userId: users.id,
-        username: users.username,
-        avatarUrl: users.avatarUrl,
-        role: organizationMembers.role,
-      })
-      .from(organizationMembers)
-      .innerJoin(users, eq(organizationMembers.userId, users.id))
-      .where(eq(organizationMembers.orgId, access.org.id));
-
     return res.render("app/org", {
       title: access.org.name,
       orgSlug,
@@ -139,6 +128,39 @@ pagesRouter.get("/app/o/:org", async (req, res, next) => {
         ...p,
         targetLocales: langMap.get(p.id) ?? [],
       })),
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+pagesRouter.get("/app/o/:org/members", async (req, res, next) => {
+  try {
+    const session = requireSession(req)!;
+    const orgSlug = req.params.org;
+
+    const access = await requireOrgAccess(orgSlug, session.userId!);
+    if ("error" in access) {
+      if (access.error === "not_found") return res.status(404).render("404", { title: "未找到" });
+      return res.redirect("/app");
+    }
+
+    const members = await db
+      .select({
+        userId: users.id,
+        username: users.username,
+        avatarUrl: users.avatarUrl,
+        role: organizationMembers.role,
+      })
+      .from(organizationMembers)
+      .innerJoin(users, eq(organizationMembers.userId, users.id))
+      .where(eq(organizationMembers.orgId, access.org.id));
+
+    return res.render("app/org-members", {
+      title: `成员 · ${access.org.name}`,
+      orgSlug,
+      org: access.org,
+      canManage: canManageOrg(access.role),
       members,
       roleLabels: ROLE_LABELS,
       currentUserId: session.userId!,
