@@ -15,6 +15,7 @@
     "db:studio": "drizzle-kit studio",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:http-flow": "node scripts/http-flow.mjs",
     "db:seed": "tsx scripts/seed.ts"
   },
   "dependencies": {

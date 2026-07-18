@@ -5,6 +5,7 @@ import { isPassportConfigured, getEnv } from "@/lib/env";
 import { db } from "@/lib/db";
 import { users } from "@/lib/db/schema";
 import { Logger } from "@/lib/logger";
+import { safeInternalPath } from "@/lib/safe-redirect";
 
 export const authRouter = Router();
 
@@ -43,7 +44,7 @@ function setCookie(
 
 authRouter.get("/auth/login", async (req, res, next) => {
   try {
-    const nextPath = typeof req.query.next === "string" ? req.query.next : "/app";
+    const nextPath = safeInternalPath(req.query.next, "/app");
 
     if (isPassportConfigured()) {
       const url = getOAuthAuthorizeUrl();
@@ -89,7 +90,7 @@ authRouter.get("/auth/login", async (req, res, next) => {
 authRouter.get("/auth/callback", async (req, res, next) => {
   try {
     const code = typeof req.query.code === "string" ? req.query.code : null;
-    const nextPath = parseCookie(req.headers.cookie, "btc_oauth_next") || "/app";
+    const nextPath = safeInternalPath(parseCookie(req.headers.cookie, "btc_oauth_next"), "/app");
 
     if (!code) {
       return res.redirect("/?error=oauth_denied");

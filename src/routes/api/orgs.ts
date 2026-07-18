@@ -47,8 +47,14 @@ import {
   upsertSourceFile,
 } from "@/lib/services/files";
 import { Logger } from "@/lib/logger";
+import { slugify } from "@/lib/slug";
 
 export const orgsRouter = Router();
+
+/** Stable project count subquery (plain table name — avoids drizzle alias quirks) */
+const orgProjectCountSql = sql<number>`(
+  select count(*)::int from projects p where p.org_id = ${organizations.id}
+)`;
 
 // —— Orgs list / create ——
 orgsRouter.get("/v1/orgs", async (req, res, next) => {
@@ -64,9 +70,7 @@ orgsRouter.get("/v1/orgs", async (req, res, next) => {
         description: organizations.description,
         role: organizationMembers.role,
         createdAt: organizations.createdAt,
-        projectCount: sql<number>`(
-          select count(*)::int from ${projects} p where p.org_id = ${organizations.id}
-        )`,
+        projectCount: orgProjectCountSql,
       })
       .from(organizationMembers)
       .innerJoin(organizations, eq(organizationMembers.orgId, organizations.id))
@@ -84,7 +88,17 @@ orgsRouter.post("/v1/orgs", async (req, res, next) => {
     const session = requireSession(req);
     if (!session) return unauthorized(res);
 
-    const parsed = createOrgSchema.safeParse(req.body);
+    const rawBody =
+      req.body && typeof req.body === "object" ? { ...(req.body as Record<string, unknown>) } : {};
+    // Server-side fallback when client sends empty slug (e.g. non-Latin name)
+    if (
+      typeof rawBody.name === "string" &&
+      (!rawBody.slug || String(rawBody.slug).length < 2)
+    ) {
+      rawBody.slug = slugify(rawBody.name, "org");
+    }
+
+    const parsed = createOrgSchema.safeParse(rawBody);
     if (!parsed.success) {
       return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
     }
@@ -410,7 +424,16 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects", async (req, res, next) => {
     }
     if (!canManageProjects(access.role)) return forbidden(res);
 
-    const parsed = createProjectSchema.safeParse(req.body);
+    const rawBody =
+      req.body && typeof req.body === "object" ? { ...(req.body as Record<string, unknown>) } : {};
+    if (
+      typeof rawBody.name === "string" &&
+      (!rawBody.slug || String(rawBody.slug).length < 2)
+    ) {
+      rawBody.slug = slugify(rawBody.name, "project");
+    }
+
+    const parsed = createProjectSchema.safeParse(rawBody);
     if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
 
     const data = parsed.data;

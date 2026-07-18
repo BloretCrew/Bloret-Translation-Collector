@@ -8,7 +8,7 @@
     const slugEl = document.getElementById("org-slug");
     let slugTouched = false;
     nameEl?.addEventListener("input", () => {
-      if (!slugTouched && slugEl) slugEl.value = toSlug(nameEl.value);
+      if (!slugTouched && slugEl) slugEl.value = toSlug(nameEl.value, "org");
     });
     slugEl?.addEventListener("input", () => {
       slugTouched = true;
@@ -18,6 +18,11 @@
       const err = document.getElementById("form-error");
       const btn = createOrg.querySelector('button[type="submit"]');
       showError(err, "");
+      // Ensure slug never empty (non-Latin names)
+      if (slugEl && (!slugEl.value || slugEl.value.length < 2)) {
+        slugEl.value = toSlug(nameEl.value || "org", "org");
+        slugTouched = true;
+      }
       btn.disabled = true;
       btn.textContent = "创建中…";
       try {
@@ -86,7 +91,7 @@
     const slugEl = document.getElementById("project-slug");
     let slugTouched = false;
     nameEl?.addEventListener("input", () => {
-      if (!slugTouched && slugEl) slugEl.value = toSlug(nameEl.value);
+      if (!slugTouched && slugEl) slugEl.value = toSlug(nameEl.value, "project");
     });
     slugEl?.addEventListener("input", () => {
       slugTouched = true;
@@ -98,6 +103,10 @@
       const btn = createProject.querySelector('button[type="submit"]');
       const fd = new FormData(createProject);
       showError(err, "");
+      if (slugEl && (!slugEl.value || slugEl.value.length < 2)) {
+        slugEl.value = toSlug(String(fd.get("name") || "project"), "project");
+        slugTouched = true;
+      }
       btn.disabled = true;
       btn.textContent = "创建中…";
       const locales = String(fd.get("targetLocales") || "")
@@ -109,7 +118,7 @@
           method: "POST",
           body: JSON.stringify({
             name: fd.get("name"),
-            slug: fd.get("slug"),
+            slug: slugEl ? slugEl.value : fd.get("slug"),
             description: fd.get("description") || null,
             sourceLocale: fd.get("sourceLocale"),
             targetLocales: locales,

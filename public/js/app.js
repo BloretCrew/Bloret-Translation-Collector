@@ -20,8 +20,9 @@ window.BTC = {
       console.log(`[${type}] ${message}`);
     }
   },
-  toSlug(name) {
-    return name
+  /** Match server slugify: non-Latin-only names get a fallback slug */
+  toSlug(name, fallbackPrefix) {
+    const base = name
       .trim()
       .toLowerCase()
       .replace(/[\s_]+/g, "-")
@@ -29,6 +30,10 @@ window.BTC = {
       .replace(/-+/g, "-")
       .replace(/^-|-$/g, "")
       .slice(0, 48);
+    if (base.length >= 2) return base;
+    const prefix = fallbackPrefix || "item";
+    const suffix = Date.now().toString(36).slice(-6);
+    return (prefix + "-" + suffix).slice(0, 48);
   },
   showError(el, message) {
     if (!el) return;

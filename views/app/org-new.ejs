@@ -11,7 +11,7 @@
         </div>
       </header>
       <div class="blora-panel">
-        <form id="create-org-form" class="blora-stack">
+        <form id="create-org-form" class="blora-stack" method="post" action="/api/v1/orgs" onsubmit="return false;">
           <div id="form-error" class="blora-alert blora-alert--danger" hidden></div>
           <label class="blora-field">
             <span class="blora-field__label">组织名称</span>

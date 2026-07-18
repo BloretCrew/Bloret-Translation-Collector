@@ -60,7 +60,7 @@ pagesRouter.get("/app", async (req, res, next) => {
         description: organizations.description,
         role: organizationMembers.role,
         projectCount: sql<number>`(
-          select count(*)::int from ${projects} p where p.org_id = ${organizations.id}
+          select count(*)::int from projects p where p.org_id = ${organizations.id}
         )`,
       })
       .from(organizationMembers)
