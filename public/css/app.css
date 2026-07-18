@@ -244,7 +244,13 @@
   flex-wrap: wrap;
   gap: var(--blora-space-3);
   align-items: flex-end;
-  margin-bottom: var(--blora-space-2);
+  position: sticky;
+  top: 3.5rem;
+  z-index: 5;
+  background: var(--blora-surface-0, var(--blora-surface-1));
+  padding: var(--blora-space-3) 0;
+  border-bottom: var(--blora-border);
+  margin-bottom: var(--blora-space-3);
 }
 
 .editor-toolbar .blora-field {
