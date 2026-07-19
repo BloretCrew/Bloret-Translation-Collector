@@ -354,6 +354,48 @@
   margin-top: 2px;
 }
 
+.collab-comments__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--blora-space-2);
+  margin-top: var(--blora-space-2);
+  max-height: 16rem;
+  overflow: auto;
+}
+
+.collab-comment {
+  border: var(--blora-border);
+  border-radius: var(--blora-radius-md);
+  padding: var(--blora-space-2) var(--blora-space-3);
+  background: var(--blora-surface-1);
+  font-size: var(--blora-text-sm);
+}
+
+.collab-comment__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--blora-space-2);
+  align-items: baseline;
+  margin-bottom: 0.25rem;
+  color: var(--blora-ink-mist);
+  font-size: var(--blora-text-xs);
+}
+
+.collab-comment__body {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--blora-ink);
+}
+
+.collab-comment__actions {
+  margin-top: var(--blora-space-1);
+}
+
+.collab-card__time {
+  font-size: var(--blora-text-xs);
+}
+
+
 .save-hint {
   font-size: var(--blora-text-xs);
   color: var(--blora-ink-mist);

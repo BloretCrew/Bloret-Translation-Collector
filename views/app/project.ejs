@@ -69,8 +69,9 @@
                             <div class="blora-progress__fill" style="width:<%= p.percent %>%"></div>
                           </div>
                         </div>
-                        <span class="blora-text-mono blora-text-faint u-text-xs" title="已批准 / 总数（有建议 <%= p.suggested != null ? p.suggested : p.translated %>）">
+                        <span class="blora-text-mono blora-text-faint u-text-xs">
                           批准 <%= p.translated %>/<%= p.total %> (<%= p.percent %>%)
+                          · 有建议 <%= p.suggested != null ? p.suggested : 0 %>
                         </span>
                       </div>
                     </td>

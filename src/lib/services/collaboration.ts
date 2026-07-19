@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
+  stringComments,
   stringLocaleStates,
   stringUnits,
   suggestionVotes,
@@ -357,6 +358,54 @@ async function refreshWorkflowStatus(stringId: string, locale: string) {
       status,
     });
   }
+}
+
+export async function listComments(stringId: string, locale: string) {
+  return db
+    .select({
+      id: stringComments.id,
+      body: stringComments.body,
+      authorId: stringComments.authorId,
+      authorUsername: users.username,
+      authorAvatarUrl: users.avatarUrl,
+      createdAt: stringComments.createdAt,
+    })
+    .from(stringComments)
+    .innerJoin(users, eq(stringComments.authorId, users.id))
+    .where(and(eq(stringComments.stringId, stringId), eq(stringComments.locale, locale)))
+    .orderBy(asc(stringComments.createdAt));
+}
+
+export async function addComment(params: {
+  stringId: string;
+  locale: string;
+  userId: string;
+  body: string;
+}) {
+  const [row] = await db
+    .insert(stringComments)
+    .values({
+      stringId: params.stringId,
+      locale: params.locale,
+      authorId: params.userId,
+      body: params.body.trim(),
+    })
+    .returning();
+  return row!;
+}
+
+export async function deleteComment(commentId: string, userId: string, canModerate: boolean) {
+  const [row] = await db
+    .select()
+    .from(stringComments)
+    .where(eq(stringComments.id, commentId))
+    .limit(1);
+  if (!row) return { ok: false as const, error: "not_found" as const };
+  if (row.authorId !== userId && !canModerate) {
+    return { ok: false as const, error: "forbidden" as const };
+  }
+  await db.delete(stringComments).where(eq(stringComments.id, commentId));
+  return { ok: true as const };
 }
 
 /** List strings for file with workflow summary for a locale */

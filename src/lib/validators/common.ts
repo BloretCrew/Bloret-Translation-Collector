@@ -77,3 +77,7 @@ export const saveTranslationSchema = z.object({
 export const saveSuggestionSchema = z.object({
   text: z.string().max(50_000),
 });
+
+export const stringCommentSchema = z.object({
+  body: z.string().min(1).max(5_000),
+});

@@ -16,7 +16,9 @@ import {
   users,
 } from "../db/schema";
 import {
+  addComment,
   approveSuggestion,
+  listComments,
   listSuggestionsForString,
   toggleVote,
   upsertMySuggestion,
@@ -150,5 +152,15 @@ describe("collaboration workflow", () => {
         ),
       );
     expect(count.length).toBe(2);
+
+    await addComment({
+      stringId: unit!.id,
+      locale: "en",
+      userId: userB!.id,
+      body: "请注意大小写",
+    });
+    const comments = await listComments(unit!.id, "en");
+    expect(comments.length).toBe(1);
+    expect(comments[0]!.body).toBe("请注意大小写");
   });
 });

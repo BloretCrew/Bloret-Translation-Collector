@@ -244,6 +244,28 @@ export const stringLocaleStates = pgTable(
   ],
 );
 
+/** Crowdin-style discussion on a string × locale */
+export const stringComments = pgTable(
+  "string_comments",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    stringId: uuid("string_id")
+      .notNull()
+      .references(() => stringUnits.id, { onDelete: "cascade" }),
+    locale: text("locale").notNull(),
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("string_comments_string_locale_idx").on(t.stringId, t.locale),
+    index("string_comments_author_idx").on(t.authorId),
+  ],
+);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   memberships: many(organizationMembers),
@@ -348,6 +370,17 @@ export const stringLocaleStatesRelations = relations(stringLocaleStates, ({ one 
   approvedSuggestion: one(translationSuggestions, {
     fields: [stringLocaleStates.approvedSuggestionId],
     references: [translationSuggestions.id],
+  }),
+}));
+
+export const stringCommentsRelations = relations(stringComments, ({ one }) => ({
+  stringUnit: one(stringUnits, {
+    fields: [stringComments.stringId],
+    references: [stringUnits.id],
+  }),
+  author: one(users, {
+    fields: [stringComments.authorId],
+    references: [users.id],
   }),
 }));
 

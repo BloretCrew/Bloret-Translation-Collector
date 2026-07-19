@@ -4,6 +4,7 @@ import { requireSession } from "@/lib/auth/session";
 import { requireProjectAccess } from "@/lib/access";
 import {
   forbidden,
+  jsonCreated,
   jsonError,
   jsonOk,
   notFound,
@@ -11,15 +12,23 @@ import {
 } from "@/lib/api";
 import { db } from "@/lib/db";
 import { sourceFiles, stringUnits, translationSuggestions } from "@/lib/db/schema";
-import { localeSchema, saveSuggestionSchema } from "@/lib/validators/common";
+import {
+  localeSchema,
+  saveSuggestionSchema,
+  stringCommentSchema,
+} from "@/lib/validators/common";
 import {
   canApproveTranslations,
+  canManageProjects,
   canSuggestTranslations,
   canVoteSuggestions,
 } from "@/lib/permissions/roles";
 import {
+  addComment,
   approveSuggestion,
+  deleteComment,
   deleteMySuggestion,
+  listComments,
   listStringsWithWorkflow,
   listSuggestionsForString,
   toggleVote,
@@ -137,6 +146,7 @@ collaborationRouter.get(
         localeParsed.data,
         session.userId!,
       );
+      const comments = await listComments(unit.id, localeParsed.data);
 
       return jsonOk(res, {
         stringId: unit.id,
@@ -146,10 +156,122 @@ collaborationRouter.get(
         workflowStatus: data.workflowStatus,
         approvedSuggestionId: data.approvedSuggestionId,
         suggestions: data.suggestions,
+        comments,
         canSuggest: canSuggestTranslations(access.role),
         canVote: canVoteSuggestions(access.role),
         canApprove: canApproveTranslations(access.role),
+        canComment: canSuggestTranslations(access.role) || access.role === "viewer",
       });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// Comments (discussion)
+collaborationRouter.get(
+  "/v1/orgs/:orgSlug/projects/:projectSlug/strings/:stringId/comments",
+  async (req, res, next) => {
+    try {
+      const session = requireSession(req);
+      if (!session) return unauthorized(res);
+      const locale = typeof req.query.locale === "string" ? req.query.locale : "";
+      const localeParsed = localeSchema.safeParse(locale);
+      if (!localeParsed.success) return jsonError(res, "缺少或无效 locale");
+
+      const access = await requireProjectAccess(
+        req.params.orgSlug,
+        req.params.projectSlug,
+        session.userId!,
+      );
+      if ("error" in access) {
+        if (access.error === "not_found") return notFound(res);
+        return forbidden(res);
+      }
+      const unit = await assertStringInProject(access.project.id, req.params.stringId);
+      if (!unit) return notFound(res, "字符串不存在");
+
+      const comments = await listComments(unit.id, localeParsed.data);
+      return jsonOk(res, { comments });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+collaborationRouter.post(
+  "/v1/orgs/:orgSlug/projects/:projectSlug/strings/:stringId/comments",
+  async (req, res, next) => {
+    try {
+      const session = requireSession(req);
+      if (!session) return unauthorized(res);
+      const locale = typeof req.body?.locale === "string" ? req.body.locale : req.query.locale;
+      const localeParsed = localeSchema.safeParse(locale);
+      if (!localeParsed.success) return jsonError(res, "缺少或无效 locale");
+
+      const access = await requireProjectAccess(
+        req.params.orgSlug,
+        req.params.projectSlug,
+        session.userId!,
+      );
+      if ("error" in access) {
+        if (access.error === "not_found") return notFound(res);
+        return forbidden(res);
+      }
+      // viewers and above can discuss
+      if (access.role === undefined) return forbidden(res);
+
+      const unit = await assertStringInProject(access.project.id, req.params.stringId);
+      if (!unit) return notFound(res, "字符串不存在");
+
+      const parsed = stringCommentSchema.safeParse(req.body);
+      if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
+
+      const row = await addComment({
+        stringId: unit.id,
+        locale: localeParsed.data,
+        userId: session.userId!,
+        body: parsed.data.body,
+      });
+      return jsonCreated(res, {
+        id: row.id,
+        body: row.body,
+        authorId: row.authorId,
+        createdAt: row.createdAt,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+collaborationRouter.delete(
+  "/v1/orgs/:orgSlug/projects/:projectSlug/comments/:commentId",
+  async (req, res, next) => {
+    try {
+      const session = requireSession(req);
+      if (!session) return unauthorized(res);
+
+      const access = await requireProjectAccess(
+        req.params.orgSlug,
+        req.params.projectSlug,
+        session.userId!,
+      );
+      if ("error" in access) {
+        if (access.error === "not_found") return notFound(res);
+        return forbidden(res);
+      }
+
+      const result = await deleteComment(
+        req.params.commentId,
+        session.userId!,
+        canManageProjects(access.role) || canApproveTranslations(access.role),
+      );
+      if (!result.ok) {
+        if (result.error === "forbidden") return forbidden(res, "只能删除自己的评论");
+        return notFound(res);
+      }
+      return jsonOk(res, { ok: true });
     } catch (err) {
       next(err);
     }

@@ -1,6 +1,6 @@
 /**
  * Crowdin-style collaboration editor:
- * my suggestion · others' suggestions · vote · approve
+ * suggestions · vote · approve · comments · use-as-mine
  */
 (function () {
   const root = document.getElementById("translation-editor");
@@ -38,6 +38,9 @@
     next: document.getElementById("editor-next"),
     suggestions: document.getElementById("editor-suggestions"),
     workflow: document.getElementById("editor-workflow"),
+    comments: document.getElementById("editor-comments"),
+    commentBody: document.getElementById("editor-comment-body"),
+    commentSend: document.getElementById("editor-comment-send"),
   };
 
   let strings = [];
@@ -69,7 +72,7 @@
       els.saveHint.classList.add("is-error");
       els.saveHint.textContent = "保存失败";
     } else {
-      els.saveHint.textContent = canEdit ? "保存为建议（不会自动定稿）" : "只读";
+      els.saveHint.textContent = canEdit ? "保存为建议（不定稿）· Ctrl/⌘+S" : "只读";
     }
   }
 
@@ -77,6 +80,22 @@
     if (status === "approved") return { cls: "status-dot--done", label: "已批准" };
     if (status === "suggested") return { cls: "status-dot--suggested", label: "有建议" };
     return { cls: "status-dot--empty", label: "未翻译" };
+  }
+
+  function escapeHtml(s) {
+    return String(s)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function formatTime(iso) {
+    try {
+      return new Date(iso).toLocaleString();
+    } catch {
+      return "";
+    }
   }
 
   function renderList() {
@@ -163,6 +182,7 @@
   async function loadDetail(stringId) {
     detail = null;
     els.suggestions.innerHTML = `<div class="blora-text-faint">加载建议…</div>`;
+    if (els.comments) els.comments.innerHTML = "";
     els.workflow.textContent = "";
     try {
       const { res, data } = await json(
@@ -183,22 +203,16 @@
       if (wf === "approved") {
         const approved = (data.suggestions || []).find((s) => s.isApproved);
         if (approved) {
-          els.workflow.innerHTML += ` · 定稿：${escapeHtml(approved.text).slice(0, 80)}${approved.text.length > 80 ? "…" : ""}`;
+          els.workflow.innerHTML +=
+            ` · 定稿：` + escapeHtml(approved.text).slice(0, 80) + (approved.text.length > 80 ? "…" : "");
         }
       }
 
       renderSuggestions(data);
+      renderComments(data.comments || [], data);
     } catch {
       els.suggestions.innerHTML = `<div class="blora-alert blora-alert--danger">网络错误</div>`;
     }
-  }
-
-  function escapeHtml(s) {
-    return String(s)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;");
   }
 
   function renderSuggestions(data) {
@@ -219,6 +233,7 @@
         <div class="collab-card__meta">
           <span class="collab-card__author"></span>
           <span class="collab-card__votes"></span>
+          <span class="collab-card__time"></span>
           <span class="collab-card__badges"></span>
         </div>
         <div class="collab-card__actions blora-row u-gap-1"></div>
@@ -226,6 +241,7 @@
       card.querySelector(".collab-card__text").textContent = s.text;
       card.querySelector(".collab-card__author").textContent = s.authorUsername;
       card.querySelector(".collab-card__votes").textContent = `★ ${s.voteCount}`;
+      card.querySelector(".collab-card__time").textContent = formatTime(s.updatedAt);
       const badges = card.querySelector(".collab-card__badges");
       if (s.isApproved) {
         const b = document.createElement("span");
@@ -241,6 +257,18 @@
       }
 
       const actions = card.querySelector(".collab-card__actions");
+      if (canEdit && !s.isMine && s.text.trim()) {
+        const useBtn = document.createElement("button");
+        useBtn.type = "button";
+        useBtn.className = "blora-btn blora-btn--ghost blora-btn--xs";
+        useBtn.textContent = "采用为我的建议";
+        useBtn.addEventListener("click", () => {
+          els.draft.value = s.text;
+          els.draft.focus();
+          toast?.("success", "已填入编辑框，请点「保存建议」确认");
+        });
+        actions.appendChild(useBtn);
+      }
       if (data.canVote && !s.isMine) {
         const voteBtn = document.createElement("button");
         voteBtn.type = "button";
@@ -269,6 +297,38 @@
       }
 
       els.suggestions.appendChild(card);
+    });
+  }
+
+  function renderComments(comments, data) {
+    if (!els.comments) return;
+    els.comments.innerHTML = "";
+    if (!comments.length) {
+      els.comments.innerHTML = `<div class="blora-text-faint">暂无讨论</div>`;
+      return;
+    }
+    comments.forEach((c) => {
+      const item = document.createElement("div");
+      item.className = "collab-comment";
+      item.innerHTML = `
+        <div class="collab-comment__meta">
+          <strong class="collab-comment__author"></strong>
+          <span class="collab-comment__time"></span>
+        </div>
+        <div class="collab-comment__body"></div>
+        <div class="collab-comment__actions"></div>
+      `;
+      item.querySelector(".collab-comment__author").textContent = c.authorUsername;
+      item.querySelector(".collab-comment__time").textContent = formatTime(c.createdAt);
+      item.querySelector(".collab-comment__body").textContent = c.body;
+      // Delete: API enforces own-or-moderator
+      const del = document.createElement("button");
+      del.type = "button";
+      del.className = "blora-btn blora-btn--ghost blora-btn--xs";
+      del.textContent = "删除";
+      del.addEventListener("click", () => deleteComment(c.id));
+      item.querySelector(".collab-comment__actions").appendChild(del);
+      els.comments.appendChild(item);
     });
   }
 
@@ -373,6 +433,50 @@
     }
   }
 
+  async function sendComment() {
+    if (!activeId || !els.commentBody) return;
+    const body = els.commentBody.value.trim();
+    if (!body) {
+      toast?.("error", "请输入评论内容");
+      return;
+    }
+    try {
+      const { res, data } = await json(
+        `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/strings/${activeId}/comments`,
+        {
+          method: "POST",
+          body: JSON.stringify({ body, locale }),
+        },
+      );
+      if (!res.ok) {
+        toast?.("error", data.error || "发送失败");
+        return;
+      }
+      els.commentBody.value = "";
+      toast?.("success", "评论已发送");
+      await loadDetail(activeId);
+    } catch {
+      toast?.("error", "网络错误");
+    }
+  }
+
+  async function deleteComment(id) {
+    if (!confirm("删除这条评论？")) return;
+    try {
+      const { res, data } = await json(
+        `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/comments/${id}`,
+        { method: "DELETE" },
+      );
+      if (!res.ok) {
+        toast?.("error", data.error || "删除失败");
+        return;
+      }
+      if (activeId) await loadDetail(activeId);
+    } catch {
+      toast?.("error", "网络错误");
+    }
+  }
+
   function navigate(delta) {
     if (!activeId) return;
     const idx = strings.findIndex((s) => s.id === activeId);
@@ -402,10 +506,32 @@
   els.deleteBtn?.addEventListener("click", () => deleteSuggestion());
   els.prev?.addEventListener("click", () => navigate(-1));
   els.next?.addEventListener("click", () => navigate(1));
+  els.commentSend?.addEventListener("click", () => sendComment());
+  els.commentBody?.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      sendComment();
+    }
+  });
   els.draft?.addEventListener("keydown", (e) => {
+    if ((e.key === "s" || e.key === "S") && (e.ctrlKey || e.metaKey)) {
+      e.preventDefault();
+      saveSuggestion();
+    }
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
       saveSuggestion().then(() => navigate(1));
+    }
+  });
+  document.addEventListener("keydown", (e) => {
+    if (e.target && (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT")) return;
+    if (e.key === "ArrowUp" && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault();
+      navigate(-1);
+    }
+    if (e.key === "ArrowDown" && !e.metaKey && !e.ctrlKey) {
+      e.preventDefault();
+      navigate(1);
     }
   });
 
