@@ -1,10 +1,13 @@
 /**
- * Crowdin-style collaboration editor:
- * suggestions · vote · approve · comments · MT · contexts · assign · TM
+ * Crowdin-style focus editor:
+ * fixed viewport · list | compose | side · save & next
  */
 (function () {
   const root = document.getElementById("translation-editor");
   if (!root) return;
+
+  document.documentElement.classList.add("is-translation-editor");
+  document.body.classList.add("is-translation-editor");
 
   const { json, toast } = window.BTC;
   const orgSlug = root.dataset.orgSlug;
@@ -31,6 +34,10 @@
     empty: document.getElementById("editor-empty"),
     body: document.getElementById("editor-body"),
     list: document.getElementById("editor-list"),
+    listCol: document.getElementById("editor-list-col"),
+    sideCol: document.getElementById("editor-side-col"),
+    toggleList: document.getElementById("editor-toggle-list"),
+    toggleSide: document.getElementById("editor-toggle-side"),
     panelEmpty: document.getElementById("editor-panel-empty"),
     panelActive: document.getElementById("editor-panel-active"),
     key: document.getElementById("editor-key"),
@@ -38,6 +45,7 @@
     draft: document.getElementById("editor-draft"),
     saveHint: document.getElementById("editor-save-hint"),
     saveBtn: document.getElementById("editor-save-suggestion"),
+    saveOnlyBtn: document.getElementById("editor-save-only"),
     deleteBtn: document.getElementById("editor-delete-suggestion"),
     mtBtn: document.getElementById("editor-mt"),
     assignBtn: document.getElementById("editor-assign-task"),
@@ -89,8 +97,26 @@
       els.saveHint.classList.add("is-error");
       els.saveHint.textContent = "保存失败";
     } else {
-      els.saveHint.textContent = canEdit ? "保存为建议（不定稿）· Ctrl/⌘+S" : "只读";
+      els.saveHint.textContent = canEdit
+        ? "Ctrl/⌘+Enter 保存并下一条 · Ctrl/⌘+S 仅保存"
+        : "只读";
     }
+  }
+
+  function focusDraft() {
+    if (!canEdit || !els.draft || els.panelActive?.hidden) return;
+    requestAnimationFrame(() => {
+      els.draft.focus({ preventScroll: true });
+    });
+  }
+
+  function scrollActiveIntoView() {
+    const activeBtn = els.list?.querySelector(".editor-list__item.is-active");
+    activeBtn?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }
+
+  function closeMobileDrawers() {
+    els.body?.classList.remove("is-list-open", "is-side-open");
   }
 
   function workflowBadge(status) {
@@ -140,10 +166,18 @@
     });
   }
 
-  async function loadList() {
-    els.loading.hidden = false;
-    els.empty.hidden = true;
-    els.body.hidden = true;
+  /**
+   * @param {{ preferId?: string|null, quiet?: boolean }} [opts]
+   * preferId: pick this after refresh (e.g. next string after save) if still listed
+   */
+  async function loadList(opts = {}) {
+    const preferId = opts.preferId || null;
+    const quiet = Boolean(opts.quiet);
+    if (!quiet) {
+      els.loading.hidden = false;
+      els.empty.hidden = true;
+      els.body.hidden = true;
+    }
     showError("");
     const params = new URLSearchParams({
       locale,
@@ -159,6 +193,7 @@
       );
       if (!res.ok) {
         showError(data.error || "加载失败");
+        els.loading.hidden = true;
         return;
       }
       strings = data.strings || [];
@@ -167,12 +202,19 @@
       els.loading.hidden = true;
       if (!strings.length) {
         els.empty.hidden = false;
+        els.body.hidden = true;
         activeId = null;
+        if (els.panelActive) els.panelActive.hidden = true;
+        if (els.panelEmpty) els.panelEmpty.hidden = false;
         return;
       }
+      els.empty.hidden = true;
       els.body.hidden = false;
       let pick = null;
-      if (pendingFocus && strings.some((s) => s.id === pendingFocus)) {
+      if (preferId && strings.some((s) => s.id === preferId)) {
+        pick = preferId;
+        pendingFocus = null;
+      } else if (pendingFocus && strings.some((s) => s.id === pendingFocus)) {
         pick = pendingFocus;
         pendingFocus = null;
       } else if (activeId && strings.some((s) => s.id === activeId)) {
@@ -182,7 +224,9 @@
       }
       if (pick === activeId) {
         renderList();
+        scrollActiveIntoView();
         await loadDetail(activeId);
+        focusDraft();
       } else {
         await selectString(pick);
       }
@@ -195,14 +239,17 @@
   async function selectString(id) {
     activeId = id;
     renderList();
-    els.panelEmpty.hidden = true;
-    els.panelActive.hidden = false;
+    scrollActiveIntoView();
+    closeMobileDrawers();
+    if (els.panelEmpty) els.panelEmpty.hidden = true;
+    if (els.panelActive) els.panelActive.hidden = false;
     const row = strings.find((s) => s.id === id);
     if (row) {
-      els.key.textContent = row.keyPath;
-      els.source.textContent = row.sourceText;
+      if (els.key) els.key.textContent = row.keyPath;
+      if (els.source) els.source.textContent = row.sourceText;
     }
     await loadDetail(id);
+    focusDraft();
   }
 
   async function loadDetail(stringId) {
@@ -630,10 +677,25 @@
     });
   }
 
-  async function saveSuggestion() {
+  /**
+   * @param {{ advance?: boolean }} [opts]
+   * advance: after non-empty save, jump to next string in current filter list
+   */
+  async function saveSuggestion(opts = {}) {
+    const advance = Boolean(opts.advance);
     if (!canEdit || !activeId || saving) return;
     saving = true;
     setSaveHint("saving");
+
+    const text = (els.draft?.value || "").trim();
+    const idx = strings.findIndex((s) => s.id === activeId);
+    // Capture next id BEFORE list refresh (filter "untranslated" drops current row)
+    const nextId =
+      advance && text && idx >= 0 && idx < strings.length - 1
+        ? strings[idx + 1].id
+        : null;
+    const atEnd = advance && text && idx >= 0 && idx === strings.length - 1;
+
     try {
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/strings/${activeId}/suggestions/${encodeURIComponent(locale)}`,
@@ -645,9 +707,15 @@
         return;
       }
       setSaveHint("saved");
-      toast?.("success", "建议已保存");
-      await loadList();
-      if (activeId) await loadDetail(activeId);
+      if (advance && text) {
+        toast?.("success", atEnd ? "已保存 · 本批已到最后一条" : "已保存，下一条");
+      } else {
+        toast?.("success", "建议已保存");
+      }
+
+      const preferId = nextId || activeId;
+      await loadList({ preferId, quiet: true });
+      focusDraft();
     } catch {
       setSaveHint("error");
     } finally {
@@ -800,7 +868,8 @@
     if (e.key === "Enter") loadList();
   });
   els.refresh?.addEventListener("click", () => loadList());
-  els.saveBtn?.addEventListener("click", () => saveSuggestion());
+  els.saveBtn?.addEventListener("click", () => saveSuggestion({ advance: true }));
+  els.saveOnlyBtn?.addEventListener("click", () => saveSuggestion({ advance: false }));
   els.deleteBtn?.addEventListener("click", () => deleteSuggestion());
   els.mtBtn?.addEventListener("click", () => runMachineTranslate());
   els.assignBtn?.addEventListener("click", () => assignTask());
@@ -808,6 +877,14 @@
   els.prev?.addEventListener("click", () => navigate(-1));
   els.next?.addEventListener("click", () => navigate(1));
   els.commentSend?.addEventListener("click", () => sendComment());
+  els.toggleList?.addEventListener("click", () => {
+    els.body?.classList.toggle("is-list-open");
+    els.body?.classList.remove("is-side-open");
+  });
+  els.toggleSide?.addEventListener("click", () => {
+    els.body?.classList.toggle("is-side-open");
+    els.body?.classList.remove("is-list-open");
+  });
   els.commentBody?.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
@@ -817,15 +894,17 @@
   els.draft?.addEventListener("keydown", (e) => {
     if ((e.key === "s" || e.key === "S") && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      saveSuggestion();
+      saveSuggestion({ advance: false });
     }
     if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
       e.preventDefault();
-      saveSuggestion().then(() => navigate(1));
+      saveSuggestion({ advance: true });
     }
   });
   document.addEventListener("keydown", (e) => {
-    if (e.target && (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT")) return;
+    if (e.target && (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT" || e.target.tagName === "SELECT")) {
+      return;
+    }
     if (e.key === "ArrowUp" && !e.metaKey && !e.ctrlKey) {
       e.preventDefault();
       navigate(-1);
