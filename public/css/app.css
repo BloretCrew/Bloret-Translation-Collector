@@ -395,6 +395,59 @@
   font-size: var(--blora-text-xs);
 }
 
+.glossary-hits__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--blora-space-2);
+  margin-top: var(--blora-space-2);
+}
+
+.glossary-hit {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--blora-space-2);
+  padding: var(--blora-space-2) var(--blora-space-3);
+  border: var(--blora-border);
+  border-radius: var(--blora-radius-md);
+  background: var(--blora-surface-2);
+  font-size: var(--blora-text-sm);
+}
+
+.glossary-hit__src {
+  font-weight: 600;
+  color: var(--blora-ink);
+}
+
+.glossary-hit__dst {
+  font-family: var(--blora-font-mono);
+  color: var(--blora-seal);
+}
+
+.glossary-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--blora-space-3);
+}
+
+.glossary-item {
+  border: var(--blora-border);
+  border-radius: var(--blora-radius-lg);
+  padding: var(--blora-space-3);
+  background: var(--blora-surface-1);
+}
+
+.glossary-item__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--blora-space-2);
+}
+
+.assignees-list {
+  margin-bottom: var(--blora-space-3);
+}
+
 
 .save-hint {
   font-size: var(--blora-text-xs);

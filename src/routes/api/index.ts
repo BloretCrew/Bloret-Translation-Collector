@@ -4,6 +4,7 @@ import { healthRouter } from "./health";
 import { meRouter } from "./me";
 import { orgsRouter } from "./orgs";
 import { collaborationRouter } from "./collaboration";
+import { glossaryRouter } from "./glossary";
 
 export const apiRouter = Router();
 
@@ -13,4 +14,5 @@ apiRouter.use(requireApiAuth);
 apiRouter.use(meRouter);
 // Collaboration routes first so workflow-aware string handlers win
 apiRouter.use(collaborationRouter);
+apiRouter.use(glossaryRouter);
 apiRouter.use(orgsRouter);

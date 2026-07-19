@@ -22,6 +22,13 @@
       "when": 1784301000000,
       "tag": "0002_string_comments",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1784302000000,
+      "tag": "0003_glossary_assignees",
+      "breakpoints": true
     }
   ]
 }

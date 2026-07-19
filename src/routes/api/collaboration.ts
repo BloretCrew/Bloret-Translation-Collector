@@ -23,6 +23,11 @@ import {
   canSuggestTranslations,
   canVoteSuggestions,
 } from "@/lib/permissions/roles";
+import { isLocaleAssignee } from "@/lib/services/glossary";
+import {
+  listGlossary,
+  matchGlossaryTerms,
+} from "@/lib/services/glossary";
 import {
   addComment,
   approveSuggestion,
@@ -147,6 +152,21 @@ collaborationRouter.get(
         session.userId!,
       );
       const comments = await listComments(unit.id, localeParsed.data);
+      const glossary = await listGlossary(access.project.id);
+      const glossaryHits = matchGlossaryTerms(
+        glossary,
+        unit.sourceText,
+        localeParsed.data,
+      );
+
+      const localeProofreader = await isLocaleAssignee(
+        access.project.id,
+        localeParsed.data,
+        session.userId!,
+        "proofreader",
+      );
+      const canApprove =
+        canApproveTranslations(access.role) || localeProofreader;
 
       return jsonOk(res, {
         stringId: unit.id,
@@ -157,10 +177,11 @@ collaborationRouter.get(
         approvedSuggestionId: data.approvedSuggestionId,
         suggestions: data.suggestions,
         comments,
+        glossaryHits,
         canSuggest: canSuggestTranslations(access.role),
         canVote: canVoteSuggestions(access.role),
-        canApprove: canApproveTranslations(access.role),
-        canComment: canSuggestTranslations(access.role) || access.role === "viewer",
+        canApprove,
+        canComment: true,
       });
     } catch (err) {
       next(err);
@@ -448,13 +469,10 @@ collaborationRouter.post(
         if (access.error === "not_found") return notFound(res);
         return forbidden(res);
       }
-      if (!canApproveTranslations(access.role)) {
-        return forbidden(res, "仅审核员及以上可批准译文");
-      }
-
       const [s] = await db
         .select({
           id: translationSuggestions.id,
+          locale: translationSuggestions.locale,
           projectId: sourceFiles.projectId,
         })
         .from(translationSuggestions)
@@ -464,6 +482,16 @@ collaborationRouter.post(
         .limit(1);
 
       if (!s || s.projectId !== access.project.id) return notFound(res, "建议不存在");
+
+      const localeProofreader = await isLocaleAssignee(
+        access.project.id,
+        s.locale,
+        session.userId!,
+        "proofreader",
+      );
+      if (!canApproveTranslations(access.role) && !localeProofreader) {
+        return forbidden(res, "仅审核员、语言审核指派或管理员可批准译文");
+      }
 
       const result = await approveSuggestion(s.id, session.userId!);
       if (!result.ok) {

@@ -41,6 +41,8 @@
     comments: document.getElementById("editor-comments"),
     commentBody: document.getElementById("editor-comment-body"),
     commentSend: document.getElementById("editor-comment-send"),
+    glossary: document.getElementById("editor-glossary"),
+    glossaryList: document.getElementById("editor-glossary-list"),
   };
 
   let strings = [];
@@ -210,9 +212,49 @@
 
       renderSuggestions(data);
       renderComments(data.comments || [], data);
+      renderGlossary(data.glossaryHits || []);
     } catch {
       els.suggestions.innerHTML = `<div class="blora-alert blora-alert--danger">网络错误</div>`;
     }
+  }
+
+  function renderGlossary(hits) {
+    if (!els.glossary || !els.glossaryList) return;
+    if (!hits.length) {
+      els.glossary.hidden = true;
+      els.glossaryList.innerHTML = "";
+      return;
+    }
+    els.glossary.hidden = false;
+    els.glossaryList.innerHTML = "";
+    hits.forEach((h) => {
+      const row = document.createElement("div");
+      row.className = "glossary-hit";
+      row.innerHTML = `
+        <span class="glossary-hit__src"></span>
+        <span class="glossary-hit__arrow">→</span>
+        <span class="glossary-hit__dst"></span>
+        <button type="button" class="blora-btn blora-btn--ghost blora-btn--xs" data-use>填入</button>
+      `;
+      row.querySelector(".glossary-hit__src").textContent = h.sourceTerm;
+      row.querySelector(".glossary-hit__dst").textContent =
+        h.translation || "（未定义此语言译法）";
+      const use = row.querySelector("[data-use]");
+      if (!h.translation || !canEdit) {
+        use.hidden = true;
+      } else {
+        use.addEventListener("click", () => {
+          const cur = els.draft.value;
+          els.draft.value = cur ? cur + h.translation : h.translation;
+          els.draft.focus();
+          toast?.("success", `已填入术语「${h.sourceTerm}」`);
+        });
+      }
+      if (h.description) {
+        row.title = h.description;
+      }
+      els.glossaryList.appendChild(row);
+    });
   }
 
   function renderSuggestions(data) {

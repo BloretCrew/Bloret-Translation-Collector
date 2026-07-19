@@ -44,6 +44,69 @@
 
           <hr class="blora-divider" />
 
+          <section
+            class="blora-stack"
+            id="glossary-panel"
+            data-org-slug="<%= orgSlug %>"
+            data-project-slug="<%= projectSlug %>"
+            data-locales="<%= targetLocales.join(',') %>"
+          >
+            <h3 class="blora-h4">术语表</h3>
+            <p class="blora-text-muted">源文出现术语时，工作台会提示推荐译法（类似 Crowdin Glossary）。</p>
+            <div id="glossary-list" class="glossary-list"></div>
+            <form id="glossary-add-form" class="blora-stack">
+              <div class="blora-grid blora-grid--2">
+                <label class="blora-field">
+                  <span class="blora-field__label">源术语</span>
+                  <input class="blora-input" name="sourceTerm" required placeholder="例如：账号" />
+                </label>
+                <label class="blora-field">
+                  <span class="blora-field__label">说明（可选）</span>
+                  <input class="blora-input" name="description" placeholder="上下文备注" />
+                </label>
+              </div>
+              <label class="blora-field">
+                <span class="blora-field__label">目标语言译法（可选，可稍后在列表中补全）</span>
+                <div class="blora-row" style="flex-wrap:wrap;gap:8px" id="glossary-tr-fields"></div>
+              </label>
+              <button type="submit" class="blora-btn blora-btn--secondary">添加术语</button>
+            </form>
+          </section>
+
+          <hr class="blora-divider" />
+
+          <section
+            class="blora-stack"
+            id="assignees-panel"
+            data-org-slug="<%= orgSlug %>"
+            data-project-slug="<%= projectSlug %>"
+            data-locales="<%= targetLocales.join(',') %>"
+          >
+            <h3 class="blora-h4">语言负责人</h3>
+            <p class="blora-text-muted">为某语言指派审核员（可批准该语言译文，无需全局审核员角色）。</p>
+            <div id="assignees-list" class="assignees-list"></div>
+            <form id="assignee-add-form" class="blora-row" style="align-items:flex-end;flex-wrap:wrap;gap:8px">
+              <label class="blora-field">
+                <span class="blora-field__label">语言</span>
+                <select class="blora-select" name="locale" id="assignee-locale"></select>
+              </label>
+              <label class="blora-field">
+                <span class="blora-field__label">用户名</span>
+                <input class="blora-input" name="username" required placeholder="PassPort 用户名" />
+              </label>
+              <label class="blora-field">
+                <span class="blora-field__label">职责</span>
+                <select class="blora-select" name="kind">
+                  <option value="proofreader">审核员</option>
+                  <option value="translator">译者</option>
+                </select>
+              </label>
+              <button type="submit" class="blora-btn blora-btn--secondary">添加指派</button>
+            </form>
+          </section>
+
+          <hr class="blora-divider" />
+
           <div class="blora-stack">
             <h3 class="blora-h4">危险区域</h3>
             <p class="blora-text-muted">删除项目将清除所有源文件与译文，且无法恢复。</p>
@@ -54,4 +117,4 @@
     </div>
   </div>
 </main>
-<%- include('../partials/foot', { scripts: ['/js/forms.js'] }) %>
+<%- include('../partials/foot', { scripts: ['/js/forms.js', '/js/project-settings.js'] }) %>

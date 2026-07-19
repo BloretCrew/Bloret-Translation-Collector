@@ -266,6 +266,62 @@ export const stringComments = pgTable(
   ],
 );
 
+/** Project glossary (terminology) — Crowdin-style terms */
+export const glossaryTerms = pgTable(
+  "glossary_terms",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    sourceTerm: text("source_term").notNull(),
+    description: text("description"),
+    caseSensitive: boolean("case_sensitive").notNull().default(false),
+    createdBy: uuid("created_by").references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("glossary_terms_project_idx").on(t.projectId),
+    uniqueIndex("glossary_terms_project_source_uidx").on(t.projectId, t.sourceTerm),
+  ],
+);
+
+export const glossaryTranslations = pgTable(
+  "glossary_translations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    termId: uuid("term_id")
+      .notNull()
+      .references(() => glossaryTerms.id, { onDelete: "cascade" }),
+    locale: text("locale").notNull(),
+    translation: text("translation").notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [uniqueIndex("glossary_translations_term_locale_uidx").on(t.termId, t.locale)],
+);
+
+/** Per-locale assignees (translator / proofreader for a language) */
+export const projectLocaleAssignees = pgTable(
+  "project_locale_assignees",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    locale: text("locale").notNull(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    kind: text("kind").notNull().default("proofreader"), // translator | proofreader
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("project_locale_assignees_uidx").on(t.projectId, t.locale, t.userId, t.kind),
+    index("project_locale_assignees_project_locale_idx").on(t.projectId, t.locale),
+  ],
+);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   memberships: many(organizationMembers),
@@ -298,6 +354,8 @@ export const projectsRelations = relations(projects, ({ one, many }) => ({
   }),
   languages: many(projectLanguages),
   files: many(sourceFiles),
+  glossaryTerms: many(glossaryTerms),
+  localeAssignees: many(projectLocaleAssignees),
   creator: one(users, {
     fields: [projects.createdBy],
     references: [users.id],
@@ -308,6 +366,32 @@ export const projectLanguagesRelations = relations(projectLanguages, ({ one }) =
   project: one(projects, {
     fields: [projectLanguages.projectId],
     references: [projects.id],
+  }),
+}));
+
+export const glossaryTermsRelations = relations(glossaryTerms, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [glossaryTerms.projectId],
+    references: [projects.id],
+  }),
+  translations: many(glossaryTranslations),
+}));
+
+export const glossaryTranslationsRelations = relations(glossaryTranslations, ({ one }) => ({
+  term: one(glossaryTerms, {
+    fields: [glossaryTranslations.termId],
+    references: [glossaryTerms.id],
+  }),
+}));
+
+export const projectLocaleAssigneesRelations = relations(projectLocaleAssignees, ({ one }) => ({
+  project: one(projects, {
+    fields: [projectLocaleAssignees.projectId],
+    references: [projects.id],
+  }),
+  user: one(users, {
+    fields: [projectLocaleAssignees.userId],
+    references: [users.id],
   }),
 }));
 
