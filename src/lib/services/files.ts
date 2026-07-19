@@ -3,6 +3,7 @@ import { db } from "@/lib/db";
 import {
   sourceFiles,
   stringUnits,
+  suggestionVotes,
   translationSuggestions,
   translations,
 } from "@/lib/db/schema";
@@ -122,7 +123,28 @@ export async function upsertSourceFile(params: {
   });
 }
 
-export async function exportFileLocale(fileId: string, locale: string, fallbackToSource = true) {
+/**
+ * Export strategy for unapproved / missing approved text:
+ * - approved: only approved (translations table); missing → "" or source via fallbackToSource
+ * - top_voted: approved first, else highest-voted non-empty suggestion
+ * - source: missing → source text (fallbackToSource true)
+ * - empty: missing → ""
+ */
+export type ExportMode = "approved" | "top_voted" | "source" | "empty";
+
+export async function exportFileLocale(
+  fileId: string,
+  locale: string,
+  modeOrFallback: boolean | ExportMode = "source",
+) {
+  const mode: ExportMode =
+    typeof modeOrFallback === "boolean"
+      ? modeOrFallback
+        ? "source"
+        : "empty"
+      : modeOrFallback;
+
+  const fallbackToSource = mode === "source";
   const [file] = await db.select().from(sourceFiles).where(eq(sourceFiles.id, fileId)).limit(1);
   if (!file) return null;
 
@@ -131,23 +153,72 @@ export async function exportFileLocale(fileId: string, locale: string, fallbackT
   const map = new Map<string, string>();
 
   if (unitIds.length > 0) {
+    // Always load approved first
     const rows = await db
       .select({
         stringId: translations.stringId,
         text: translations.text,
         keyPath: stringUnits.keyPath,
+        status: translations.status,
       })
       .from(translations)
       .innerJoin(stringUnits, eq(translations.stringId, stringUnits.id))
       .where(and(eq(translations.locale, locale), inArray(translations.stringId, unitIds)));
 
     for (const row of rows) {
-      map.set(row.keyPath, row.text);
+      if (row.status === "translated" && row.text.trim()) {
+        map.set(row.keyPath, row.text);
+      }
+    }
+
+    if (mode === "top_voted") {
+      const missing = units.filter((u) => !map.has(u.keyPath) && !u.orphaned);
+      if (missing.length) {
+        const missingIds = missing.map((u) => u.id);
+        const keyById = new Map(missing.map((u) => [u.id, u.keyPath]));
+        const suggs = await db
+          .select({
+            id: translationSuggestions.id,
+            stringId: translationSuggestions.stringId,
+            text: translationSuggestions.text,
+            updatedAt: translationSuggestions.updatedAt,
+            votes: sql<number>`coalesce((
+              select sum(${suggestionVotes.value})::int from ${suggestionVotes}
+              where ${suggestionVotes.suggestionId} = ${translationSuggestions.id}
+            ), 0)`,
+          })
+          .from(translationSuggestions)
+          .where(
+            and(
+              eq(translationSuggestions.locale, locale),
+              inArray(translationSuggestions.stringId, missingIds),
+              sql`coalesce(${translationSuggestions.text}, '') <> ''`,
+            ),
+          );
+
+        // pick best per stringId
+        const best = new Map<string, { text: string; votes: number; updatedAt: Date }>();
+        for (const s of suggs) {
+          const votes = Number(s.votes ?? 0);
+          const prev = best.get(s.stringId);
+          if (
+            !prev ||
+            votes > prev.votes ||
+            (votes === prev.votes && s.updatedAt > prev.updatedAt)
+          ) {
+            best.set(s.stringId, { text: s.text, votes, updatedAt: s.updatedAt });
+          }
+        }
+        for (const [stringId, val] of best) {
+          const keyPath = keyById.get(stringId);
+          if (keyPath) map.set(keyPath, val.text);
+        }
+      }
     }
   }
 
   const exported = exportWithStructure(file.rawSource, map, { fallbackToSource });
-  return { path: file.path, data: exported };
+  return { path: file.path, data: exported, mode };
 }
 
 export type LocaleProgress = {

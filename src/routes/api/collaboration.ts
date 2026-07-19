@@ -28,6 +28,7 @@ import {
   listGlossary,
   matchGlossaryTerms,
 } from "@/lib/services/glossary";
+import { lookupTranslationMemory } from "@/lib/services/tm";
 import {
   addComment,
   approveSuggestion,
@@ -158,6 +159,13 @@ collaborationRouter.get(
         unit.sourceText,
         localeParsed.data,
       );
+      const tmHits = await lookupTranslationMemory({
+        projectId: access.project.id,
+        locale: localeParsed.data,
+        sourceText: unit.sourceText,
+        excludeStringId: unit.id,
+        limit: 6,
+      });
 
       const localeProofreader = await isLocaleAssignee(
         access.project.id,
@@ -178,11 +186,46 @@ collaborationRouter.get(
         suggestions: data.suggestions,
         comments,
         glossaryHits,
+        tmHits,
         canSuggest: canSuggestTranslations(access.role),
         canVote: canVoteSuggestions(access.role),
         canApprove,
         canComment: true,
       });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+/** Explicit TM lookup API */
+collaborationRouter.get(
+  "/v1/orgs/:orgSlug/projects/:projectSlug/tm",
+  async (req, res, next) => {
+    try {
+      const session = requireSession(req);
+      if (!session) return unauthorized(res);
+      const access = await requireProjectAccess(
+        req.params.orgSlug,
+        req.params.projectSlug,
+        session.userId!,
+      );
+      if ("error" in access) {
+        if (access.error === "not_found") return notFound(res);
+        return forbidden(res);
+      }
+      const locale = typeof req.query.locale === "string" ? req.query.locale : "";
+      const text = typeof req.query.text === "string" ? req.query.text : "";
+      const exclude =
+        typeof req.query.excludeStringId === "string" ? req.query.excludeStringId : undefined;
+      if (!locale || !text) return jsonError(res, "需要 locale 与 text");
+      const hits = await lookupTranslationMemory({
+        projectId: access.project.id,
+        locale,
+        sourceText: text,
+        excludeStringId: exclude,
+      });
+      return jsonOk(res, { hits });
     } catch (err) {
       next(err);
     }

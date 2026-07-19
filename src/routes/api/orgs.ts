@@ -856,7 +856,16 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects/:projectSlug/export", async (req, res
 
     const localeRaw = typeof req.query.locale === "string" ? req.query.locale : null;
     const fileId = typeof req.query.fileId === "string" ? req.query.fileId : null;
-    const fallback = req.query.fallback !== "empty";
+    // mode: approved | top_voted | source | empty  (legacy fallback=empty|source)
+    let mode: "approved" | "top_voted" | "source" | "empty" = "source";
+    if (typeof req.query.mode === "string") {
+      const m = req.query.mode;
+      if (m === "approved" || m === "top_voted" || m === "source" || m === "empty") mode = m;
+    } else if (req.query.fallback === "empty") {
+      mode = "empty";
+    } else if (req.query.fallback === "false") {
+      mode = "empty";
+    }
 
     if (!localeRaw) return jsonError(res, "缺少 locale 参数");
     const localeParsed = localeSchema.safeParse(localeRaw);
@@ -885,23 +894,25 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects/:projectSlug/export", async (req, res
     if (files.length === 0) return jsonError(res, "项目中没有源文件");
 
     if (files.length === 1) {
-      const result = await exportFileLocale(files[0]!.id, locale, fallback);
+      const result = await exportFileLocale(files[0]!.id, locale, mode);
       if (!result) return notFound(res);
       const filename = result.path.replace(/\.json$/i, "") + `.${locale}.json`;
       res.setHeader("Content-Type", "application/json; charset=utf-8");
       res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+      res.setHeader("X-Export-Mode", mode);
       return res.status(200).send(JSON.stringify(result.data, null, 2));
     }
 
     const bundle: Record<string, unknown> = {};
     for (const f of files) {
-      const result = await exportFileLocale(f.id, locale, fallback);
+      const result = await exportFileLocale(f.id, locale, mode);
       if (result) bundle[result.path] = result.data;
     }
 
     const filename = `${req.params.projectSlug}.${locale}.bundle.json`;
     res.setHeader("Content-Type", "application/json; charset=utf-8");
     res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
+    res.setHeader("X-Export-Mode", mode);
     return res.status(200).send(JSON.stringify(bundle, null, 2));
   } catch (err) {
     next(err);

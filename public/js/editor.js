@@ -43,6 +43,8 @@
     commentSend: document.getElementById("editor-comment-send"),
     glossary: document.getElementById("editor-glossary"),
     glossaryList: document.getElementById("editor-glossary-list"),
+    tm: document.getElementById("editor-tm"),
+    tmList: document.getElementById("editor-tm-list"),
   };
 
   let strings = [];
@@ -213,9 +215,51 @@
       renderSuggestions(data);
       renderComments(data.comments || [], data);
       renderGlossary(data.glossaryHits || []);
+      renderTm(data.tmHits || []);
     } catch {
       els.suggestions.innerHTML = `<div class="blora-alert blora-alert--danger">网络错误</div>`;
     }
+  }
+
+  function renderTm(hits) {
+    if (!els.tm || !els.tmList) return;
+    if (!hits.length) {
+      els.tm.hidden = true;
+      els.tmList.innerHTML = "";
+      return;
+    }
+    els.tm.hidden = false;
+    els.tmList.innerHTML = "";
+    hits.forEach((h) => {
+      const row = document.createElement("div");
+      row.className = "tm-hit";
+      const matchLabel =
+        h.match === "exact" ? "完全匹配" : h.match === "contains" ? "包含" : "被包含";
+      row.innerHTML = `
+        <div class="tm-hit__score">${h.score}%</div>
+        <div class="tm-hit__body">
+          <div class="tm-hit__src"></div>
+          <div class="tm-hit__dst"></div>
+          <div class="tm-hit__meta blora-text-faint u-text-xs"></div>
+        </div>
+        <button type="button" class="blora-btn blora-btn--ghost blora-btn--xs" data-use>采用</button>
+      `;
+      row.querySelector(".tm-hit__src").textContent = h.sourceText;
+      row.querySelector(".tm-hit__dst").textContent = h.translation;
+      row.querySelector(".tm-hit__meta").textContent =
+        `${matchLabel} · ${h.filePath} · ${h.keyPath}`;
+      const use = row.querySelector("[data-use]");
+      if (!canEdit) {
+        use.hidden = true;
+      } else {
+        use.addEventListener("click", () => {
+          els.draft.value = h.translation;
+          els.draft.focus();
+          toast?.("success", "已采用 TM 译文，请保存建议");
+        });
+      }
+      els.tmList.appendChild(row);
+    });
   }
 
   function renderGlossary(hits) {

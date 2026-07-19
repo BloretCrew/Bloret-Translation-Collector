@@ -20,11 +20,15 @@
           <% if (canExport && targetLocales.length) { %>
             <div class="blora-dropdown">
               <button type="button" class="blora-btn blora-btn--outline" data-blora-dropdown-trigger>导出 ▾</button>
-              <div class="blora-dropdown-menu">
+              <div class="blora-dropdown-menu export-menu">
                 <% targetLocales.forEach(function (locale) { %>
-                  <a class="blora-dropdown-menu__item" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= locale %>">
-                    <%= localeLabel(locale) %>
-                  </a>
+                  <div class="export-menu__group">
+                    <div class="export-menu__locale"><%= localeLabel(locale) %></div>
+                    <a class="blora-dropdown-menu__item" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= locale %>&mode=approved">仅已批准</a>
+                    <a class="blora-dropdown-menu__item" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= locale %>&mode=top_voted">已批准+最高票</a>
+                    <a class="blora-dropdown-menu__item" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= locale %>&mode=source">缺省用源文</a>
+                    <a class="blora-dropdown-menu__item" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= locale %>&mode=empty">缺省留空</a>
+                  </div>
                 <% }) %>
               </div>
             </div>
