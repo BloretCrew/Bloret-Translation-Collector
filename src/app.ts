@@ -20,7 +20,8 @@ export function createApp() {
   app.set("views", path.join(root, "views"));
   app.set("trust proxy", 1);
 
-  app.use(express.json({ limit: "2mb" }));
+  // 5mb: context screenshot uploads arrive as base64 data URLs
+  app.use(express.json({ limit: "5mb" }));
   app.use(express.urlencoded({ extended: false }));
   app.use(sessionMiddleware);
 
@@ -53,6 +54,11 @@ export function createApp() {
   });
 
   app.use(express.static(path.join(root, "public"), { maxAge: "1d" }));
+  // uploaded context screenshots
+  app.use(
+    "/uploads",
+    express.static(path.join(root, "public", "uploads"), { maxAge: "7d" }),
+  );
 
   app.use(authRouter);
   app.use("/api", apiRouter);

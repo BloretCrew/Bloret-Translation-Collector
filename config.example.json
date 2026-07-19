@@ -16,5 +16,11 @@
     "appSecret": "",
     "baseUrl": "https://passport.bloret.net",
     "redirectUri": "http://localhost:3000/auth/callback"
+  },
+  "mt": {
+    "enabled": false,
+    "endpoint": "http://127.0.0.1:5000/translate",
+    "apiKey": "",
+    "defaultSource": "auto"
   }
 }

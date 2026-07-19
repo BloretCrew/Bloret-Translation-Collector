@@ -40,6 +40,22 @@ const configSchema = z.object({
       baseUrl: "https://passport.bloret.net",
       redirectUri: "http://localhost:3000/auth/callback",
     }),
+  /** Optional machine translation (LibreTranslate-compatible HTTP API) */
+  mt: z
+    .object({
+      enabled: z.boolean().default(false),
+      /** e.g. https://libretranslate.com/translate */
+      endpoint: z.string().default(""),
+      apiKey: z.string().default(""),
+      /** source language code sent to MT when not auto */
+      defaultSource: z.string().default("auto"),
+    })
+    .default({
+      enabled: false,
+      endpoint: "",
+      apiKey: "",
+      defaultSource: "auto",
+    }),
 });
 
 export type DatabaseConfig = z.infer<typeof databaseSchema>;

@@ -1,6 +1,6 @@
 /**
  * Crowdin-style collaboration editor:
- * suggestions · vote · approve · comments · use-as-mine
+ * suggestions · vote · approve · comments · MT · contexts · assign · TM
  */
 (function () {
   const root = document.getElementById("translation-editor");
@@ -13,6 +13,11 @@
   let locale = root.dataset.locale;
   const canEdit = root.dataset.canEdit === "1";
   const canApprove = root.dataset.canApprove === "1";
+  const urlFocus =
+    root.dataset.focusString ||
+    new URLSearchParams(location.search).get("string") ||
+    "";
+  let pendingFocus = urlFocus || null;
 
   const els = {
     file: document.getElementById("editor-file"),
@@ -34,6 +39,8 @@
     saveHint: document.getElementById("editor-save-hint"),
     saveBtn: document.getElementById("editor-save-suggestion"),
     deleteBtn: document.getElementById("editor-delete-suggestion"),
+    mtBtn: document.getElementById("editor-mt"),
+    assignBtn: document.getElementById("editor-assign-task"),
     prev: document.getElementById("editor-prev"),
     next: document.getElementById("editor-next"),
     suggestions: document.getElementById("editor-suggestions"),
@@ -45,6 +52,11 @@
     glossaryList: document.getElementById("editor-glossary-list"),
     tm: document.getElementById("editor-tm"),
     tmList: document.getElementById("editor-tm-list"),
+    contexts: document.getElementById("editor-contexts"),
+    contextsList: document.getElementById("editor-contexts-list"),
+    contextFile: document.getElementById("editor-context-file"),
+    contextCaption: document.getElementById("editor-context-caption"),
+    contextUpload: document.getElementById("editor-context-upload"),
   };
 
   let strings = [];
@@ -52,6 +64,7 @@
   let activeId = null;
   let detail = null;
   let saving = false;
+  let mtBusy = false;
 
   function showError(msg) {
     if (!msg) {
@@ -158,11 +171,20 @@
         return;
       }
       els.body.hidden = false;
-      if (!activeId || !strings.some((s) => s.id === activeId)) {
-        await selectString(strings[0].id);
+      let pick = null;
+      if (pendingFocus && strings.some((s) => s.id === pendingFocus)) {
+        pick = pendingFocus;
+        pendingFocus = null;
+      } else if (activeId && strings.some((s) => s.id === activeId)) {
+        pick = activeId;
       } else {
+        pick = strings[0].id;
+      }
+      if (pick === activeId) {
         renderList();
         await loadDetail(activeId);
+      } else {
+        await selectString(pick);
       }
     } catch {
       showError("网络错误");
@@ -216,8 +238,198 @@
       renderComments(data.comments || [], data);
       renderGlossary(data.glossaryHits || []);
       renderTm(data.tmHits || []);
+      renderContexts(data.contexts || [], data);
+      updateExtrasUi(data);
     } catch {
       els.suggestions.innerHTML = `<div class="blora-alert blora-alert--danger">网络错误</div>`;
+    }
+  }
+
+  function updateExtrasUi(data) {
+    if (els.mtBtn) {
+      els.mtBtn.hidden = !(canEdit && data.mtEnabled);
+    }
+    if (els.assignBtn) {
+      els.assignBtn.hidden = !data.canManage;
+    }
+  }
+
+  function renderContexts(contexts, data) {
+    if (!els.contexts || !els.contextsList) return;
+    const canUpload = canEdit || data.canManage;
+    els.contexts.hidden = false;
+    if (els.contextFile) els.contextFile.hidden = !canUpload;
+    if (els.contextCaption) els.contextCaption.hidden = !canUpload;
+    if (els.contextUpload) els.contextUpload.hidden = !canUpload;
+
+    els.contextsList.innerHTML = "";
+    if (!contexts.length) {
+      els.contextsList.innerHTML = `<div class="blora-text-faint u-text-xs">暂无截图语境</div>`;
+      return;
+    }
+    contexts.forEach((c) => {
+      const card = document.createElement("div");
+      card.className = "context-shot";
+      card.innerHTML = `
+        <a class="context-shot__link" target="_blank" rel="noopener">
+          <img class="context-shot__img" alt="" />
+        </a>
+        <div class="context-shot__meta">
+          <div class="context-shot__caption"></div>
+          <div class="context-shot__by blora-text-faint u-text-xs"></div>
+        </div>
+        <div class="context-shot__actions"></div>
+      `;
+      const img = card.querySelector(".context-shot__img");
+      const link = card.querySelector(".context-shot__link");
+      img.src = c.imageUrl;
+      img.alt = c.caption || "截图语境";
+      link.href = c.imageUrl;
+      card.querySelector(".context-shot__caption").textContent = c.caption || "";
+      card.querySelector(".context-shot__by").textContent = c.username
+        ? `by ${c.username}`
+        : "";
+      if (data.canManage) {
+        const del = document.createElement("button");
+        del.type = "button";
+        del.className = "blora-btn blora-btn--ghost blora-btn--xs";
+        del.textContent = "删除";
+        del.addEventListener("click", () => deleteContext(c.id));
+        card.querySelector(".context-shot__actions").appendChild(del);
+      }
+      els.contextsList.appendChild(card);
+    });
+  }
+
+  function readFileAsDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => reject(new Error("读取文件失败"));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  async function uploadContext() {
+    if (!activeId || !els.contextFile?.files?.length) {
+      toast?.("error", "请选择图片");
+      return;
+    }
+    const file = els.contextFile.files[0];
+    if (!file.type.startsWith("image/")) {
+      toast?.("error", "仅支持图片");
+      return;
+    }
+    try {
+      const dataUrl = await readFileAsDataUrl(file);
+      const caption = els.contextCaption?.value?.trim() || null;
+      const { res, data } = await json(
+        `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/strings/${activeId}/contexts`,
+        {
+          method: "POST",
+          body: JSON.stringify({ imageBase64: dataUrl, caption }),
+        },
+      );
+      if (!res.ok) {
+        toast?.("error", data.error || "上传失败");
+        return;
+      }
+      if (els.contextFile) els.contextFile.value = "";
+      if (els.contextCaption) els.contextCaption.value = "";
+      toast?.("success", "截图已上传");
+      await loadDetail(activeId);
+    } catch {
+      toast?.("error", "上传失败");
+    }
+  }
+
+  async function deleteContext(id) {
+    if (!confirm("删除这张截图？")) return;
+    try {
+      const { res, data } = await json(
+        `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/contexts/${id}`,
+        { method: "DELETE" },
+      );
+      if (!res.ok) {
+        toast?.("error", data.error || "删除失败");
+        return;
+      }
+      if (activeId) await loadDetail(activeId);
+    } catch {
+      toast?.("error", "网络错误");
+    }
+  }
+
+  async function runMachineTranslate() {
+    if (!canEdit || !activeId || mtBusy) return;
+    const text = (els.source?.textContent || "").trim();
+    if (!text) {
+      toast?.("error", "源文为空");
+      return;
+    }
+    mtBusy = true;
+    if (els.mtBtn) {
+      els.mtBtn.disabled = true;
+      els.mtBtn.textContent = "翻译中…";
+    }
+    try {
+      const { res, data } = await json(
+        `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/mt`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            text,
+            targetLocale: locale,
+            sourceLocale: detail?.sourceLocale,
+            stringId: activeId,
+            asSuggestion: false,
+          }),
+        },
+      );
+      if (!res.ok) {
+        toast?.("error", data.error || "机器翻译失败");
+        return;
+      }
+      els.draft.value = data.text || "";
+      els.draft.focus();
+      toast?.("success", "已填入机器译文，请检查后保存建议");
+    } catch {
+      toast?.("error", "网络错误");
+    } finally {
+      mtBusy = false;
+      if (els.mtBtn) {
+        els.mtBtn.disabled = false;
+        els.mtBtn.textContent = "机器翻译";
+      }
+    }
+  }
+
+  async function assignTask() {
+    if (!activeId || !detail?.canManage) return;
+    const username = window.prompt("指派给（用户名）：");
+    if (!username || !username.trim()) return;
+    const note = window.prompt("备注（可选）：") || "";
+    try {
+      const { res, data } = await json(
+        `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/tasks`,
+        {
+          method: "POST",
+          body: JSON.stringify({
+            locale,
+            username: username.trim(),
+            stringId: activeId,
+            fileId,
+            note: note.trim() || null,
+          }),
+        },
+      );
+      if (!res.ok) {
+        toast?.("error", data.error || "指派失败");
+        return;
+      }
+      toast?.("success", `已指派给 ${username.trim()}`);
+    } catch {
+      toast?.("error", "网络错误");
     }
   }
 
@@ -590,6 +802,9 @@
   els.refresh?.addEventListener("click", () => loadList());
   els.saveBtn?.addEventListener("click", () => saveSuggestion());
   els.deleteBtn?.addEventListener("click", () => deleteSuggestion());
+  els.mtBtn?.addEventListener("click", () => runMachineTranslate());
+  els.assignBtn?.addEventListener("click", () => assignTask());
+  els.contextUpload?.addEventListener("click", () => uploadContext());
   els.prev?.addEventListener("click", () => navigate(-1));
   els.next?.addEventListener("click", () => navigate(1));
   els.commentSend?.addEventListener("click", () => sendComment());

@@ -322,6 +322,51 @@ export const projectLocaleAssignees = pgTable(
   ],
 );
 
+export const taskStatusEnum = pgEnum("task_status", ["todo", "doing", "done"]);
+
+/** Crowdin-style work items: assign string×locale (or whole file×locale) to a user */
+export const translationTasks = pgTable(
+  "translation_tasks",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    locale: text("locale").notNull(),
+    stringId: uuid("string_id").references(() => stringUnits.id, { onDelete: "cascade" }),
+    fileId: uuid("file_id").references(() => sourceFiles.id, { onDelete: "cascade" }),
+    assigneeId: uuid("assignee_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    status: taskStatusEnum("status").notNull().default("todo"),
+    note: text("note"),
+    createdBy: uuid("created_by").references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("translation_tasks_assignee_idx").on(t.assigneeId),
+    index("translation_tasks_project_locale_idx").on(t.projectId, t.locale),
+  ],
+);
+
+/** Screenshot / context image attached to a source string */
+export const stringContexts = pgTable(
+  "string_contexts",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    stringId: uuid("string_id")
+      .notNull()
+      .references(() => stringUnits.id, { onDelete: "cascade" }),
+    /** Public URL path e.g. /uploads/contexts/xxx.png */
+    imageUrl: text("image_url").notNull(),
+    caption: text("caption"),
+    uploadedBy: uuid("uploaded_by").references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index("string_contexts_string_idx").on(t.stringId)],
+);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   memberships: many(organizationMembers),
@@ -477,3 +522,5 @@ export type StringUnit = typeof stringUnits.$inferSelect;
 export type Translation = typeof translations.$inferSelect;
 export type TranslationSuggestion = typeof translationSuggestions.$inferSelect;
 export type MemberRole = (typeof memberRoleEnum.enumValues)[number];
+export type TranslationTask = typeof translationTasks.$inferSelect;
+export type StringContext = typeof stringContexts.$inferSelect;

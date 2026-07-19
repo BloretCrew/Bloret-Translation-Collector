@@ -81,11 +81,11 @@
                     </td>
                     <td>
                       <div class="blora-row u-gap-1">
-                        <% if (defaultFile && canEdit) { %>
-                          <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= defaultFile %>&locale=<%= p.locale %>">翻译</a>
+                        <% if (defaultFile) { %>
+                          <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= defaultFile %>&locale=<%= p.locale %>">进入工作台</a>
                         <% } %>
                         <% if (canExport) { %>
-                          <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= p.locale %>">导出</a>
+                          <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= p.locale %>&mode=approved">导出</a>
                         <% } %>
                       </div>
                     </td>

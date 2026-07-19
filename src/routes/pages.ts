@@ -50,6 +50,30 @@ pagesRouter.get("/", async (req, res, next) => {
 
 pagesRouter.use("/app", requirePageAuth);
 
+pagesRouter.get("/app/tasks", async (req, res, next) => {
+  try {
+    const session = requireSession(req)!;
+    const { listMyTasks } = await import("@/lib/services/tasks");
+    const raw = await listMyTasks(session.userId!, true);
+    const orgIds = [...new Set(raw.map((t) => t.orgId))] as string[];
+    const orgs =
+      orgIds.length === 0
+        ? []
+        : await db
+            .select({ id: organizations.id, slug: organizations.slug })
+            .from(organizations)
+            .where(inArray(organizations.id, orgIds));
+    const slugByOrg = new Map(orgs.map((o) => [o.id, o.slug]));
+    const tasks = raw.map((t) => ({
+      ...t,
+      orgSlug: slugByOrg.get(t.orgId) ?? "",
+    }));
+    return res.render("app/tasks", { title: "我的任务", tasks });
+  } catch (e) {
+    next(e);
+  }
+});
+
 pagesRouter.get("/app", async (req, res, next) => {
   try {
     const session = requireSession(req)!;
@@ -396,6 +420,7 @@ pagesRouter.get("/app/o/:org/p/:project/translate", async (req, res, next) => {
 
     const fileIdParam = typeof req.query.file === "string" ? req.query.file : null;
     const localeParam = typeof req.query.locale === "string" ? req.query.locale : null;
+    const stringParam = typeof req.query.string === "string" ? req.query.string : null;
     const fileId =
       fileIdParam && files.some((f) => f.id === fileIdParam) ? fileIdParam : files[0]!.id;
     const locale =
@@ -411,6 +436,7 @@ pagesRouter.get("/app/o/:org/p/:project/translate", async (req, res, next) => {
       locales,
       fileId,
       locale,
+      focusString: stringParam,
       canEdit: canEditTranslations(access.role),
       canApprove: canApproveTranslations(access.role),
     });

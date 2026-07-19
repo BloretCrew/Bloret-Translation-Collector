@@ -8,6 +8,7 @@
   <div class="blora-navbar__menu">
     <% if (session && session.isLoggedIn) { %>
       <a class="blora-navbar__link" href="/app">我的组织</a>
+      <a class="blora-navbar__link" href="/app/tasks">我的任务</a>
       <div class="blora-dropdown">
         <button class="blora-btn blora-btn--ghost blora-btn--sm" data-blora-dropdown-trigger type="button">
           <% if (session.avatarUrl) { %>
@@ -22,6 +23,7 @@
         </button>
         <div class="blora-dropdown-menu">
           <a class="blora-dropdown-menu__item" href="/app">工作台</a>
+          <a class="blora-dropdown-menu__item" href="/app/tasks">我的任务</a>
           <div class="blora-dropdown-menu__sep"></div>
           <a class="blora-dropdown-menu__item" href="/auth/logout">退出登录</a>
         </div>

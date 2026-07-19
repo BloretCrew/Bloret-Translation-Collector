@@ -30,6 +30,7 @@
         data-project-slug="<%= projectSlug %>"
         data-file-id="<%= fileId %>"
         data-locale="<%= locale %>"
+        data-focus-string="<%= typeof focusString !== 'undefined' && focusString ? focusString : '' %>"
         data-can-edit="<%= canEdit ? '1' : '0' %>"
         data-can-approve="<%= typeof canApprove !== 'undefined' && canApprove ? '1' : '0' %>"
       >
@@ -90,6 +91,16 @@
                 <div class="blora-panel" id="editor-source"></div>
               </div>
 
+              <div class="context-shots u-mt-3" id="editor-contexts" hidden>
+                <div class="blora-text-caps blora-text-faint">截图语境</div>
+                <div id="editor-contexts-list" class="context-shots__list"></div>
+                <div class="blora-row u-mt-2" style="flex-wrap:wrap;gap:8px;align-items:center">
+                  <input type="file" id="editor-context-file" accept="image/*" class="blora-input" style="max-width:16rem" />
+                  <input type="text" id="editor-context-caption" class="blora-input" placeholder="说明（可选）" style="max-width:12rem" />
+                  <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" id="editor-context-upload">上传截图</button>
+                </div>
+              </div>
+
               <div class="glossary-hits u-mt-3" id="editor-glossary" hidden>
                 <div class="blora-text-caps blora-text-faint">术语提示</div>
                 <div id="editor-glossary-list" class="glossary-hits__list"></div>
@@ -109,13 +120,15 @@
                 </span>
                 <textarea class="blora-textarea" id="editor-draft" rows="4" <%= canEdit ? '' : 'readonly' %>></textarea>
               </label>
-              <div class="blora-row u-mt-2">
+              <div class="blora-row u-mt-2" style="flex-wrap:wrap;gap:8px">
                 <% if (canEdit) { %>
                   <button type="button" class="blora-btn blora-btn--primary blora-btn--sm" id="editor-save-suggestion">保存建议</button>
+                  <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" id="editor-mt" hidden>机器翻译</button>
                   <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm" id="editor-delete-suggestion">删除我的建议</button>
                 <% } %>
                 <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" id="editor-prev">上一条</button>
                 <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" id="editor-next">下一条</button>
+                <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" id="editor-assign-task" hidden>指派任务</button>
               </div>
 
               <div class="collab-suggestions u-mt-4">

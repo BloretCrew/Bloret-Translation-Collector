@@ -49,3 +49,7 @@ drizzle/meta
 
 # local postgres data (if any)
 .pgdata/
+
+# user-uploaded context screenshots (keep directory)
+/public/uploads/**
+!/public/uploads/.gitkeep

@@ -23,12 +23,14 @@ import {
   canSuggestTranslations,
   canVoteSuggestions,
 } from "@/lib/permissions/roles";
-import { isLocaleAssignee } from "@/lib/services/glossary";
 import {
+  isLocaleAssignee,
   listGlossary,
   matchGlossaryTerms,
 } from "@/lib/services/glossary";
 import { lookupTranslationMemory } from "@/lib/services/tm";
+import { listContexts } from "@/lib/services/contexts";
+import { isMtEnabled } from "@/lib/services/mt";
 import {
   addComment,
   approveSuggestion,
@@ -166,6 +168,7 @@ collaborationRouter.get(
         excludeStringId: unit.id,
         limit: 6,
       });
+      const contexts = await listContexts(unit.id);
 
       const localeProofreader = await isLocaleAssignee(
         access.project.id,
@@ -187,10 +190,14 @@ collaborationRouter.get(
         comments,
         glossaryHits,
         tmHits,
+        contexts,
+        mtEnabled: isMtEnabled(),
+        sourceLocale: access.project.sourceLocale,
         canSuggest: canSuggestTranslations(access.role),
         canVote: canVoteSuggestions(access.role),
         canApprove,
         canComment: true,
+        canManage: canManageProjects(access.role),
       });
     } catch (err) {
       next(err);
@@ -347,12 +354,15 @@ async function putSuggestion(req: import("express").Request, res: import("expres
   const session = requireSession(req);
   if (!session) return unauthorized(res);
 
+  const orgSlug = String(req.params.orgSlug ?? "");
+  const projectSlug = String(req.params.projectSlug ?? "");
+  const stringId = String(req.params.stringId ?? "");
   const localeParsed = localeSchema.safeParse(req.params.locale);
   if (!localeParsed.success) return jsonError(res, "无效语言代码");
 
   const access = await requireProjectAccess(
-    req.params.orgSlug,
-    req.params.projectSlug,
+    orgSlug,
+    projectSlug,
     session.userId!,
     "translator",
   );
@@ -362,7 +372,7 @@ async function putSuggestion(req: import("express").Request, res: import("expres
   }
   if (!canSuggestTranslations(access.role)) return forbidden(res);
 
-  const unit = await assertStringInProject(access.project.id, req.params.stringId);
+  const unit = await assertStringInProject(access.project.id, stringId);
   if (!unit) return notFound(res, "字符串不存在");
 
   const parsed = saveSuggestionSchema.safeParse(req.body);
