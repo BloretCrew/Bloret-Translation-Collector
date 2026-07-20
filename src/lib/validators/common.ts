@@ -150,4 +150,6 @@ export const saveSuggestionSchema = z.object({
 
 export const stringCommentSchema = z.object({
   body: z.string().min(1).max(5_000),
+  /** Reply under an existing top-level comment (same string × locale). */
+  parentId: z.string().uuid().optional().nullable(),
 });

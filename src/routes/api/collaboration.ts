@@ -298,15 +298,22 @@ collaborationRouter.post(
       const parsed = stringCommentSchema.safeParse(req.body);
       if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
 
-      const row = await addComment({
+      const result = await addComment({
         stringId: unit.id,
         locale: localeParsed.data,
         userId: session.userId!,
         body: parsed.data.body,
+        parentId: parsed.data.parentId ?? null,
       });
+      if (!result.ok) {
+        if (result.error === "parent_not_found") return notFound(res, "回复的评论不存在");
+        return jsonError(res, "只能回复同一字符串下的评论");
+      }
+      const row = result.row;
       return jsonCreated(res, {
         id: row.id,
         body: row.body,
+        parentId: row.parentId,
         authorId: row.authorId,
         createdAt: row.createdAt,
       });

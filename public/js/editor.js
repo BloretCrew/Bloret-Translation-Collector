@@ -1115,6 +1115,94 @@
     });
   }
 
+  /**
+   * Build one comment card (top-level or reply).
+   * @param {object} c
+   * @param {{ isReply?: boolean }} [opts]
+   */
+  function buildCommentNode(c, opts = {}) {
+    const item = document.createElement("div");
+    item.className = opts.isReply ? "collab-comment collab-comment--reply" : "collab-comment";
+    item.dataset.commentId = c.id;
+    item.innerHTML = `
+      <div class="collab-comment__meta">
+        <strong class="collab-comment__author"></strong>
+        <span class="collab-comment__time"></span>
+      </div>
+      <div class="collab-comment__body"></div>
+      <div class="collab-comment__actions"></div>
+    `;
+    item.querySelector(".collab-comment__author").textContent = c.authorUsername;
+    item.querySelector(".collab-comment__time").textContent = formatTime(c.createdAt);
+    item.querySelector(".collab-comment__body").textContent = c.body;
+    const actions = item.querySelector(".collab-comment__actions");
+
+    // Replies only on root comments (one-level thread).
+    if (!opts.isReply) {
+      const replyBtn = document.createElement("button");
+      replyBtn.type = "button";
+      replyBtn.className = "blora-btn blora-btn--ghost blora-btn--xs";
+      replyBtn.textContent = "回复";
+      replyBtn.addEventListener("click", () => toggleReplyForm(item, c));
+      actions.appendChild(replyBtn);
+    }
+
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "blora-btn blora-btn--ghost blora-btn--xs";
+    del.textContent = "删除";
+    del.addEventListener("click", () => deleteComment(c.id));
+    actions.appendChild(del);
+    return item;
+  }
+
+  function toggleReplyForm(rootItem, parentComment) {
+    const existing = rootItem.querySelector(".collab-comment__reply-form");
+    if (existing) {
+      existing.remove();
+      return;
+    }
+    // Close other open reply forms
+    els.comments?.querySelectorAll(".collab-comment__reply-form").forEach((el) => el.remove());
+
+    const form = document.createElement("div");
+    form.className = "collab-comment__reply-form";
+    form.innerHTML = `
+      <textarea class="blora-textarea collab-comment__reply-body" rows="2" placeholder="回复 ${escapeAttr(parentComment.authorUsername)}…"></textarea>
+      <div class="collab-comment__reply-actions">
+        <button type="button" class="blora-btn blora-btn--secondary blora-btn--xs collab-comment__reply-send">发送</button>
+        <button type="button" class="blora-btn blora-btn--ghost blora-btn--xs collab-comment__reply-cancel">取消</button>
+      </div>
+    `;
+    const ta = form.querySelector(".collab-comment__reply-body");
+    form.querySelector(".collab-comment__reply-cancel").addEventListener("click", () => form.remove());
+    form.querySelector(".collab-comment__reply-send").addEventListener("click", () => {
+      sendComment({ parentId: parentComment.id, bodyEl: ta, onDone: () => form.remove() });
+    });
+    ta.addEventListener("keydown", (e) => {
+      if (matchAction(e, "sendComment")) {
+        e.preventDefault();
+        sendComment({ parentId: parentComment.id, bodyEl: ta, onDone: () => form.remove() });
+      }
+    });
+    // Place form after actions, before replies list
+    const replies = rootItem.querySelector(".collab-comment__replies");
+    if (replies) {
+      rootItem.insertBefore(form, replies);
+    } else {
+      rootItem.appendChild(form);
+    }
+    ta.focus();
+  }
+
+  function escapeAttr(s) {
+    return String(s ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/"/g, "&quot;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;");
+  }
+
   function renderComments(comments, data) {
     if (!els.comments) return;
     els.comments.innerHTML = "";
@@ -1122,26 +1210,34 @@
       els.comments.innerHTML = `<div class="blora-text-faint u-text-sm">暂无讨论</div>`;
       return;
     }
+
+    const roots = [];
+    const byParent = new Map();
     comments.forEach((c) => {
-      const item = document.createElement("div");
-      item.className = "collab-comment";
-      item.innerHTML = `
-        <div class="collab-comment__meta">
-          <strong class="collab-comment__author"></strong>
-          <span class="collab-comment__time"></span>
-        </div>
-        <div class="collab-comment__body"></div>
-        <div class="collab-comment__actions"></div>
-      `;
-      item.querySelector(".collab-comment__author").textContent = c.authorUsername;
-      item.querySelector(".collab-comment__time").textContent = formatTime(c.createdAt);
-      item.querySelector(".collab-comment__body").textContent = c.body;
-      const del = document.createElement("button");
-      del.type = "button";
-      del.className = "blora-btn blora-btn--ghost blora-btn--xs";
-      del.textContent = "删除";
-      del.addEventListener("click", () => deleteComment(c.id));
-      item.querySelector(".collab-comment__actions").appendChild(del);
+      if (c.parentId) {
+        if (!byParent.has(c.parentId)) byParent.set(c.parentId, []);
+        byParent.get(c.parentId).push(c);
+      } else {
+        roots.push(c);
+      }
+    });
+    const rootIds = new Set(roots.map((r) => r.id));
+    // Orphan replies (missing parent) surface as top-level
+    for (const [pid, list] of byParent) {
+      if (!rootIds.has(pid)) {
+        list.forEach((c) => roots.push(c));
+      }
+    }
+
+    roots.forEach((c) => {
+      const item = buildCommentNode(c, { isReply: false });
+      const replies = byParent.get(c.id) || [];
+      if (replies.length) {
+        const wrap = document.createElement("div");
+        wrap.className = "collab-comment__replies";
+        replies.forEach((r) => wrap.appendChild(buildCommentNode(r, { isReply: true })));
+        item.appendChild(wrap);
+      }
       els.comments.appendChild(item);
     });
   }
@@ -1267,27 +1363,35 @@
     }
   }
 
-  async function sendComment() {
-    if (!activeId || !els.commentBody) return;
-    const body = els.commentBody.value.trim();
+  /**
+   * @param {{ parentId?: string, bodyEl?: HTMLTextAreaElement, onDone?: () => void }} [opts]
+   */
+  async function sendComment(opts = {}) {
+    if (!activeId) return;
+    const bodyEl = opts.bodyEl || els.commentBody;
+    if (!bodyEl) return;
+    const body = bodyEl.value.trim();
     if (!body) {
       toast?.("error", "请输入评论内容");
       return;
     }
+    const payload = { body, locale };
+    if (opts.parentId) payload.parentId = opts.parentId;
     try {
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/strings/${activeId}/comments`,
         {
           method: "POST",
-          body: JSON.stringify({ body, locale }),
+          body: JSON.stringify(payload),
         },
       );
       if (!res.ok) {
         toast?.("error", data.error || "发送失败");
         return;
       }
-      els.commentBody.value = "";
-      toast?.("success", "评论已发送");
+      bodyEl.value = "";
+      opts.onDone?.();
+      toast?.("success", opts.parentId ? "回复已发送" : "评论已发送");
       await loadDetail(activeId);
     } catch {
       toast?.("error", "网络错误");

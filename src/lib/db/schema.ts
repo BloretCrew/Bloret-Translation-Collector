@@ -278,7 +278,7 @@ export const stringLocaleStates = pgTable(
   ],
 );
 
-/** Crowdin-style discussion on a string × locale */
+/** Crowdin-style discussion on a string × locale (optional parent = reply) */
 export const stringComments = pgTable(
   "string_comments",
   {
@@ -290,6 +290,8 @@ export const stringComments = pgTable(
     authorId: uuid("author_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    /** When set, this row is a reply under another comment (one-level thread). */
+    parentId: uuid("parent_id"),
     body: text("body").notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
@@ -297,6 +299,7 @@ export const stringComments = pgTable(
   (t) => [
     index("string_comments_string_locale_idx").on(t.stringId, t.locale),
     index("string_comments_author_idx").on(t.authorId),
+    index("string_comments_parent_idx").on(t.parentId),
   ],
 );
 
@@ -536,7 +539,7 @@ export const stringLocaleStatesRelations = relations(stringLocaleStates, ({ one 
   }),
 }));
 
-export const stringCommentsRelations = relations(stringComments, ({ one }) => ({
+export const stringCommentsRelations = relations(stringComments, ({ one, many }) => ({
   stringUnit: one(stringUnits, {
     fields: [stringComments.stringId],
     references: [stringUnits.id],
@@ -545,6 +548,12 @@ export const stringCommentsRelations = relations(stringComments, ({ one }) => ({
     fields: [stringComments.authorId],
     references: [users.id],
   }),
+  parent: one(stringComments, {
+    fields: [stringComments.parentId],
+    references: [stringComments.id],
+    relationName: "comment_replies",
+  }),
+  replies: many(stringComments, { relationName: "comment_replies" }),
 }));
 
 export type User = typeof users.$inferSelect;

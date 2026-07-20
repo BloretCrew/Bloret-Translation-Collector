@@ -154,15 +154,32 @@ describe("collaboration workflow", () => {
       );
     expect(count.length).toBe(2);
 
-    await addComment({
+    const root = await addComment({
       stringId: unit!.id,
       locale: "en",
       userId: userB!.id,
       body: "请注意大小写",
     });
+    expect(root.ok).toBe(true);
+    if (!root.ok) throw new Error("addComment failed");
+
+    const reply = await addComment({
+      stringId: unit!.id,
+      locale: "en",
+      userId: userA!.id,
+      body: "已按你的建议修改",
+      parentId: root.row.id,
+    });
+    expect(reply.ok).toBe(true);
+    if (!reply.ok) throw new Error("reply failed");
+    expect(reply.row.parentId).toBe(root.row.id);
+
     const comments = await listComments(unit!.id, "en");
-    expect(comments.length).toBe(1);
+    expect(comments.length).toBe(2);
     expect(comments[0]!.body).toBe("请注意大小写");
+    expect(comments[0]!.parentId).toBeNull();
+    expect(comments[1]!.body).toBe("已按你的建议修改");
+    expect(comments[1]!.parentId).toBe(root.row.id);
   });
 
   it("filters todo as untranslated + suggested (not approved)", async () => {

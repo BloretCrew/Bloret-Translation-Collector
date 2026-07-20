@@ -365,6 +365,7 @@ export async function listComments(stringId: string, locale: string) {
     .select({
       id: stringComments.id,
       body: stringComments.body,
+      parentId: stringComments.parentId,
       authorId: stringComments.authorId,
       authorUsername: users.username,
       authorAvatarUrl: users.avatarUrl,
@@ -381,17 +382,38 @@ export async function addComment(params: {
   locale: string;
   userId: string;
   body: string;
+  parentId?: string | null;
 }) {
+  let parentId: string | null = params.parentId ?? null;
+  if (parentId) {
+    const [parent] = await db
+      .select()
+      .from(stringComments)
+      .where(eq(stringComments.id, parentId))
+      .limit(1);
+    if (!parent) {
+      return { ok: false as const, error: "parent_not_found" as const };
+    }
+    if (parent.stringId !== params.stringId || parent.locale !== params.locale) {
+      return { ok: false as const, error: "parent_mismatch" as const };
+    }
+    // One-level threads only: replies attach to the root comment.
+    if (parent.parentId) {
+      parentId = parent.parentId;
+    }
+  }
+
   const [row] = await db
     .insert(stringComments)
     .values({
       stringId: params.stringId,
       locale: params.locale,
       authorId: params.userId,
+      parentId,
       body: params.body.trim(),
     })
     .returning();
-  return row!;
+  return { ok: true as const, row: row! };
 }
 
 export async function deleteComment(commentId: string, userId: string, canModerate: boolean) {
