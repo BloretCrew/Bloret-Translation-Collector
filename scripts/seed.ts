@@ -102,12 +102,21 @@ async function main() {
     .limit(1);
 
   if (!existingFile) {
+    const rawContent = JSON.stringify(sample, null, 2) + "\n";
     const [file] = await db
       .insert(schema.sourceFiles)
       .values({
         projectId: project!.id,
         path: "locales/common.json",
+        format: "json",
         rawSource: sample,
+        rawContent,
+        formatMeta: {
+          indent: 2,
+          trailingNewline: true,
+          newline: "\n",
+          bom: false,
+        },
         sourceRevision: 1,
         updatedBy: user!.id,
       })

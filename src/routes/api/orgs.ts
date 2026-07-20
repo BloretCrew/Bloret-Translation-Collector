@@ -31,6 +31,7 @@ import {
   updateMemberSchema,
   updateOrgSchema,
   updateProjectSchema,
+  uploadBatchSchema,
   uploadFileSchema,
 } from "@/lib/validators/common";
 import {
@@ -41,7 +42,10 @@ import {
   canUploadFiles,
 } from "@/lib/permissions/roles";
 import {
-  exportFileLocale,
+  buildProjectExport,
+  type ExportFilenameMode,
+  type ExportMode,
+  type ExportPack,
   getFileProgress,
   getProjectProgress,
   upsertSourceFile,
@@ -776,6 +780,93 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/files", async (req, res
   }
 });
 
+/** Batch upload / update multiple source files in one request. */
+orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/files/batch", async (req, res, next) => {
+  try {
+    const session = requireSession(req);
+    if (!session) return unauthorized(res);
+
+    const access = await requireProjectAccess(
+      req.params.orgSlug,
+      req.params.projectSlug,
+      session.userId!,
+      "manager",
+    );
+    if ("error" in access) {
+      if (access.error === "not_found") return notFound(res);
+      return forbidden(res);
+    }
+    if (!canUploadFiles(access.role)) return forbidden(res);
+
+    const parsed = uploadBatchSchema.safeParse(req.body);
+    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
+
+    // Validate all first (fail fast on parse errors)
+    const results: Array<
+      | {
+          path: string;
+          ok: true;
+          fileId: string;
+          revision: number;
+          stringCount: number;
+          orphanedCount: number;
+          warnings: string[];
+          unchanged?: boolean;
+          format?: string;
+        }
+      | { path: string; ok: false; error: string; warnings?: string[] }
+    > = [];
+
+    for (const file of parsed.data.files) {
+      const result = await upsertSourceFile({
+        projectId: access.project.id,
+        path: file.path,
+        content: file.content,
+        userId: session.userId!,
+      });
+      if ("error" in result && result.error) {
+        results.push({
+          path: file.path,
+          ok: false,
+          error: result.error,
+          warnings: "warnings" in result ? (result.warnings as string[]) : undefined,
+        });
+      } else {
+        const ok = result as {
+          fileId: string;
+          path: string;
+          revision: number;
+          stringCount: number;
+          orphanedCount: number;
+          warnings: string[];
+          unchanged?: boolean;
+          format?: string;
+        };
+        results.push({
+          path: file.path,
+          ok: true,
+          fileId: ok.fileId,
+          revision: ok.revision,
+          stringCount: ok.stringCount,
+          orphanedCount: ok.orphanedCount,
+          warnings: ok.warnings ?? [],
+          unchanged: ok.unchanged,
+          format: ok.format,
+        });
+      }
+    }
+
+    const failed = results.filter((r) => !r.ok).length;
+    const okCount = results.length - failed;
+    return jsonCreated(res, {
+      results,
+      summary: { total: results.length, ok: okCount, failed },
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 orgsRouter.get(
   "/v1/orgs/:orgSlug/projects/:projectSlug/files/:fileId",
   async (req, res, next) => {
@@ -877,7 +968,7 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects/:projectSlug/export", async (req, res
     const localeRaw = typeof req.query.locale === "string" ? req.query.locale : null;
     const fileId = typeof req.query.fileId === "string" ? req.query.fileId : null;
     // mode: approved | top_voted | source | empty  (legacy fallback=empty|source)
-    let mode: "approved" | "top_voted" | "source" | "empty" = "source";
+    let mode: ExportMode = "source";
     if (typeof req.query.mode === "string") {
       const m = req.query.mode;
       if (m === "approved" || m === "top_voted" || m === "source" || m === "empty") mode = m;
@@ -885,6 +976,19 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects/:projectSlug/export", async (req, res
       mode = "empty";
     } else if (req.query.fallback === "false") {
       mode = "empty";
+    }
+
+    // pack: file (single) | zip | bundle — multi-file default zip
+    let pack: ExportPack = "file";
+    if (typeof req.query.pack === "string") {
+      if (req.query.pack === "zip" || req.query.pack === "bundle" || req.query.pack === "file") {
+        pack = req.query.pack;
+      }
+    }
+
+    let filenameMode: ExportFilenameMode = "locale_suffix";
+    if (req.query.filename === "original" || req.query.filename === "locale_suffix") {
+      filenameMode = req.query.filename;
     }
 
     if (!localeRaw) return jsonError(res, "缺少 locale 参数");
@@ -902,7 +1006,11 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects/:projectSlug/export", async (req, res
     if (!lang) return jsonError(res, "语言未在项目中启用");
 
     let files = await db
-      .select()
+      .select({
+        id: sourceFiles.id,
+        path: sourceFiles.path,
+        format: sourceFiles.format,
+      })
       .from(sourceFiles)
       .where(eq(sourceFiles.projectId, access.project.id));
 
@@ -913,27 +1021,35 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects/:projectSlug/export", async (req, res
 
     if (files.length === 0) return jsonError(res, "项目中没有源文件");
 
-    if (files.length === 1) {
-      const result = await exportFileLocale(files[0]!.id, locale, mode);
-      if (!result) return notFound(res);
-      const filename = result.path.replace(/\.json$/i, "") + `.${locale}.json`;
-      res.setHeader("Content-Type", "application/json; charset=utf-8");
-      res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-      res.setHeader("X-Export-Mode", mode);
-      return res.status(200).send(JSON.stringify(result.data, null, 2));
+    // Multi-file: default to zip when pack not specified
+    if (files.length > 1 && typeof req.query.pack !== "string") {
+      pack = "zip";
+    }
+    // Single file with explicit pack=zip still zips; otherwise stream file body
+    if (files.length === 1 && typeof req.query.pack !== "string") {
+      pack = "file";
     }
 
-    const bundle: Record<string, unknown> = {};
-    for (const f of files) {
-      const result = await exportFileLocale(f.id, locale, mode);
-      if (result) bundle[result.path] = result.data;
-    }
+    const payload = await buildProjectExport({
+      files,
+      locale,
+      mode,
+      pack,
+      filenameMode,
+      projectSlug: req.params.projectSlug,
+    });
 
-    const filename = `${req.params.projectSlug}.${locale}.bundle.json`;
-    res.setHeader("Content-Type", "application/json; charset=utf-8");
-    res.setHeader("Content-Disposition", `attachment; filename="${filename}"`);
-    res.setHeader("X-Export-Mode", mode);
-    return res.status(200).send(JSON.stringify(bundle, null, 2));
+    if ("error" in payload) return jsonError(res, payload.error, 400);
+
+    res.setHeader("Content-Type", payload.contentType);
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename="${payload.downloadName.replace(/"/g, "")}"`,
+    );
+    res.setHeader("X-Export-Mode", payload.mode);
+    res.setHeader("X-Export-Pack", payload.pack);
+    res.setHeader("X-Export-Fidelity", payload.fidelity);
+    return res.status(200).send(payload.body);
   } catch (err) {
     next(err);
   }

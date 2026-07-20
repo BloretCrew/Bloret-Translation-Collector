@@ -1420,6 +1420,39 @@ button.is-btc-busy .loading-spinner {
   display: none !important;
 }
 
+.upload-file-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--blora-space-2);
+  padding: var(--blora-space-3);
+  border: var(--blora-border);
+  border-radius: var(--blora-radius-md, 8px);
+  background: var(--blora-surface-2, rgba(0, 0, 0, 0.03));
+}
+
+.upload-file-list__title {
+  font-size: 0.85rem;
+  color: var(--blora-text-muted, #666);
+  margin-bottom: 0.25rem;
+}
+
+.upload-file-list__row {
+  display: grid;
+  grid-template-columns: minmax(6rem, 10rem) 1fr;
+  gap: var(--blora-space-2);
+  align-items: center;
+}
+
+.export-menu__sub {
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--blora-text-faint, #999);
+  padding: 0.35rem 0.75rem 0.15rem;
+  margin-top: 0.25rem;
+}
+
 .app-section-head {
   display: flex;
   flex-wrap: wrap;

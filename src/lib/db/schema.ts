@@ -113,6 +113,14 @@ export const projectLanguages = pgTable(
   (t) => [uniqueIndex("project_languages_project_locale_uidx").on(t.projectId, t.locale)],
 );
 
+export type SourceFormatMeta = {
+  indent?: number | string;
+  trailingNewline?: boolean;
+  newline?: "\n" | "\r\n";
+  bom?: boolean;
+  extra?: Record<string, unknown>;
+};
+
 export const sourceFiles = pgTable(
   "source_files",
   {
@@ -124,6 +132,10 @@ export const sourceFiles = pgTable(
     format: text("format").notNull().default("json"),
     sourceRevision: integer("source_revision").notNull().default(1),
     rawSource: jsonb("raw_source").notNull().$type<Record<string, unknown>>(),
+    /** Original uploaded file text for fidelity-preserving export. */
+    rawContent: text("raw_content"),
+    /** Serialization style detected from the original file. */
+    formatMeta: jsonb("format_meta").$type<SourceFormatMeta>(),
     contentHash: text("content_hash"),
     orphanedKeys: jsonb("orphaned_keys").$type<string[]>().default([]),
     updatedBy: uuid("updated_by").references(() => users.id),

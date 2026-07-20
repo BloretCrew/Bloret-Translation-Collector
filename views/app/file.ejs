@@ -69,7 +69,7 @@
                           <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= file.id %>&locale=<%= p.locale %>">翻译</a>
                         <% } %>
                         <% if (canExport) { %>
-                          <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= p.locale %>&fileId=<%= file.id %>">导出</a>
+                          <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= p.locale %>&fileId=<%= file.id %>&mode=approved">导出</a>
                         <% } %>
                       </div>
                     </td>

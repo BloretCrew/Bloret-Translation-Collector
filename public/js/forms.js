@@ -271,20 +271,97 @@
     });
   }
 
-  // Upload file
+  // Upload file(s) — single or multi via batch API
   const uploadForm = document.getElementById("upload-file-form");
   if (uploadForm) {
     const pick = document.getElementById("file-pick");
     const pathEl = document.getElementById("file-path");
     const contentEl = document.getElementById("file-content");
-    pick?.addEventListener("change", async () => {
-      const file = pick.files?.[0];
-      if (!file) return;
-      contentEl.value = await file.text();
-      if (!pathEl.value || pathEl.value === "locales/common.json") {
-        pathEl.value = file.name.endsWith(".json") ? file.name : `${file.name}.json`;
+    const listEl = document.getElementById("upload-file-list");
+    const singlePathField = document.getElementById("single-path-field");
+    /** @type {{ path: string, content: string, name: string }[]} */
+    let pendingFiles = [];
+
+    function safePathFromName(name) {
+      const base = name.replace(/\\/g, "/").split("/").pop() || name;
+      const cleaned = base.replace(/[^a-zA-Z0-9_./-]/g, "_");
+      if (/\.(json|properties)$/i.test(cleaned)) return cleaned;
+      return `${cleaned}.json`;
+    }
+
+    function renderFileList() {
+      if (!listEl) return;
+      if (pendingFiles.length <= 1) {
+        listEl.hidden = true;
+        listEl.innerHTML = "";
+        if (singlePathField) singlePathField.hidden = false;
+        return;
       }
+      if (singlePathField) singlePathField.hidden = true;
+      listEl.hidden = false;
+      listEl.innerHTML =
+        '<div class="upload-file-list__title">将上传 ' +
+        pendingFiles.length +
+        " 个文件：</div>" +
+        pendingFiles
+          .map(
+            (f, i) =>
+              `<label class="upload-file-list__row">` +
+              `<span class="blora-text-mono u-text-xs">${escapeHtml(f.name)}</span>` +
+              `<input class="blora-input blora-input--sm" data-pending-path="${i}" value="${escapeHtml(f.path)}" />` +
+              `</label>`,
+          )
+          .join("");
+      listEl.querySelectorAll("[data-pending-path]").forEach((input) => {
+        input.addEventListener("change", () => {
+          const idx = Number(input.getAttribute("data-pending-path"));
+          if (pendingFiles[idx]) pendingFiles[idx].path = input.value.trim();
+        });
+      });
+    }
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/"/g, "&quot;");
+    }
+
+    pick?.addEventListener("change", async () => {
+      const files = pick.files ? Array.from(pick.files) : [];
+      pendingFiles = [];
+      for (const file of files) {
+        const content = await file.text();
+        pendingFiles.push({
+          name: file.name,
+          path: safePathFromName(file.name),
+          content,
+        });
+      }
+      if (pendingFiles.length === 1) {
+        const f = pendingFiles[0];
+        if (contentEl) contentEl.value = f.content;
+        if (pathEl) {
+          if (!pathEl.value || pathEl.value === "locales/common.json") {
+            pathEl.value = f.path.startsWith("locales/") ? f.path : f.path;
+          } else {
+            // keep user path if customized; still update content
+          }
+          // Prefer picked filename when default path
+          if (pathEl.value === "locales/common.json" || !pathEl.value) {
+            pathEl.value = f.path.includes("/") ? f.path : `locales/${f.path}`;
+          }
+        }
+      } else if (pendingFiles.length > 1) {
+        if (contentEl) contentEl.value = "";
+        pendingFiles = pendingFiles.map((f) => ({
+          ...f,
+          path: f.path.includes("/") ? f.path : f.path,
+        }));
+      }
+      renderFileList();
     });
+
     uploadForm.addEventListener("submit", async (e) => {
       e.preventDefault();
       const orgSlug = uploadForm.dataset.orgSlug;
@@ -297,33 +374,110 @@
         warn.hidden = true;
         warn.innerHTML = "";
       }
-      if (!contentEl.value.trim()) {
-        showError(err, "请选择 JSON 文件或粘贴内容");
-        return;
-      }
-      if (!pathEl.value.trim()) {
-        showError(err, "请填写项目内路径");
-        return;
-      }
-      setButtonBusy(btn, true, { busyLabel: "上传中..." });
-      try {
-        const { res, data } = await json(`/api/v1/orgs/${orgSlug}/projects/${projectSlug}/files`, {
-          method: "POST",
-          body: JSON.stringify({ path: pathEl.value, content: contentEl.value }),
+
+      // Sync multi path inputs
+      if (listEl && pendingFiles.length > 1) {
+        listEl.querySelectorAll("[data-pending-path]").forEach((input) => {
+          const idx = Number(input.getAttribute("data-pending-path"));
+          if (pendingFiles[idx]) pendingFiles[idx].path = input.value.trim();
         });
-        if (!res.ok) {
-          showError(err, data.error || "上传失败");
+      }
+
+      /** @type {{ path: string, content: string }[]} */
+      let payloadFiles = [];
+      if (pendingFiles.length > 1) {
+        payloadFiles = pendingFiles.map((f) => ({ path: f.path, content: f.content }));
+      } else if (pendingFiles.length === 1) {
+        payloadFiles = [
+          {
+            path: (pathEl?.value || pendingFiles[0].path).trim(),
+            content: pendingFiles[0].content,
+          },
+        ];
+      } else if (contentEl?.value?.trim()) {
+        payloadFiles = [
+          {
+            path: (pathEl?.value || "").trim(),
+            content: contentEl.value,
+          },
+        ];
+      }
+
+      if (!payloadFiles.length) {
+        showError(err, "请选择文件或粘贴内容");
+        return;
+      }
+      for (const f of payloadFiles) {
+        if (!f.path) {
+          showError(err, "请填写项目内路径");
           return;
         }
-        if (data.warnings?.length && warn) {
+        if (!f.content.trim()) {
+          showError(err, `文件 ${f.path} 内容为空`);
+          return;
+        }
+      }
+
+      setButtonBusy(btn, true, { busyLabel: "上传中..." });
+      try {
+        if (payloadFiles.length === 1) {
+          const { res, data } = await json(
+            `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/files`,
+            {
+              method: "POST",
+              body: JSON.stringify(payloadFiles[0]),
+            },
+          );
+          if (!res.ok) {
+            showError(err, data.error || "上传失败");
+            return;
+          }
+          if (data.warnings?.length && warn) {
+            warn.hidden = false;
+            warn.innerHTML =
+              "<strong>警告：</strong><ul style='margin:8px 0 0;padding-left:18px'>" +
+              data.warnings.map((w) => `<li>${w}</li>`).join("") +
+              "</ul>";
+          }
+          if (data.unchanged) {
+            toast("info", `内容未变化，已跳过 (r${data.revision})`);
+          } else {
+            toast("success", `已同步 ${data.stringCount} 条字符串 (r${data.revision})`);
+          }
+          location.reload();
+          return;
+        }
+
+        const { res, data } = await json(
+          `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/files/batch`,
+          {
+            method: "POST",
+            body: JSON.stringify({ files: payloadFiles }),
+          },
+        );
+        if (!res.ok) {
+          showError(err, data.error || "批量上传失败");
+          return;
+        }
+        const summary = data.summary || {};
+        const failed = (data.results || []).filter((r) => !r.ok);
+        if (failed.length && warn) {
           warn.hidden = false;
           warn.innerHTML =
-            "<strong>警告：</strong><ul style='margin:8px 0 0;padding-left:18px'>" +
-            data.warnings.map((w) => `<li>${w}</li>`).join("") +
+            "<strong>部分失败：</strong><ul style='margin:8px 0 0;padding-left:18px'>" +
+            failed.map((r) => `<li>${r.path}: ${r.error}</li>`).join("") +
             "</ul>";
         }
-        toast("success", `已同步 ${data.stringCount} 条字符串 (r${data.revision})`);
-        location.reload();
+        if (summary.ok > 0) {
+          toast(
+            "success",
+            `已处理 ${summary.ok}/${summary.total} 个文件` +
+              (summary.failed ? `，${summary.failed} 个失败` : ""),
+          );
+          if (!summary.failed) location.reload();
+        } else {
+          showError(err, "全部文件上传失败");
+        }
       } catch {
         showError(err, "网络错误");
       } finally {

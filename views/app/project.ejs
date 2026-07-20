@@ -23,13 +23,18 @@
               <div class="blora-dropdown-menu export-menu">
                 <% (targetLanguages || targetLocales.map(function (l) { return { locale: l, displayName: null }; })).forEach(function (lang) {
                   var locale = lang.locale;
+                  var base = '/api/v1/orgs/' + orgSlug + '/projects/' + projectSlug + '/export?locale=' + encodeURIComponent(locale);
                 %>
                   <div class="export-menu__group">
                     <div class="export-menu__locale"><%= languageLabel(locale, lang.displayName) %></div>
-                    <a class="blora-dropdown-menu__item" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= locale %>&mode=approved">仅已批准</a>
-                    <a class="blora-dropdown-menu__item" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= locale %>&mode=top_voted">已批准+最高票</a>
-                    <a class="blora-dropdown-menu__item" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= locale %>&mode=source">缺省用源文</a>
-                    <a class="blora-dropdown-menu__item" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= locale %>&mode=empty">缺省留空</a>
+                    <div class="export-menu__sub">ZIP（原格式）</div>
+                    <a class="blora-dropdown-menu__item" href="<%= base %>&mode=approved&pack=zip">仅已批准</a>
+                    <a class="blora-dropdown-menu__item" href="<%= base %>&mode=top_voted&pack=zip">已批准+最高票</a>
+                    <a class="blora-dropdown-menu__item" href="<%= base %>&mode=source&pack=zip">缺省用源文</a>
+                    <a class="blora-dropdown-menu__item" href="<%= base %>&mode=empty&pack=zip">缺省留空</a>
+                    <div class="export-menu__sub">Bundle JSON</div>
+                    <a class="blora-dropdown-menu__item" href="<%= base %>&mode=approved&pack=bundle">仅已批准 · Bundle</a>
+                    <a class="blora-dropdown-menu__item" href="<%= base %>&mode=source&pack=bundle">缺省用源文 · Bundle</a>
                   </div>
                 <% }) %>
               </div>
@@ -92,7 +97,7 @@
                           <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= defaultFile %>&locale=<%= p.locale %>">进入工作台</a>
                         <% } %>
                         <% if (canExport) { %>
-                          <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= p.locale %>&mode=approved">导出</a>
+                          <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= p.locale %>&mode=approved&pack=zip">导出 ZIP</a>
                         <% } %>
                       </div>
                     </td>
@@ -115,10 +120,10 @@
         <% if (!files.length) { %>
           <div class="blora-empty">
             <div class="blora-empty__title">尚无源文件</div>
-            <div class="blora-empty__desc">上传 JSON 以解析可翻译字符串</div>
+            <div class="blora-empty__desc">上传 JSON 或 .properties 以解析可翻译字符串</div>
             <% if (canUpload) { %>
               <div class="app-empty-actions">
-                <button type="button" class="blora-btn blora-btn--primary" data-show-upload>上传 JSON</button>
+                <button type="button" class="blora-btn blora-btn--primary" data-show-upload>上传源文件</button>
               </div>
             <% } %>
           </div>
@@ -156,26 +161,30 @@
         <% if (canUpload) { %>
           <div class="blora-panel upload-panel" id="upload-panel" <%= files.length ? 'hidden' : '' %>>
             <div class="blora-panel__header">
-              <h3 class="blora-h4">上传 JSON 源文件</h3>
+              <h3 class="blora-h4">上传源文件</h3>
             </div>
             <form id="upload-file-form" class="blora-stack" data-org-slug="<%= orgSlug %>" data-project-slug="<%= projectSlug %>">
               <div id="form-error" class="blora-alert blora-alert--danger" hidden></div>
               <div id="form-warnings" class="blora-alert blora-alert--warning" hidden></div>
               <label class="blora-field">
-                <span class="blora-field__label">选择 JSON 文件</span>
-                <input class="blora-input" type="file" id="file-pick" accept="application/json,.json" />
+                <span class="blora-field__label">选择文件（可多选）</span>
+                <input class="blora-input" type="file" id="file-pick" accept=".json,.properties,application/json,text/plain" multiple />
               </label>
-              <label class="blora-field">
-                <span class="blora-field__label">项目内路径</span>
-                <input class="blora-input" name="path" id="file-path" required pattern="[a-zA-Z0-9_./-]+\.json" value="locales/common.json" placeholder="locales/common.json" />
+              <div id="upload-file-list" class="upload-file-list" hidden></div>
+              <label class="blora-field" id="single-path-field">
+                <span class="blora-field__label">项目内路径（单文件时）</span>
+                <input class="blora-input" name="path" id="file-path" pattern="[a-zA-Z0-9_./-]+\.(json|properties)" value="locales/common.json" placeholder="locales/common.json" />
               </label>
               <details class="app-advanced">
-                <summary>高级：直接粘贴 JSON</summary>
+                <summary>高级：直接粘贴内容（单文件）</summary>
                 <label class="blora-field u-mt-3">
-                  <span class="blora-field__label">JSON 内容</span>
+                  <span class="blora-field__label">文件内容</span>
                   <textarea class="blora-textarea blora-text-mono" name="content" id="file-content" rows="10" style="font-size:13px"></textarea>
                 </label>
               </details>
+              <p class="blora-text-muted u-text-xs">
+                支持 <code>.json</code>（嵌套 i18n）与 <code>.properties</code>。导出时按上传原文的缩进 / 键序 / 格式写出。
+              </p>
               <div class="blora-row">
                 <button class="blora-btn blora-btn--primary" type="submit">上传 / 更新</button>
                 <% if (files.length) { %>

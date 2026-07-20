@@ -71,13 +71,23 @@ export const setLanguagesSchema = z.object({
   }
 });
 
+/** Safe project-relative path with a known i18n extension. */
+const sourcePathRegex = /^[a-zA-Z0-9_./-]+\.(json|properties)$/;
+
 export const uploadFileSchema = z.object({
   path: z
     .string()
     .min(1)
     .max(256)
-    .regex(/^[a-zA-Z0-9_./-]+\.json$/, "路径须为 .json 且仅含安全字符"),
-  content: z.string().min(2).max(2 * 1024 * 1024),
+    .regex(sourcePathRegex, "路径须为 .json / .properties 且仅含安全字符"),
+  content: z.string().min(1).max(2 * 1024 * 1024),
+});
+
+export const uploadBatchSchema = z.object({
+  files: z
+    .array(uploadFileSchema)
+    .min(1, "至少上传一个文件")
+    .max(50, "单次最多 50 个文件"),
 });
 
 export const saveTranslationSchema = z.object({
