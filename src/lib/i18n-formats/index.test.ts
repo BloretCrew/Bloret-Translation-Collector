@@ -76,6 +76,55 @@ describe("serializeJson fidelity", () => {
     );
     expect(out).toBe('{"hello":"世界"}');
   });
+
+  it("preserves unusual spacing exactly (only value changes)", () => {
+    // no space after colon, extra spaces, mixed
+    const raw = '{\n  "a":"A" ,\n  "b" :  "B"\n}';
+    const parsed = jsonHandler.parse(raw);
+    const out = jsonHandler.export(
+      raw,
+      parsed.data,
+      new Map([["a", "甲"]]),
+      parsed.formatMeta,
+    );
+    expect(out).toBe('{\n  "a":"甲" ,\n  "b" :  "B"\n}');
+  });
+
+  it("does not insert indent digits when format_meta.indent is string \"2\"", () => {
+    const raw = '{\n  "x": "one"\n}\n';
+    const parsed = jsonHandler.parse(raw);
+    // Simulate jsonb / form data that stringified the indent
+    const out = jsonHandler.export(
+      raw,
+      parsed.data,
+      new Map([["x", "一"]]),
+      { ...parsed.formatMeta, indent: "2" as unknown as number },
+    );
+    expect(out).not.toMatch(/\n2"/);
+    expect(out).toBe('{\n  "x": "一"\n}\n');
+  });
+
+  it("leaves non-string leaves and array strings unchanged", () => {
+    const raw = '{\n  "n": 3,\n  "list": ["a", "b"],\n  "ok": "yes"\n}\n';
+    const parsed = jsonHandler.parse(raw);
+    const out = jsonHandler.export(
+      raw,
+      parsed.data,
+      new Map([["ok", "好"]]),
+      parsed.formatMeta,
+    );
+    expect(out).toBe('{\n  "n": 3,\n  "list": ["a", "b"],\n  "ok": "好"\n}\n');
+  });
+});
+
+describe("normalizeJsonIndent", () => {
+  it("coerces numeric strings to numbers", async () => {
+    const { normalizeJsonIndent } = await import("./json");
+    expect(normalizeJsonIndent("2")).toBe(2);
+    expect(normalizeJsonIndent("4")).toBe(4);
+    expect(normalizeJsonIndent("\t")).toBe("\t");
+    expect(normalizeJsonIndent(0)).toBe(0);
+  });
 });
 
 describe("properties handler", () => {

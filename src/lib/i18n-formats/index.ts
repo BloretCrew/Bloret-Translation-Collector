@@ -15,7 +15,14 @@ export {
   acceptAttribute,
   inferFormatFromPath,
 } from "./registry";
-export { jsonHandler, detectJsonFormatMeta, serializeJson } from "./json";
+export {
+  jsonHandler,
+  detectJsonFormatMeta,
+  serializeJson,
+  normalizeJsonIndent,
+  patchJsonStringValues,
+  resolveExportString,
+} from "./json";
 export { propertiesHandler, parsePropertiesContent } from "./properties";
 export { localeSuffixPath, basenamePath } from "./filename";
 export { buildZip } from "./zip";
