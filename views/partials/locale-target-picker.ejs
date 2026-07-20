@@ -4,16 +4,25 @@
 %>
 <%
   var fieldName = typeof name !== 'undefined' ? name : 'targetLocales';
-  var selectedList = Array.isArray(selected) ? selected.slice() : [];
+  var selectedInput = Array.isArray(selected) ? selected.slice() : [];
+  var selectedList = selectedInput.map(function (item) {
+    return typeof item === 'string'
+      ? { code: item, label: '' }
+      : { code: item.locale || item.code, label: item.displayName || item.label || '' };
+  }).filter(function (item) { return item.code; });
   var opts = typeof COMMON_LOCALES !== 'undefined' ? COMMON_LOCALES : [];
   var modalId = typeof modalId !== 'undefined' ? modalId : 'locale-picker-modal';
   var catalog = opts.map(function (o) {
     return { code: o.code, label: o.label };
   });
-  selectedList.forEach(function (code) {
-    if (!catalog.some(function (o) { return o.code === code; })) {
-      catalog.push({ code: code, label: code });
-    }
+  selectedList.forEach(function (item) {
+    var hit = catalog.find(function (o) { return o.code.toLowerCase() === item.code.toLowerCase(); });
+    if (hit && item.label) hit.label = item.label;
+    if (!hit) catalog.push({ code: item.code, label: item.label || item.code });
+  });
+  selectedList = selectedList.map(function (item) {
+    var hit = catalog.find(function (o) { return o.code.toLowerCase() === item.code.toLowerCase(); });
+    return { code: item.code, label: item.label || (hit ? hit.label : item.code) };
   });
   var instanceId = modalId + '-data';
 %>
@@ -32,9 +41,9 @@
       <% if (!selectedList.length) { %>
         <span class="blora-text-faint" data-locale-empty>尚未选择语言</span>
       <% } else { %>
-        <% selectedList.forEach(function (code) {
-          var hit = catalog.find(function (o) { return o.code === code; });
-          var label = hit ? hit.label : code;
+        <% selectedList.forEach(function (item) {
+          var code = item.code;
+          var label = item.label || code;
         %>
           <span class="locale-tag" data-code="<%= code %>">
             <span class="locale-tag__label"><%= label %></span>
@@ -59,7 +68,7 @@
   </div>
 
   <script type="application/json" id="<%= instanceId %>">
-<%- JSON.stringify({ catalog: catalog, selected: selectedList }) %>
+<%- JSON.stringify({ catalog: catalog, selected: selectedList.map(function (item) { return item.code; }) }) %>
   </script>
 </div>
 

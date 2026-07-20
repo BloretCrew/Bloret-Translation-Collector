@@ -40,12 +40,18 @@ export const updateMemberSchema = z.object({
   role: memberRoleSchema.exclude(["owner"]),
 });
 
+export const projectLanguageSchema = z.object({
+  locale: localeSchema,
+  displayName: z.string().trim().min(1).max(80).nullable().optional(),
+});
+
 export const createProjectSchema = z.object({
   name: z.string().min(1).max(80),
   slug: slugSchema,
   description: z.string().max(500).optional().nullable(),
   sourceLocale: localeSchema.default("en"),
   targetLocales: z.array(localeSchema).min(1).max(50),
+  languages: z.array(projectLanguageSchema).min(1).max(50).optional(),
   visibility: z.enum(["private", "org", "public"]).default("org"),
 });
 
@@ -53,11 +59,16 @@ export const updateProjectSchema = z.object({
   name: z.string().min(1).max(80).optional(),
   description: z.string().max(500).optional().nullable(),
   sourceLocale: localeSchema.optional(),
-  visibility: z.enum(["private", "org"]).optional(),
+  visibility: z.enum(["private", "org", "public"]).optional(),
 });
 
 export const setLanguagesSchema = z.object({
-  locales: z.array(localeSchema).min(1).max(50),
+  locales: z.array(localeSchema).min(1).max(50).optional(),
+  languages: z.array(projectLanguageSchema).min(1).max(50).optional(),
+}).superRefine((value, ctx) => {
+  if (!value.locales && !value.languages) {
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "缺少目标语言" });
+  }
 });
 
 export const uploadFileSchema = z.object({

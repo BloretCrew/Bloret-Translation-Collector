@@ -27,8 +27,8 @@
           <% }) %>
         </select>
         <select class="blora-select blora-select--sm editor-chrome__select" id="editor-locale" aria-label="目标语言" title="目标语言">
-          <% locales.forEach(function (l) { %>
-            <option value="<%= l %>" <%= l === locale ? 'selected' : '' %>><%= localeLabel(l) %></option>
+          <% (localeLanguages || locales.map(function (l) { return { locale: l, displayName: '' }; })).forEach(function (language) { %>
+            <option value="<%= language.locale %>" <%= language.locale === locale ? 'selected' : '' %>><%= language.displayName || localeLabel(language.locale) %></option>
           <% }) %>
         </select>
         <% var showTranslateMode = typeof canModeTranslate !== 'undefined' && canModeTranslate; %>

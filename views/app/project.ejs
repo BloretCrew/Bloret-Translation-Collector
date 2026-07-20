@@ -65,7 +65,7 @@
               <tbody>
                 <% localeProgress.forEach(function (p) { %>
                   <tr>
-                    <td><strong><%= localeLabel(p.locale) %></strong></td>
+                    <td><strong><%= p.displayName || localeLabel(p.locale) %></strong></td>
                     <td>
                       <div class="blora-row blora-row--center u-gap-1">
                         <div class="blora-progress" data-value="<%= p.percent %>" style="flex:1">

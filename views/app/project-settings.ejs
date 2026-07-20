@@ -61,7 +61,7 @@
                   <option value="private" <%= project.visibility === 'private' ? 'selected' : '' %>>私有</option>
                 </select>
               </label>
-              <%- include('../partials/locale-target-picker', { selected: targetLocales }) %>
+              <%- include('../partials/locale-target-picker', { selected: targetLanguages }) %>
               <p class="blora-text-faint u-text-xs">
                 Slug <code class="blora-code"><%= projectSlug %></code> 创建后不可修改。
               </p>

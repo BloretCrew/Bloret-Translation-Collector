@@ -270,7 +270,10 @@ pagesRouter.get("/app/o/:org/p/:project", async (req, res, next) => {
       .select()
       .from(projectLanguages)
       .where(eq(projectLanguages.projectId, access.project.id));
-    const targetLocales = langs.filter((l) => l.enabled).map((l) => l.locale);
+    const targetLanguages = langs
+      .filter((l) => l.enabled)
+      .map((l) => ({ locale: l.locale, displayName: l.displayName }));
+    const targetLocales = targetLanguages.map((l) => l.locale);
 
     const files = await db
       .select({
@@ -296,7 +299,15 @@ pagesRouter.get("/app/o/:org/p/:project", async (req, res, next) => {
       const suggested = p?.suggested ?? 0;
       const total = progress.totalStrings;
       const percent = total === 0 ? 0 : Math.round((translated / total) * 100);
-      return { locale, translated, suggested, total, percent };
+      const language = targetLanguages.find((l) => l.locale === locale);
+      return {
+        locale,
+        displayName: language?.displayName ?? null,
+        translated,
+        suggested,
+        total,
+        percent,
+      };
     });
 
     return res.render("app/project", {
@@ -307,6 +318,7 @@ pagesRouter.get("/app/o/:org/p/:project", async (req, res, next) => {
       project: access.project,
       role: access.role,
       targetLocales,
+      targetLanguages,
       files,
       localeProgress,
       totalStrings: progress.totalStrings,
@@ -353,6 +365,9 @@ pagesRouter.get("/app/o/:org/p/:project/settings", async (req, res, next) => {
       org: access.org,
       project: access.project,
       targetLocales: langs.filter((l) => l.enabled).map((l) => l.locale),
+      targetLanguages: langs
+        .filter((l) => l.enabled)
+        .map((l) => ({ locale: l.locale, displayName: l.displayName })),
       activeTab,
     });
   } catch (e) {
@@ -382,7 +397,10 @@ pagesRouter.get("/app/o/:org/p/:project/files/:fileId", async (req, res, next) =
       .select()
       .from(projectLanguages)
       .where(eq(projectLanguages.projectId, access.project.id));
-    const targetLocales = langs.filter((l) => l.enabled).map((l) => l.locale);
+    const targetLanguages = langs
+      .filter((l) => l.enabled)
+      .map((l) => ({ locale: l.locale, displayName: l.displayName }));
+    const targetLocales = targetLanguages.map((l) => l.locale);
 
     const progress = await getFileProgress(file.id);
     const progressMap = new Map(progress.byLocale.map((p) => [p.locale, p]));
@@ -393,7 +411,15 @@ pagesRouter.get("/app/o/:org/p/:project/files/:fileId", async (req, res, next) =
       const suggested = p?.suggested ?? 0;
       const total = progress.totalStrings;
       const percent = total === 0 ? 0 : Math.round((translated / total) * 100);
-      return { locale, translated, suggested, total, percent };
+      const language = targetLanguages.find((l) => l.locale === locale);
+      return {
+        locale,
+        displayName: language?.displayName ?? null,
+        translated,
+        suggested,
+        total,
+        percent,
+      };
     });
 
     return res.render("app/file", {
@@ -404,6 +430,7 @@ pagesRouter.get("/app/o/:org/p/:project/files/:fileId", async (req, res, next) =
       project: access.project,
       file,
       localeProgress,
+      targetLanguages,
       canUpload: canUploadFiles(access.role),
       canEdit: canEditTranslations(access.role),
       canExport: canExport(access.role),
@@ -435,7 +462,10 @@ pagesRouter.get("/app/o/:org/p/:project/translate", async (req, res, next) => {
       .select()
       .from(projectLanguages)
       .where(eq(projectLanguages.projectId, access.project.id));
-    const locales = langs.filter((l) => l.enabled).map((l) => l.locale);
+    const localeLanguages = langs
+      .filter((l) => l.enabled)
+      .map((l) => ({ locale: l.locale, displayName: l.displayName }));
+    const locales = localeLanguages.map((l) => l.locale);
 
     if (files.length === 0 || locales.length === 0) {
       return res.redirect(`/app/o/${orgSlug}/p/${projectSlug}`);
@@ -476,6 +506,7 @@ pagesRouter.get("/app/o/:org/p/:project/translate", async (req, res, next) => {
       project: access.project,
       files,
       locales,
+      localeLanguages,
       fileId,
       locale,
       focusString: stringParam,

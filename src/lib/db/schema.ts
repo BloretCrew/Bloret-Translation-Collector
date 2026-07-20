@@ -107,6 +107,7 @@ export const projectLanguages = pgTable(
       .notNull()
       .references(() => projects.id, { onDelete: "cascade" }),
     locale: text("locale").notNull(),
+    displayName: text("display_name"),
     enabled: boolean("enabled").notNull().default(true),
   },
   (t) => [uniqueIndex("project_languages_project_locale_uidx").on(t.projectId, t.locale)],

@@ -454,10 +454,14 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects", async (req, res, next) => {
           .returning();
 
         if (data.targetLocales.length) {
+          const languageByCode = new Map(
+            (data.languages ?? []).map((language) => [language.locale.toLowerCase(), language]),
+          );
           await tx.insert(projectLanguages).values(
             data.targetLocales.map((locale) => ({
               projectId: created!.id,
               locale,
+              displayName: languageByCode.get(locale.toLowerCase())?.displayName?.trim() || null,
               enabled: true,
             })),
           );
@@ -613,22 +617,37 @@ orgsRouter.put("/v1/orgs/:orgSlug/projects/:projectSlug/languages", async (req, 
     const parsed = setLanguagesSchema.safeParse(req.body);
     if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
 
-    const locales = [...new Set(parsed.data.locales)];
+    const languageRows = parsed.data.languages
+      ? parsed.data.languages.map((language) => ({
+          locale: language.locale,
+          displayName: language.displayName?.trim() || null,
+        }))
+      : (parsed.data.locales ?? []).map((locale) => ({
+          locale,
+          displayName: null,
+        }));
+    const dedupedLanguages = Array.from(
+      new Map(languageRows.map((language) => [language.locale.toLowerCase(), language])).values(),
+    );
 
     await db.transaction(async (tx) => {
       await tx.delete(projectLanguages).where(eq(projectLanguages.projectId, access.project.id));
-      if (locales.length) {
+      if (dedupedLanguages.length) {
         await tx.insert(projectLanguages).values(
-          locales.map((locale) => ({
+          dedupedLanguages.map((language) => ({
             projectId: access.project.id,
-            locale,
+            locale: language.locale,
+            displayName: language.displayName,
             enabled: true,
           })),
         );
       }
     });
 
-    return jsonOk(res, { locales });
+    return jsonOk(res, {
+      locales: dedupedLanguages.map((language) => language.locale),
+      languages: dedupedLanguages,
+    });
   } catch (err) {
     next(err);
   }

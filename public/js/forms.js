@@ -1,6 +1,29 @@
 (function () {
   const { json, toast, toSlug, showError, setButtonBusy } = window.BTC;
 
+  function readProjectLanguages(form) {
+    const picker = form?.querySelector("[data-locale-transfer]");
+    const inputCodes = Array.from(form?.querySelectorAll('input[name="targetLocales"]') || [])
+      .map((input) => input.value)
+      .filter(Boolean);
+    const dataId = picker?.dataset.jsonId;
+    const dataEl = dataId ? document.getElementById(dataId) : null;
+    let catalog = [];
+    try {
+      catalog = dataEl ? JSON.parse(dataEl.textContent || "{}").catalog || [] : [];
+    } catch {
+      catalog = [];
+    }
+    const byCode = new Map(catalog.map((item) => [String(item.code).toLowerCase(), item]));
+    return {
+      locales: inputCodes,
+      languages: inputCodes.map((locale) => ({
+        locale,
+        displayName: byCode.get(locale.toLowerCase())?.label || null,
+      })),
+    };
+  }
+
   // Create org
   const createOrg = document.getElementById("create-org-form");
   if (createOrg) {
@@ -103,7 +126,8 @@
         slugEl.value = toSlug(String(fd.get("name") || "project"), "project");
         slugTouched = true;
       }
-      const locales = fd.getAll("targetLocales").map(String).filter(Boolean);
+      const projectLanguages = readProjectLanguages(createProject);
+      const locales = projectLanguages.locales;
       if (!locales.length) {
         showError(err, "请至少选择一种目标语言");
         return;
@@ -118,6 +142,7 @@
             description: fd.get("description") || null,
             sourceLocale: fd.get("sourceLocale"),
             targetLocales: locales,
+            languages: projectLanguages.languages,
             visibility: fd.get("visibility") || "org",
           }),
         });
@@ -144,7 +169,8 @@
       const err = document.getElementById("form-error");
       const btn = projectSettings.querySelector('button[type="submit"]');
       const fd = new FormData(projectSettings);
-      const locales = fd.getAll("targetLocales").map(String).filter(Boolean);
+      const projectLanguages = readProjectLanguages(projectSettings);
+      const locales = projectLanguages.locales;
       showError(err, "");
       if (!locales.length) {
         showError(err, "请至少选择一种目标语言");
@@ -167,7 +193,7 @@
         }
         const langRes = await json(`/api/v1/orgs/${orgSlug}/projects/${projectSlug}/languages`, {
           method: "PUT",
-          body: JSON.stringify({ locales }),
+          body: JSON.stringify({ locales, languages: projectLanguages.languages }),
         });
         if (!langRes.res.ok) {
           showError(err, langRes.data.error || "语言保存失败");
