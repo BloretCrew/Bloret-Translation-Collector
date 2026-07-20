@@ -22,6 +22,12 @@
       scope: "draft",
       default: { key: "s", mod: true },
     },
+    insertSource: {
+      label: "插入原文",
+      hint: "在译文框光标处插入源文",
+      scope: "draft",
+      default: { key: "i", mod: true, shift: true },
+    },
     prevString: {
       label: "上一条字符串",
       hint: "焦点不在输入框时",

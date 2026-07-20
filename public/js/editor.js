@@ -130,6 +130,7 @@
     }
     if (els.saveBtn) els.saveBtn.hidden = !suggest;
     if (els.saveOnlyBtn) els.saveOnlyBtn.hidden = !suggest;
+    if (els.insertSourceBtn) els.insertSourceBtn.hidden = !suggest;
     const more = document.querySelector(".editor-compose__more");
     if (more) more.hidden = !suggest;
 
@@ -189,6 +190,10 @@
       saveAndNext: () => e.key === "Enter" && (e.ctrlKey || e.metaKey),
       saveOnly: () =>
         (e.key === "s" || e.key === "S") && (e.ctrlKey || e.metaKey),
+      insertSource: () =>
+        (e.key === "i" || e.key === "I") &&
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey,
       prevString: () => e.key === "ArrowUp" && !e.metaKey && !e.ctrlKey,
       nextString: () => e.key === "ArrowDown" && !e.metaKey && !e.ctrlKey,
       sendComment: () => e.key === "Enter" && (e.ctrlKey || e.metaKey),
@@ -201,10 +206,13 @@
     const f = (id) => shortcutsApi.format(shortcuts[id]);
     if (els.saveBtn) els.saveBtn.title = f("saveAndNext");
     if (els.saveOnlyBtn) els.saveOnlyBtn.title = f("saveOnly");
+    if (els.insertSourceBtn) {
+      els.insertSourceBtn.title = `${f("insertSource")} 在光标处插入源文`;
+    }
     if (els.prev) els.prev.title = `上一条 (${f("prevString")})`;
     if (els.next) els.next.title = `下一条 (${f("nextString")})`;
     if (els.saveHint && effectiveCanSuggest()) {
-      els.saveHint.title = `${f("saveAndNext")} 保存并下一条 · ${f("saveOnly")} 仅保存`;
+      els.saveHint.title = `${f("saveAndNext")} 保存并下一条 · ${f("saveOnly")} 仅保存 · ${f("insertSource")} 插入原文`;
     }
     if (els.commentBody) {
       els.commentBody.placeholder = `讨论语境、术语… (${f("sendComment")} 发送)`;
@@ -240,6 +248,7 @@
     saveHint: document.getElementById("editor-save-hint"),
     saveBtn: document.getElementById("editor-save-suggestion"),
     saveOnlyBtn: document.getElementById("editor-save-only"),
+    insertSourceBtn: document.getElementById("editor-insert-source"),
     deleteBtn: document.getElementById("editor-delete-suggestion"),
     mtBtn: document.getElementById("editor-mt"),
     assignBtn: document.getElementById("editor-assign-task"),
@@ -838,6 +847,46 @@
     }
   }
 
+  /** Current string source text (from detail payload or list row). */
+  function currentSourceText() {
+    if (detail?.string?.sourceText != null) return String(detail.string.sourceText);
+    if (detail?.sourceText != null) return String(detail.sourceText);
+    const row = strings.find((s) => s.id === activeId);
+    if (row?.sourceText != null) return String(row.sourceText);
+    if (els.source?.textContent != null) return els.source.textContent;
+    return "";
+  }
+
+  /**
+   * Insert source into the draft at the caret (replaces selection if any).
+   * @param {{ silent?: boolean }} [opts]
+   */
+  function insertSource(opts = {}) {
+    if (!effectiveCanSuggest() || !els.draft || els.draft.readOnly) return false;
+    const src = currentSourceText();
+    if (!src) {
+      if (!opts.silent) toast?.("error", "当前没有可插入的原文");
+      return false;
+    }
+    const ta = els.draft;
+    const start = typeof ta.selectionStart === "number" ? ta.selectionStart : ta.value.length;
+    const end = typeof ta.selectionEnd === "number" ? ta.selectionEnd : start;
+    const before = ta.value.slice(0, start);
+    const after = ta.value.slice(end);
+    ta.value = before + src + after;
+    const caret = start + src.length;
+    try {
+      ta.setSelectionRange(caret, caret);
+    } catch {
+      /* ignore */
+    }
+    ta.focus({ preventScroll: true });
+    // Notify any listeners that rely on input events
+    ta.dispatchEvent(new Event("input", { bubbles: true }));
+    if (!opts.silent) toast?.("success", "已插入原文");
+    return true;
+  }
+
   async function assignTask() {
     if (!activeId || !detail?.canManage) return;
     const username = window.prompt("指派给（用户名）：");
@@ -1278,6 +1327,7 @@
   els.refresh?.addEventListener("click", () => loadList({ quiet: true, preferId: activeId }));
   els.saveBtn?.addEventListener("click", () => saveSuggestion({ advance: true }));
   els.saveOnlyBtn?.addEventListener("click", () => saveSuggestion({ advance: false }));
+  els.insertSourceBtn?.addEventListener("click", () => insertSource());
   els.deleteBtn?.addEventListener("click", () => deleteSuggestion());
   els.mtBtn?.addEventListener("click", () => runMachineTranslate());
   els.assignBtn?.addEventListener("click", () => assignTask());
@@ -1309,6 +1359,11 @@
   });
   els.draft?.addEventListener("keydown", (e) => {
     if (!effectiveCanSuggest()) return;
+    if (matchAction(e, "insertSource")) {
+      e.preventDefault();
+      insertSource({ silent: true });
+      return;
+    }
     if (matchAction(e, "saveOnly")) {
       e.preventDefault();
       saveSuggestion({ advance: false });

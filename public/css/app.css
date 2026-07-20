@@ -297,7 +297,8 @@ html.is-translation-editor .app-main--editor {
 .editor-compose.is-compose-hidden .editor-compose__field,
 .editor-compose.is-compose-hidden .editor-compose__more,
 .editor-compose.is-compose-hidden #editor-save-suggestion,
-.editor-compose.is-compose-hidden #editor-save-only {
+.editor-compose.is-compose-hidden #editor-save-only,
+.editor-compose.is-compose-hidden #editor-insert-source {
   display: none;
 }
 
