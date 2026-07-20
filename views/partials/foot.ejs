@@ -1,12 +1,17 @@
-  <script src="/blora/blora.js"></script>
-  <script src="/js/app.js"></script>
-  <script src="/js/locale-picker.js"></script>
   <%
     // scripts must be passed via include(..., { scripts: [...] }) — template `var` is not visible here
+    const _assetV = typeof assetV !== 'undefined' && assetV ? assetV : '1';
     const pageScripts = typeof scripts !== 'undefined' && Array.isArray(scripts) ? scripts : [];
+    function withAssetV(src) {
+      if (!src) return src;
+      return src.indexOf('?') >= 0 ? src + '&v=' + _assetV : src + '?v=' + _assetV;
+    }
   %>
+  <script src="<%= withAssetV('/blora/blora.js') %>"></script>
+  <script src="<%= withAssetV('/js/app.js') %>"></script>
+  <script src="<%= withAssetV('/js/locale-picker.js') %>"></script>
   <% pageScripts.forEach(function (src) { %>
-    <script src="<%= src %>"></script>
+    <script src="<%= withAssetV(src) %>"></script>
   <% }) %>
 </body>
 </html>

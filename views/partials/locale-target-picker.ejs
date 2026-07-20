@@ -62,8 +62,16 @@
   </div>
 
   <div class="locale-transfer__inputs" data-locale-inputs>
-    <% selectedList.forEach(function (code) { %>
-      <input type="hidden" name="<%= fieldName %>" value="<%= code %>" />
+    <% selectedList.forEach(function (item) {
+      var code = item.code;
+      var label = item.label || code;
+    %>
+      <input
+        type="hidden"
+        name="<%= fieldName %>"
+        value="<%= code %>"
+        data-display-name="<%= label %>"
+      />
     <% }) %>
   </div>
 

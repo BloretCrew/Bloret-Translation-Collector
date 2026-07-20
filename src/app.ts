@@ -12,6 +12,9 @@ import { pagesRouter } from "@/routes/pages";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 
+/** Bust long-lived browser caches after each process start (static maxAge is 1d). */
+const ASSET_V = process.env.BTC_ASSET_V || String(Date.now());
+
 export function createApp() {
   const app = express();
   const config = loadConfig();
@@ -36,6 +39,7 @@ export function createApp() {
 
   app.use((req, res, next) => {
     res.locals.appName = config.appName;
+    res.locals.assetV = ASSET_V;
     res.locals.session = req.session?.isLoggedIn
       ? {
           isLoggedIn: true,

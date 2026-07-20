@@ -3,9 +3,9 @@
 
   function readProjectLanguages(form) {
     const picker = form?.querySelector("[data-locale-transfer]");
-    const inputCodes = Array.from(form?.querySelectorAll('input[name="targetLocales"]') || [])
-      .map((input) => input.value)
-      .filter(Boolean);
+    const inputs = Array.from(
+      form?.querySelectorAll('input[name="targetLocales"]') || [],
+    ).filter((input) => input.value && input.value !== "[object Object]");
     const dataId = picker?.dataset.jsonId;
     const dataEl = dataId ? document.getElementById(dataId) : null;
     let catalog = [];
@@ -14,13 +14,24 @@
     } catch {
       catalog = [];
     }
-    const byCode = new Map(catalog.map((item) => [String(item.code).toLowerCase(), item]));
+    const byCode = new Map(
+      catalog.map((item) => [String(item.code).toLowerCase(), item]),
+    );
+    const locales = inputs.map((input) => input.value);
     return {
-      locales: inputCodes,
-      languages: inputCodes.map((locale) => ({
-        locale,
-        displayName: byCode.get(locale.toLowerCase())?.label || null,
-      })),
+      locales,
+      languages: inputs.map((input) => {
+        const locale = input.value;
+        const fromInput = (input.getAttribute("data-display-name") || "").trim();
+        const fromCatalog = (byCode.get(locale.toLowerCase())?.label || "").trim();
+        const displayName = fromInput || fromCatalog || null;
+        return {
+          locale,
+          // Keep real human names; if label is only the code, still send it so custom
+          // locales without a separate name round-trip consistently.
+          displayName: displayName || null,
+        };
+      }),
     };
   }
 

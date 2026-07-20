@@ -4,8 +4,23 @@
  */
 (function () {
   function labelOf(catalog, code) {
-    const hit = catalog.find((o) => o.code === code);
-    return hit ? hit.label : code;
+    if (!code) return "";
+    const needle = String(code).toLowerCase();
+    const hit = catalog.find((o) => String(o.code).toLowerCase() === needle);
+    return hit && hit.label ? hit.label : code;
+  }
+
+  function upsertCatalog(catalog, code, label) {
+    const needle = code.toLowerCase();
+    const hit = catalog.find((o) => String(o.code).toLowerCase() === needle);
+    if (hit) {
+      // Always refresh display name when caller provides one (allows fixing earlier saves).
+      if (label) hit.label = label;
+      // Keep the canonical code as first seen; do not force-rename case.
+      return hit.code;
+    }
+    catalog.push({ code, label: label || code });
+    return code;
   }
 
   function initTransfer(root) {
@@ -22,7 +37,11 @@
       try {
         const data = JSON.parse(jsonEl.textContent || "{}");
         catalog = Array.isArray(data.catalog) ? data.catalog : [];
-        selected = Array.isArray(data.selected) ? data.selected.slice() : [];
+        selected = Array.isArray(data.selected)
+          ? data.selected
+              .map((item) => (typeof item === "string" ? item : item && (item.code || item.locale)))
+              .filter(Boolean)
+          : [];
       } catch {
         /* keep empty */
       }
@@ -49,8 +68,8 @@
     }
 
     function availableCodes() {
-      const sel = new Set(draft);
-      return catalog.map((o) => o.code).filter((c) => !sel.has(c));
+      const sel = new Set(draft.map((c) => String(c).toLowerCase()));
+      return catalog.map((o) => o.code).filter((c) => !sel.has(String(c).toLowerCase()));
     }
 
     function persistJson() {
@@ -70,12 +89,13 @@
         tagsEl.appendChild(empty);
       } else {
         selected.forEach((code) => {
+          const label = labelOf(catalog, code);
           const tag = document.createElement("span");
           tag.className = "locale-tag";
           tag.dataset.code = code;
           const lab = document.createElement("span");
           lab.className = "locale-tag__label";
-          lab.textContent = labelOf(catalog, code);
+          lab.textContent = label;
           const cod = document.createElement("span");
           cod.className = "locale-tag__code";
           cod.textContent = code;
@@ -87,6 +107,8 @@
           input.type = "hidden";
           input.name = fieldName;
           input.value = code;
+          // Persist human label for forms.js → API displayName.
+          if (label) input.setAttribute("data-display-name", label);
           inputsEl.appendChild(input);
         });
       }
@@ -190,18 +212,22 @@
     });
 
     function moveToSelected(codes) {
-      const set = new Set(draft);
+      const set = new Set(draft.map((c) => String(c).toLowerCase()));
+      const next = draft.slice();
       codes.forEach((c) => {
-        if (c) set.add(c);
+        if (!c) return;
+        if (set.has(String(c).toLowerCase())) return;
+        set.add(String(c).toLowerCase());
+        next.push(c);
       });
-      draft = Array.from(set);
+      draft = next;
       hiAvail.clear();
       renderModal();
     }
 
     function moveToAvailable(codes) {
-      const remove = new Set(codes);
-      draft = draft.filter((c) => !remove.has(c));
+      const remove = new Set(codes.map((c) => String(c).toLowerCase()));
+      draft = draft.filter((c) => !remove.has(String(c).toLowerCase()));
       hiSel.clear();
       renderModal();
     }
@@ -222,7 +248,7 @@
 
     modal.querySelector("[data-custom-add]")?.addEventListener("click", () => {
       const code = (customCode?.value || "").trim();
-      const label = (customLabel?.value || "").trim() || code;
+      const rawLabel = (customLabel?.value || "").trim();
       if (!code) {
         toast("error", "请填写语言代码");
         return;
@@ -231,13 +257,15 @@
         toast("error", "语言代码格式无效（如 en、zh-CN、yue）");
         return;
       }
-      if (!catalog.some((o) => o.code.toLowerCase() === code.toLowerCase())) {
-        catalog.push({ code, label });
-      }
-      moveToSelected([code]);
+      // Display name is optional in UI, but empty falls back to code for list rendering.
+      const label = rawLabel || code;
+      const canonical = upsertCatalog(catalog, code, label);
+      // If user re-adds an existing custom locale with a new name, draft may already include it.
+      moveToSelected([canonical]);
+      persistJson();
       if (customCode) customCode.value = "";
       if (customLabel) customLabel.value = "";
-      toast("success", `已添加 ${label}`);
+      toast("success", `已添加 ${label}${rawLabel && rawLabel !== code ? `（${canonical}）` : ""}`);
     });
 
     modal.querySelector("[data-locale-confirm]")?.addEventListener("click", () => {
