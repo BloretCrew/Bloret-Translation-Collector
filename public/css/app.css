@@ -1107,7 +1107,7 @@ html.is-translation-editor .app-main--editor {
   object-fit: cover;
   border-radius: var(--blora-radius-sm);
   border: var(--blora-border);
-  background: var(--blora-surface);
+  background: var(--blora-surface-2);
 }
 
 .context-shot__meta {
