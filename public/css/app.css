@@ -546,6 +546,8 @@ html.is-translation-editor .app-main--editor {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  /* Allow compose dropdown to paint above siblings without being clipped */
+  overflow: visible;
 }
 
 .editor-main-scroll {
@@ -590,6 +592,9 @@ html.is-translation-editor .app-main--editor {
 
 .editor-compose {
   flex: 0 0 auto;
+  position: relative;
+  z-index: 6;
+  overflow: visible;
   border-top: var(--blora-border);
   padding: var(--blora-space-3) var(--blora-space-5) var(--blora-space-3);
   background: var(--blora-surface-1);
@@ -631,10 +636,25 @@ html.is-translation-editor .app-main--editor {
 
 .editor-compose__more {
   position: relative;
+  z-index: 7;
 }
 
+/*
+ * Compose sits at the bottom of the viewport; Blora dropdowns default to
+ * top: 100% and would open off-screen / under overflow:hidden on the shell.
+ * Always open this menu upward.
+ */
 .editor-compose__more .blora-dropdown-menu {
+  top: auto;
+  bottom: calc(100% + 6px);
+  left: 0;
   min-width: 9rem;
+  z-index: var(--blora-z-dropdown, 1000);
+  transform: translateY(4px);
+}
+
+.editor-compose__more .blora-dropdown-menu.is-open {
+  transform: translateY(0);
 }
 
 .editor-compose__more .blora-dropdown-menu__item {
