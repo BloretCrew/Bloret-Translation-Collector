@@ -242,6 +242,7 @@ html.is-translation-editor .app-main--editor {
   gap: var(--blora-space-2);
   flex: 1 1 auto;
   min-width: 0;
+  flex-wrap: wrap;
 }
 
 .editor-chrome__select {
@@ -249,6 +250,39 @@ html.is-translation-editor .app-main--editor {
   min-width: 6rem;
   font-size: var(--blora-text-sm);
   padding-block: 0.3em;
+}
+
+/* Crowdin-style translate / proofread identity switch */
+.editor-chrome__mode {
+  flex: 0 0 auto;
+  font-size: var(--blora-text-xs);
+}
+
+.editor-chrome__mode .blora-segmented__item {
+  padding: 0.25em 0.7em;
+  font-size: var(--blora-text-xs);
+  border: 0;
+  background: transparent;
+  font-family: inherit;
+}
+
+.editor-compose__mode-hint {
+  margin: 0 0 var(--blora-space-2);
+  padding: 0.5rem 0.65rem;
+  border-radius: var(--blora-radius-sm);
+  background: var(--blora-surface-2);
+  border: var(--blora-border);
+}
+
+.editor-compose.is-compose-hidden .editor-compose__field,
+.editor-compose.is-compose-hidden .editor-compose__more,
+.editor-compose.is-compose-hidden #editor-save-suggestion,
+.editor-compose.is-compose-hidden #editor-save-only {
+  display: none;
+}
+
+.editor-shell.is-mode-proofread .editor-compose__field {
+  opacity: 0.85;
 }
 
 .editor-chrome__meta {

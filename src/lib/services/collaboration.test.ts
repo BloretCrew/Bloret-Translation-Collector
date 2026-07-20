@@ -19,6 +19,7 @@ import {
   addComment,
   approveSuggestion,
   listComments,
+  listStringsWithWorkflow,
   listSuggestionsForString,
   toggleVote,
   upsertMySuggestion,
@@ -162,5 +163,100 @@ describe("collaboration workflow", () => {
     const comments = await listComments(unit!.id, "en");
     expect(comments.length).toBe(1);
     expect(comments[0]!.body).toBe("请注意大小写");
+  });
+
+  it("filters todo as untranslated + suggested (not approved)", async () => {
+    const stamp = Date.now().toString(36);
+    const [user] = await db
+      .insert(users)
+      .values({ username: `todo-u-${stamp}` })
+      .returning();
+    cleanup.userIds.push(user!.id);
+
+    const [org] = await db
+      .insert(organizations)
+      .values({ name: "Todo Org", slug: `todo-org-${stamp}`, createdBy: user!.id })
+      .returning();
+    cleanup.orgIds.push(org!.id);
+
+    await db.insert(organizationMembers).values({
+      orgId: org!.id,
+      userId: user!.id,
+      role: "owner",
+    });
+
+    const [project] = await db
+      .insert(projects)
+      .values({
+        orgId: org!.id,
+        slug: `todo-p-${stamp}`,
+        name: "Todo P",
+        sourceLocale: "zh-CN",
+        createdBy: user!.id,
+      })
+      .returning();
+
+    const [file] = await db
+      .insert(sourceFiles)
+      .values({
+        projectId: project!.id,
+        path: "todo.json",
+        rawSource: { a: "甲", b: "乙", c: "丙" },
+        updatedBy: user!.id,
+      })
+      .returning();
+
+    const [ua] = await db
+      .insert(stringUnits)
+      .values({ fileId: file!.id, keyPath: "a", sourceText: "甲", sortOrder: 0 })
+      .returning();
+    const [ub] = await db
+      .insert(stringUnits)
+      .values({ fileId: file!.id, keyPath: "b", sourceText: "乙", sortOrder: 1 })
+      .returning();
+    const [uc] = await db
+      .insert(stringUnits)
+      .values({ fileId: file!.id, keyPath: "c", sourceText: "丙", sortOrder: 2 })
+      .returning();
+
+    // a: untranslated (no suggestions)
+    // b: suggested
+    await upsertMySuggestion({
+      stringId: ub!.id,
+      locale: "en",
+      userId: user!.id,
+      text: "Bee",
+    });
+    // c: approved
+    const sc = await upsertMySuggestion({
+      stringId: uc!.id,
+      locale: "en",
+      userId: user!.id,
+      text: "Sea",
+    });
+    await approveSuggestion(sc.id, user!.id);
+
+    const todo = await listStringsWithWorkflow({
+      fileId: file!.id,
+      locale: "en",
+      status: "todo",
+      page: 1,
+      pageSize: 50,
+    });
+    const todoIds = new Set(todo.strings.map((s) => s.id as string));
+    expect(todoIds.has(ua!.id)).toBe(true);
+    expect(todoIds.has(ub!.id)).toBe(true);
+    expect(todoIds.has(uc!.id)).toBe(false);
+    expect(todo.total).toBe(2);
+
+    const pending = await listStringsWithWorkflow({
+      fileId: file!.id,
+      locale: "en",
+      status: "pending",
+      page: 1,
+      pageSize: 50,
+    });
+    expect(pending.total).toBe(1);
+    expect(pending.strings[0]!.id).toBe(ub!.id);
   });
 });

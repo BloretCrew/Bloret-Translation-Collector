@@ -523,6 +523,11 @@ export async function listStringsWithWorkflow(params: {
     rows = rows.filter((r) => r.workflowStatus === "approved");
   } else if (status === "pending") {
     rows = rows.filter((r) => r.workflowStatus === "suggested");
+  } else if (status === "todo" || status === "needs_translation") {
+    // Translator work queue: untranslated + has suggestions not yet approved
+    rows = rows.filter(
+      (r) => r.workflowStatus === "untranslated" || r.workflowStatus === "suggested",
+    );
   }
 
   const total = rows.length;

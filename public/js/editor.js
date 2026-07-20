@@ -17,12 +17,162 @@
   let fileId = root.dataset.fileId;
   let locale = root.dataset.locale;
   const canEdit = root.dataset.canEdit === "1";
-  const canApprove = root.dataset.canApprove === "1";
+  /** Org role or locale assignee (SSR for initial locale); may update after detail load */
+  let canApprove = root.dataset.canApprove === "1";
+  let canModeTranslate =
+    root.dataset.canModeTranslate === "1" || canEdit;
+  let canModeProofread =
+    root.dataset.canModeProofread === "1" || canApprove;
+  const MODE_STORAGE_KEY = `btc-editor-mode:${orgSlug}/${projectSlug}`;
   const urlFocus =
     root.dataset.focusString ||
     new URLSearchParams(location.search).get("string") ||
     "";
   let pendingFocus = urlFocus || null;
+
+  /**
+   * Crowdin-style workbench identity: restricts UI focus within real permissions.
+   * @type {'translate'|'proofread'|'readonly'}
+   */
+  let workMode = "readonly";
+
+  function readStoredMode() {
+    try {
+      return localStorage.getItem(MODE_STORAGE_KEY) || "";
+    } catch {
+      return "";
+    }
+  }
+
+  function writeStoredMode(mode) {
+    try {
+      if (mode === "translate" || mode === "proofread") {
+        localStorage.setItem(MODE_STORAGE_KEY, mode);
+      }
+    } catch {
+      /* ignore */
+    }
+  }
+
+  function resolveWorkMode() {
+    const params = new URLSearchParams(location.search);
+    const fromUrl = params.get("mode");
+    const fromStore = readStoredMode();
+    const fromSsr = root.dataset.mode || "";
+    const candidates = [fromUrl, fromStore, fromSsr];
+    for (const c of candidates) {
+      if (c === "translate" && canModeTranslate) return "translate";
+      if (c === "proofread" && canModeProofread) return "proofread";
+    }
+    if (canModeTranslate) return "translate";
+    if (canModeProofread) return "proofread";
+    return "readonly";
+  }
+
+  function defaultFilterForMode(mode) {
+    if (mode === "translate") return "todo";
+    if (mode === "proofread") return "pending";
+    return "all";
+  }
+
+  function effectiveCanSuggest() {
+    return canEdit && workMode === "translate";
+  }
+
+  function effectiveCanApprove() {
+    return canApprove && workMode === "proofread";
+  }
+
+  function syncModeUrl(mode) {
+    const url = new URL(location.href);
+    if (mode === "translate" || mode === "proofread") {
+      url.searchParams.set("mode", mode);
+    } else {
+      url.searchParams.delete("mode");
+    }
+    history.replaceState(null, "", url.toString());
+  }
+
+  function updateModeSegmentUi() {
+    const seg = document.getElementById("editor-mode");
+    if (!seg) return;
+    seg.querySelectorAll("[data-mode]").forEach((btn) => {
+      const m = btn.getAttribute("data-mode");
+      const active = m === workMode;
+      btn.classList.toggle("is-active", active);
+      btn.setAttribute("aria-pressed", active ? "true" : "false");
+    });
+  }
+
+  function applyModeUi() {
+    root.dataset.mode = workMode;
+    root.classList.toggle("is-mode-translate", workMode === "translate");
+    root.classList.toggle("is-mode-proofread", workMode === "proofread");
+    root.classList.toggle("is-mode-readonly", workMode === "readonly");
+
+    const suggest = effectiveCanSuggest();
+    const compose = document.getElementById("editor-compose");
+    const modeHint = document.getElementById("editor-mode-hint");
+    if (compose) {
+      compose.classList.toggle("is-compose-hidden", workMode === "proofread");
+      compose.classList.toggle("is-compose-readonly", !suggest);
+    }
+    if (modeHint) {
+      modeHint.hidden = workMode !== "proofread";
+    }
+    if (els.draft) {
+      els.draft.readOnly = !suggest;
+      els.draft.placeholder = suggest
+        ? "输入译文…"
+        : workMode === "proofread"
+          ? "审核模式：在右侧建议中批准"
+          : "只读";
+    }
+    if (els.saveBtn) els.saveBtn.hidden = !suggest;
+    if (els.saveOnlyBtn) els.saveOnlyBtn.hidden = !suggest;
+    const more = document.querySelector(".editor-compose__more");
+    if (more) more.hidden = !suggest;
+
+    setSaveHint("idle");
+    updateModeSegmentUi();
+    updateEmptyListCopy();
+  }
+
+  function updateEmptyListCopy() {
+    const msg = document.getElementById("editor-list-empty-msg");
+    if (!msg) return;
+    if (workMode === "translate" && els.filter?.value === "todo") {
+      msg.textContent = "没有待翻译词条";
+    } else if (workMode === "proofread" && els.filter?.value === "pending") {
+      msg.textContent = "没有待批准词条";
+    } else {
+      msg.textContent = "没有匹配的字符串";
+    }
+  }
+
+  function setWorkMode(mode, opts = {}) {
+    const next =
+      mode === "translate" && canModeTranslate
+        ? "translate"
+        : mode === "proofread" && canModeProofread
+          ? "proofread"
+          : resolveWorkMode();
+    const changed = next !== workMode;
+    workMode = next;
+    writeStoredMode(workMode);
+    syncModeUrl(workMode);
+    if (opts.resetFilter !== false && els.filter) {
+      els.filter.value = defaultFilterForMode(workMode);
+    }
+    applyModeUi();
+    if (opts.reload !== false && (changed || opts.forceReload)) {
+      activeId = null;
+      loadList();
+    } else if (detail && activeId) {
+      renderSuggestions(detail);
+      updateExtrasUi(detail);
+    }
+  }
 
   function reloadShortcuts() {
     if (!shortcutsApi) return;
@@ -53,7 +203,7 @@
     if (els.saveOnlyBtn) els.saveOnlyBtn.title = f("saveOnly");
     if (els.prev) els.prev.title = `上一条 (${f("prevString")})`;
     if (els.next) els.next.title = `下一条 (${f("nextString")})`;
-    if (els.saveHint && canEdit) {
+    if (els.saveHint && effectiveCanSuggest()) {
       els.saveHint.title = `${f("saveAndNext")} 保存并下一条 · ${f("saveOnly")} 仅保存`;
     }
     if (els.commentBody) {
@@ -147,7 +297,11 @@
       els.saveHint.classList.add("is-error");
       els.saveHint.textContent = "保存失败";
     } else {
-      els.saveHint.textContent = canEdit ? "就绪" : "只读";
+      els.saveHint.textContent = effectiveCanSuggest()
+        ? "就绪"
+        : workMode === "proofread"
+          ? "审核中"
+          : "只读";
     }
   }
 
@@ -209,7 +363,7 @@
   }
 
   function focusDraft() {
-    if (!canEdit || !els.draft || els.panelActive?.hidden) return;
+    if (!effectiveCanSuggest() || !els.draft || els.panelActive?.hidden) return;
     requestAnimationFrame(() => {
       els.draft.focus({ preventScroll: true });
     });
@@ -258,6 +412,7 @@
 
   function renderList() {
     els.list.innerHTML = "";
+    updateEmptyListCopy();
     if (els.listEmpty) els.listEmpty.hidden = strings.length > 0;
 
     strings.forEach((s) => {
@@ -409,8 +564,39 @@
         return;
       }
       detail = data;
+      // Locale assignee may differ from SSR; keep mode switcher in sync
+      if (typeof data.canApprove === "boolean") {
+        canApprove = data.canApprove;
+        canModeProofread = data.canApprove;
+        const proofBtn = document.querySelector(
+          '#editor-mode [data-mode="proofread"]',
+        );
+        if (proofBtn) {
+          proofBtn.hidden = !canModeProofread;
+        }
+        if (workMode === "proofread" && !canModeProofread) {
+          setWorkMode(canModeTranslate ? "translate" : "readonly", {
+            reload: false,
+            resetFilter: false,
+          });
+        }
+      }
+      if (typeof data.canSuggest === "boolean") {
+        canModeTranslate = data.canSuggest || canEdit;
+      }
       const mine = (data.suggestions || []).find((s) => s.isMine);
-      if (els.draft) els.draft.value = mine ? mine.text : "";
+      if (els.draft) {
+        if (workMode === "proofread") {
+          const approved = (data.suggestions || []).find((s) => s.isApproved);
+          els.draft.value = approved
+            ? approved.text
+            : mine
+              ? mine.text
+              : "";
+        } else {
+          els.draft.value = mine ? mine.text : "";
+        }
+      }
       setSaveHint("idle");
 
       const wf = data.workflowStatus || "untranslated";
@@ -428,6 +614,7 @@
         }
       }
 
+      applyModeUi();
       renderSuggestions(data);
       renderComments(data.comments || [], data);
       renderGlossary(data.glossaryHits || []);
@@ -443,16 +630,16 @@
 
   function updateExtrasUi(data) {
     if (els.mtBtn) {
-      els.mtBtn.hidden = !(canEdit && data.mtEnabled);
+      els.mtBtn.hidden = !(effectiveCanSuggest() && data.mtEnabled);
     }
     if (els.assignBtn) {
-      els.assignBtn.hidden = !data.canManage;
+      els.assignBtn.hidden = !data.canManage || workMode === "proofread";
     }
   }
 
   function renderContexts(contexts, data) {
     if (!els.contextsList) return;
-    const canUpload = canEdit || data.canManage;
+    const canUpload = effectiveCanSuggest() || data.canManage;
     if (els.contextFile) els.contextFile.hidden = !canUpload;
     if (els.contextCaption) els.contextCaption.hidden = !canUpload;
     if (els.contextUpload) els.contextUpload.hidden = !canUpload;
@@ -556,7 +743,7 @@
   }
 
   async function runMachineTranslate() {
-    if (!canEdit || !activeId || mtBusy) return;
+    if (!effectiveCanSuggest() || !activeId || mtBusy) return;
     const text = (els.source?.textContent || "").trim();
     if (!text) {
       toast?.("error", "源文为空");
@@ -654,7 +841,7 @@
       row.querySelector(".tm-hit__meta").textContent =
         `${matchLabel} · ${h.filePath} · ${h.keyPath}`;
       const use = row.querySelector("[data-use]");
-      if (!canEdit) {
+      if (!effectiveCanSuggest()) {
         use.hidden = true;
       } else {
         use.addEventListener("click", () => {
@@ -689,7 +876,7 @@
       row.querySelector(".glossary-hit__dst").textContent =
         h.translation || "（未定义此语言译法）";
       const use = row.querySelector("[data-use]");
-      if (!h.translation || !canEdit) {
+      if (!h.translation || !effectiveCanSuggest()) {
         use.hidden = true;
       } else {
         use.addEventListener("click", () => {
@@ -748,7 +935,7 @@
       }
 
       const actions = card.querySelector(".collab-card__actions");
-      if (canEdit && !s.isMine && s.text.trim()) {
+      if (effectiveCanSuggest() && !s.isMine && s.text.trim()) {
         const useBtn = document.createElement("button");
         useBtn.type = "button";
         useBtn.className = "blora-btn blora-btn--ghost blora-btn--xs";
@@ -770,7 +957,7 @@
         voteBtn.addEventListener("click", () => voteSuggestion(s.id));
         actions.appendChild(voteBtn);
       }
-      if (data.canApprove && !s.isApproved && s.text.trim()) {
+      if (effectiveCanApprove() && data.canApprove && !s.isApproved && s.text.trim()) {
         const appr = document.createElement("button");
         appr.type = "button";
         appr.className = "blora-btn blora-btn--secondary blora-btn--xs";
@@ -778,7 +965,7 @@
         appr.addEventListener("click", () => approveSuggestion(s.id));
         actions.appendChild(appr);
       }
-      if (data.canApprove && s.isApproved) {
+      if (effectiveCanApprove() && data.canApprove && s.isApproved) {
         const un = document.createElement("button");
         un.type = "button";
         un.className = "blora-btn blora-btn--ghost blora-btn--xs";
@@ -827,7 +1014,7 @@
    */
   async function saveSuggestion(opts = {}) {
     const advance = Boolean(opts.advance);
-    if (!canEdit || !activeId || saving) return;
+    if (!effectiveCanSuggest() || !activeId || saving) return;
     saving = true;
     setSaveHint("saving");
 
@@ -867,7 +1054,7 @@
   }
 
   async function deleteSuggestion() {
-    if (!canEdit || !activeId) return;
+    if (!effectiveCanSuggest() || !activeId) return;
     if (!confirm("删除我的建议？")) return;
     try {
       const { res, data } = await json(
@@ -904,6 +1091,7 @@
   }
 
   async function approveSuggestion(id) {
+    if (!effectiveCanApprove()) return;
     if (!confirm("批准该建议作为定稿译文？导出将使用此文本。")) return;
     try {
       const { res, data } = await json(
@@ -923,7 +1111,7 @@
   }
 
   async function unapprove() {
-    if (!activeId) return;
+    if (!effectiveCanApprove() || !activeId) return;
     if (!confirm("取消批准？定稿将清空（建议仍保留）。")) return;
     try {
       const { res, data } = await json(
@@ -1009,15 +1197,22 @@
   els.file?.addEventListener("change", () => {
     const url = new URL(location.href);
     url.searchParams.set("file", els.file.value);
+    if (workMode === "translate" || workMode === "proofread") {
+      url.searchParams.set("mode", workMode);
+    }
     location.href = url.toString();
   });
   els.locale?.addEventListener("change", () => {
     const url = new URL(location.href);
     url.searchParams.set("locale", els.locale.value);
+    if (workMode === "translate" || workMode === "proofread") {
+      url.searchParams.set("mode", workMode);
+    }
     location.href = url.toString();
   });
   els.filter?.addEventListener("change", () => {
     activeId = null;
+    updateEmptyListCopy();
     loadList();
   });
   els.q?.addEventListener("input", debouncedSearch);
@@ -1046,6 +1241,14 @@
     els.body?.classList.toggle("is-side-open");
     els.body?.classList.remove("is-list-open");
   });
+  document.getElementById("editor-mode")?.addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-mode]");
+    if (!btn || btn.hidden) return;
+    const mode = btn.getAttribute("data-mode");
+    if (mode === "translate" || mode === "proofread") {
+      setWorkMode(mode, { forceReload: true });
+    }
+  });
   els.commentBody?.addEventListener("keydown", (e) => {
     if (matchAction(e, "sendComment")) {
       e.preventDefault();
@@ -1053,6 +1256,7 @@
     }
   });
   els.draft?.addEventListener("keydown", (e) => {
+    if (!effectiveCanSuggest()) return;
     if (matchAction(e, "saveOnly")) {
       e.preventDefault();
       saveSuggestion({ advance: false });
@@ -1091,6 +1295,14 @@
     if (document.visibilityState === "visible") reloadShortcuts();
   });
 
+  // Init workbench mode (filter defaults + action focus) before first list load
+  workMode = resolveWorkMode();
+  writeStoredMode(workMode);
+  syncModeUrl(workMode);
+  if (els.filter) {
+    els.filter.value = defaultFilterForMode(workMode);
+  }
+  applyModeUi();
   applyShortcutHints();
   loadList();
 })();

@@ -512,11 +512,12 @@ collaborationRouter.post(
       const session = requireSession(req);
       if (!session) return unauthorized(res);
 
+      // Min role translator so locale proofreader assignees (org translator) can reach the check
       const access = await requireProjectAccess(
         req.params.orgSlug,
         req.params.projectSlug,
         session.userId!,
-        "proofreader",
+        "translator",
       );
       if ("error" in access) {
         if (access.error === "not_found") return notFound(res);
@@ -577,18 +578,25 @@ collaborationRouter.post(
         req.params.orgSlug,
         req.params.projectSlug,
         session.userId!,
-        "proofreader",
+        "translator",
       );
       if ("error" in access) {
         if (access.error === "not_found") return notFound(res);
         return forbidden(res);
       }
-      if (!canApproveTranslations(access.role)) {
-        return forbidden(res, "仅审核员及以上可取消批准");
-      }
 
       const unit = await assertStringInProject(access.project.id, req.params.stringId);
       if (!unit) return notFound(res, "字符串不存在");
+
+      const localeProofreader = await isLocaleAssignee(
+        access.project.id,
+        localeParsed.data,
+        session.userId!,
+        "proofreader",
+      );
+      if (!canApproveTranslations(access.role) && !localeProofreader) {
+        return forbidden(res, "仅审核员、语言审核指派或管理员可取消批准");
+      }
 
       await unapproveLocale(unit.id, localeParsed.data);
       return jsonOk(res, { ok: true });

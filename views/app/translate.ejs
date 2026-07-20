@@ -11,6 +11,9 @@
     data-focus-string="<%= typeof focusString !== 'undefined' && focusString ? focusString : '' %>"
     data-can-edit="<%= canEdit ? '1' : '0' %>"
     data-can-approve="<%= typeof canApprove !== 'undefined' && canApprove ? '1' : '0' %>"
+    data-can-mode-translate="<%= typeof canModeTranslate !== 'undefined' && canModeTranslate ? '1' : '0' %>"
+    data-can-mode-proofread="<%= typeof canModeProofread !== 'undefined' && canModeProofread ? '1' : '0' %>"
+    data-mode="<%= typeof initialMode !== 'undefined' && initialMode ? initialMode : 'readonly' %>"
     data-project-href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>"
   >
     <header class="editor-chrome">
@@ -28,6 +31,34 @@
             <option value="<%= l %>" <%= l === locale ? 'selected' : '' %>><%= localeLabel(l) %></option>
           <% }) %>
         </select>
+        <% var showTranslateMode = typeof canModeTranslate !== 'undefined' && canModeTranslate; %>
+        <% var showProofreadMode = typeof canModeProofread !== 'undefined' && canModeProofread; %>
+        <% if (showTranslateMode || showProofreadMode) { %>
+          <div
+            class="blora-segmented editor-chrome__mode"
+            id="editor-mode"
+            role="group"
+            aria-label="工作身份"
+            title="按已有权限切换翻译 / 审核视角"
+          >
+            <% if (showTranslateMode) { %>
+              <button
+                type="button"
+                class="blora-segmented__item<%= initialMode === 'translate' ? ' is-active' : '' %>"
+                data-mode="translate"
+                aria-pressed="<%= initialMode === 'translate' ? 'true' : 'false' %>"
+              >翻译</button>
+            <% } %>
+            <% if (showProofreadMode) { %>
+              <button
+                type="button"
+                class="blora-segmented__item<%= initialMode === 'proofread' ? ' is-active' : '' %>"
+                data-mode="proofread"
+                aria-pressed="<%= initialMode === 'proofread' ? 'true' : 'false' %>"
+              >审核</button>
+            <% } %>
+          </div>
+        <% } %>
       </div>
       <div
         class="editor-progress"
@@ -72,6 +103,7 @@
           <div class="editor-list-tools__row">
             <select class="blora-select blora-select--sm editor-list-tools__filter" id="editor-filter" aria-label="筛选状态">
               <option value="all">全部</option>
+              <option value="todo">待处理（未译+待批）</option>
               <option value="untranslated">未翻译</option>
               <option value="pending">有建议未批准</option>
               <option value="approved">已批准</option>
@@ -81,7 +113,7 @@
         </div>
         <div class="editor-list" id="editor-list" role="listbox"></div>
         <div id="editor-list-empty" class="editor-list-empty blora-text-muted u-text-sm" hidden>
-          没有匹配的字符串<br />
+          <span id="editor-list-empty-msg">没有匹配的字符串</span><br />
           <span class="blora-text-faint u-text-xs">试试调整筛选或搜索</span>
         </div>
       </aside>
@@ -108,7 +140,10 @@
             </div>
           </div>
 
-          <div class="editor-compose">
+          <div class="editor-compose" id="editor-compose">
+            <p class="editor-compose__mode-hint blora-text-muted u-text-sm" id="editor-mode-hint" hidden>
+              当前为<strong>审核</strong>身份：请在右侧建议列表中批准或取消批准。写译文请切换到「翻译」。
+            </p>
             <label class="blora-field editor-compose__field">
               <span class="blora-field__label editor-compose__label">
                 译文 · <%= localeLabel(locale) %>

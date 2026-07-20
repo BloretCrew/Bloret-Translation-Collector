@@ -19,9 +19,11 @@ import {
   canExport,
   canManageOrg,
   canManageProjects,
+  canSuggestTranslations,
   canUploadFiles,
 } from "@/lib/permissions/roles";
 import { getFileProgress, getProjectProgress } from "@/lib/services/files";
+import { isLocaleAssignee } from "@/lib/services/glossary";
 import { requirePageAuth } from "@/middleware/requireAuth";
 
 export const pagesRouter = Router();
@@ -442,10 +444,29 @@ pagesRouter.get("/app/o/:org/p/:project/translate", async (req, res, next) => {
     const fileIdParam = typeof req.query.file === "string" ? req.query.file : null;
     const localeParam = typeof req.query.locale === "string" ? req.query.locale : null;
     const stringParam = typeof req.query.string === "string" ? req.query.string : null;
+    const modeParam = typeof req.query.mode === "string" ? req.query.mode : null;
     const fileId =
       fileIdParam && files.some((f) => f.id === fileIdParam) ? fileIdParam : files[0]!.id;
     const locale =
       localeParam && locales.includes(localeParam) ? localeParam : locales[0]!;
+
+    const canEdit = canEditTranslations(access.role);
+    const canModeTranslate = canSuggestTranslations(access.role);
+    const localeProofreader = await isLocaleAssignee(
+      access.project.id,
+      locale,
+      session.userId!,
+      "proofreader",
+    );
+    const canApprove =
+      canApproveTranslations(access.role) || localeProofreader;
+    const canModeProofread = canApprove;
+
+    let initialMode: "translate" | "proofread" | "readonly" = "readonly";
+    if (modeParam === "translate" && canModeTranslate) initialMode = "translate";
+    else if (modeParam === "proofread" && canModeProofread) initialMode = "proofread";
+    else if (canModeTranslate) initialMode = "translate";
+    else if (canModeProofread) initialMode = "proofread";
 
     return res.render("app/translate", {
       title: "翻译工作台",
@@ -458,8 +479,11 @@ pagesRouter.get("/app/o/:org/p/:project/translate", async (req, res, next) => {
       fileId,
       locale,
       focusString: stringParam,
-      canEdit: canEditTranslations(access.role),
-      canApprove: canApproveTranslations(access.role),
+      canEdit,
+      canApprove,
+      canModeTranslate,
+      canModeProofread,
+      initialMode,
     });
   } catch (e) {
     next(e);
