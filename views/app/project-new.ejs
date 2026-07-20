@@ -28,6 +28,15 @@
           <%- include('../partials/locale-source-select', { value: 'zh-CN' }) %>
           <%- include('../partials/locale-target-picker', { selected: ['en'] }) %>
           <label class="blora-field">
+            <span class="blora-field__label">可见性</span>
+            <select class="blora-select" name="visibility">
+              <option value="public">公开（登录用户可翻译）</option>
+              <option value="org" selected>组织内</option>
+              <option value="private">私有</option>
+            </select>
+            <span class="blora-field__hint">公开项目允许任何已登录用户以翻译员身份提交译文，审核权限不变。</span>
+          </label>
+          <label class="blora-field">
             <span class="blora-field__label">简介（可选）</span>
             <textarea class="blora-textarea" name="description" rows="2"></textarea>
           </label>

@@ -118,7 +118,7 @@
             description: fd.get("description") || null,
             sourceLocale: fd.get("sourceLocale"),
             targetLocales: locales,
-            visibility: "org",
+            visibility: fd.get("visibility") || "org",
           }),
         });
         if (!res.ok) {

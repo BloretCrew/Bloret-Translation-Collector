@@ -46,7 +46,7 @@ export const createProjectSchema = z.object({
   description: z.string().max(500).optional().nullable(),
   sourceLocale: localeSchema.default("en"),
   targetLocales: z.array(localeSchema).min(1).max(50),
-  visibility: z.enum(["private", "org"]).default("org"),
+  visibility: z.enum(["private", "org", "public"]).default("org"),
 });
 
 export const updateProjectSchema = z.object({

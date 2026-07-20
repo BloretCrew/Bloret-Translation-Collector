@@ -9,6 +9,7 @@ import { db } from "./db";
 import { organizationMembers, organizations, projectLanguages, projects, users } from "./db/schema";
 import { slugify } from "./slug";
 import { createOrgSchema, createProjectSchema } from "./validators/common";
+import { requireProjectAccess } from "./access";
 
 applyConfigToProcessEnv();
 
@@ -156,5 +157,62 @@ describe("create org → membership-scoped list", () => {
     const row = listedOrgs.find((o) => o.id === org.id);
     expect(row).toBeTruthy();
     expect(Number(row!.projectCount)).toBeGreaterThanOrEqual(1);
+  });
+
+  it("allows a logged-in non-member to access a public project as translator", async () => {
+    const stamp = Date.now().toString(36);
+    const [owner] = await db
+      .insert(users)
+      .values({ username: `public-owner-${stamp}` })
+      .returning();
+    const [visitor] = await db
+      .insert(users)
+      .values({ username: `public-visitor-${stamp}` })
+      .returning();
+    cleanupUserIds.push(owner!.id, visitor!.id);
+
+    const [org] = await db
+      .insert(organizations)
+      .values({ name: "Public Org", slug: `public-org-${stamp}`, createdBy: owner!.id })
+      .returning();
+    cleanupOrgIds.push(org!.id);
+    await db.insert(organizationMembers).values({
+      orgId: org!.id,
+      userId: owner!.id,
+      role: "owner",
+    });
+
+    const [project] = await db
+      .insert(projects)
+      .values({
+        orgId: org!.id,
+        slug: `public-p-${stamp}`,
+        name: "Public Project",
+        sourceLocale: "zh-CN",
+        visibility: "public",
+        createdBy: owner!.id,
+      })
+      .returning();
+
+    const access = await requireProjectAccess(
+      org!.slug,
+      project!.slug,
+      visitor!.id,
+      "translator",
+    );
+    expect("error" in access).toBe(false);
+    if (!("error" in access)) {
+      expect(access.project.id).toBe(project!.id);
+      expect(access.role).toBe("translator");
+      expect(access.membership).toBeNull();
+    }
+
+    const managerAccess = await requireProjectAccess(
+      org!.slug,
+      project!.slug,
+      visitor!.id,
+      "manager",
+    );
+    expect("error" in managerAccess).toBe(true);
   });
 });

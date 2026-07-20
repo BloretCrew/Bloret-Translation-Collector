@@ -471,6 +471,7 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects", async (req, res, next) => {
         slug: project.slug,
         name: project.name,
         sourceLocale: project.sourceLocale,
+        visibility: project.visibility,
         targetLocales: data.targetLocales,
       });
     } catch (e) {

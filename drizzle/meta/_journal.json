@@ -36,6 +36,13 @@
       "when": 1784303000000,
       "tag": "0004_tasks_mt_contexts",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1784517344120,
+      "tag": "0005_public_project_visibility",
+      "breakpoints": true
     }
   ]
 }

@@ -44,21 +44,53 @@ export async function requireProjectAccess(
   minRole: MemberRole = "viewer",
 ) {
   const access = await requireOrgAccess(orgSlug, userId, minRole);
-  if ("error" in access && access.error) {
-    return access;
+  if (!("error" in access)) {
+    const [project] = await db
+      .select()
+      .from(projects)
+      .where(and(eq(projects.orgId, access.org.id), eq(projects.slug, projectSlug)))
+      .limit(1);
+    if (!project) {
+      return {
+        error: "not_found" as const,
+        org: access.org,
+        membership: access.membership,
+        role: access.role,
+      };
+    }
+    const effectiveRole =
+      project.visibility === "public" && !roleAtLeast(access.role, "translator")
+        ? ("translator" as const)
+        : access.role;
+    return {
+      org: access.org,
+      project,
+      membership: access.membership,
+      role: effectiveRole,
+    };
   }
-  const { org, membership, role } = access as {
-    org: typeof organizations.$inferSelect;
-    membership: typeof organizationMembers.$inferSelect;
-    role: MemberRole;
-  };
 
+  if (access.error === "not_found" || !access.org) return access;
+
+  // Public projects accept any authenticated user as a translator. This is
+  // intentionally limited to viewer/translator access; management and review
+  // rights still require real organization membership.
   const [project] = await db
     .select()
     .from(projects)
-    .where(and(eq(projects.orgId, org.id), eq(projects.slug, projectSlug)))
+    .where(and(eq(projects.orgId, access.org.id), eq(projects.slug, projectSlug)))
     .limit(1);
-  if (!project) return { error: "not_found" as const, org, membership, role };
+  if (!project) {
+    return { error: "not_found" as const, org: access.org };
+  }
+  if (project.visibility !== "public" || !roleAtLeast("translator", minRole)) {
+    return { error: "forbidden" as const, org: access.org };
+  }
 
-  return { org, project, membership, role };
+  return {
+    org: access.org,
+    project,
+    membership: null,
+    role: "translator" as const,
+  };
 }

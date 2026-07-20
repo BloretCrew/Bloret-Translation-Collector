@@ -23,6 +23,7 @@ export const memberRoleEnum = pgEnum("member_role", [
 export const projectVisibilityEnum = pgEnum("project_visibility", [
   "private",
   "org",
+  "public",
 ]);
 
 export const translationStatusEnum = pgEnum("translation_status", [
