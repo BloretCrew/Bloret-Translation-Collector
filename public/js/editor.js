@@ -240,6 +240,7 @@
     sideCol: document.getElementById("editor-side-col"),
     toggleList: document.getElementById("editor-toggle-list"),
     toggleSide: document.getElementById("editor-toggle-side"),
+    drawerBackdrop: document.getElementById("editor-drawer-backdrop"),
     panelEmpty: document.getElementById("editor-panel-empty"),
     panelActive: document.getElementById("editor-panel-active"),
     key: document.getElementById("editor-key"),
@@ -278,6 +279,8 @@
   let mtBusy = false;
   /** Monotonic id so out-of-order list responses (fast typing) are ignored */
   let listRequestId = 0;
+  /** Matches CSS drawer breakpoint for list/side overlays */
+  const mqDrawer = window.matchMedia("(max-width: 900px)");
 
   /** @param {'loading'|'workspace'} state */
   function setShellState(state) {
@@ -401,8 +404,35 @@
     activeBtn?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
 
+  function syncDrawerUi() {
+    const listOpen = !!els.body?.classList.contains("is-list-open");
+    const sideOpen = !!els.body?.classList.contains("is-side-open");
+    const anyOpen = listOpen || sideOpen;
+    els.toggleList?.setAttribute("aria-expanded", listOpen ? "true" : "false");
+    els.toggleSide?.setAttribute("aria-expanded", sideOpen ? "true" : "false");
+    els.toggleList?.classList.toggle("is-active", listOpen);
+    els.toggleSide?.classList.toggle("is-active", sideOpen);
+    if (els.drawerBackdrop) {
+      els.drawerBackdrop.hidden = !anyOpen;
+    }
+    document.documentElement.classList.toggle("is-editor-drawer-open", anyOpen);
+  }
+
   function closeMobileDrawers() {
     els.body?.classList.remove("is-list-open", "is-side-open");
+    syncDrawerUi();
+  }
+
+  function toggleListDrawer() {
+    els.body?.classList.toggle("is-list-open");
+    els.body?.classList.remove("is-side-open");
+    syncDrawerUi();
+  }
+
+  function toggleSideDrawer() {
+    els.body?.classList.toggle("is-side-open");
+    els.body?.classList.remove("is-list-open");
+    syncDrawerUi();
   }
 
   function showMainEmpty() {
@@ -520,6 +550,12 @@
         renderList();
         showMainEmpty();
         clearSidePanels();
+        // On phone, surface the list so filters/search are discoverable
+        if (!quiet && mqDrawer.matches) {
+          els.body?.classList.add("is-list-open");
+          els.body?.classList.remove("is-side-open");
+          syncDrawerUi();
+        }
         if (keepSearchFocus) restoreSearchFocus();
         return;
       }
@@ -1335,14 +1371,26 @@
   els.prev?.addEventListener("click", () => navigate(-1));
   els.next?.addEventListener("click", () => navigate(1));
   els.commentSend?.addEventListener("click", () => sendComment());
-  els.toggleList?.addEventListener("click", () => {
-    els.body?.classList.toggle("is-list-open");
-    els.body?.classList.remove("is-side-open");
+  els.toggleList?.addEventListener("click", () => toggleListDrawer());
+  els.toggleSide?.addEventListener("click", () => toggleSideDrawer());
+  els.drawerBackdrop?.addEventListener("click", () => closeMobileDrawers());
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && els.body && !els.body.hidden) {
+      if (els.body.classList.contains("is-list-open") || els.body.classList.contains("is-side-open")) {
+        e.preventDefault();
+        closeMobileDrawers();
+      }
+    }
   });
-  els.toggleSide?.addEventListener("click", () => {
-    els.body?.classList.toggle("is-side-open");
-    els.body?.classList.remove("is-list-open");
-  });
+  // Close drawers when crossing back to desktop layout
+  const onDrawerMq = () => {
+    if (!mqDrawer.matches) closeMobileDrawers();
+  };
+  if (typeof mqDrawer.addEventListener === "function") {
+    mqDrawer.addEventListener("change", onDrawerMq);
+  } else if (typeof mqDrawer.addListener === "function") {
+    mqDrawer.addListener(onDrawerMq);
+  }
   document.getElementById("editor-mode")?.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-mode]");
     if (!btn || btn.hidden) return;

@@ -63,6 +63,14 @@
   flex-shrink: 0;
 }
 
+.app-navbar__brand-text {
+  min-width: 0;
+}
+
+.app-navbar__username {
+  min-width: 0;
+}
+
 /* —— Page shell —— */
 .app-main {
   min-height: calc(100vh - var(--app-navbar-offset));
@@ -206,6 +214,7 @@
 html.is-translation-editor,
 html.is-translation-editor body {
   height: 100%;
+  height: 100dvh;
   overflow: hidden;
 }
 
@@ -218,10 +227,15 @@ html.is-translation-editor .app-main--editor {
   padding: 0;
   min-height: 0;
   height: 100vh;
+  height: 100dvh;
   max-height: 100vh;
+  max-height: 100dvh;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  /* iOS notch / home indicator */
+  padding-top: env(safe-area-inset-top, 0);
+  padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
 /* Author display must not defeat [hidden] */
@@ -357,6 +371,20 @@ html.is-translation-editor .app-main--editor {
   display: none;
 }
 
+.editor-chrome__toggle.is-active {
+  color: var(--blora-seal);
+  background: var(--blora-seal-tint);
+}
+
+.editor-chrome__btn-label {
+  margin-inline-start: 0.15em;
+}
+
+/* Drawer dimmer (mobile only; hidden on desktop) */
+.editor-drawer-backdrop {
+  display: none;
+}
+
 /* File × locale workflow progress (approved | suggested | empty) */
 .editor-progress {
   flex: 1 1 5rem;
@@ -414,6 +442,103 @@ html.is-translation-editor .app-main--editor {
 
   .editor-chrome {
     flex-wrap: wrap;
+    row-gap: 0.35rem;
+    padding-inline: max(var(--blora-space-2), env(safe-area-inset-left, 0px))
+      max(var(--blora-space-2), env(safe-area-inset-right, 0px));
+  }
+
+  .editor-chrome__back {
+    max-width: 4.5rem;
+    padding-inline: 0.35em;
+  }
+
+  .editor-chrome__context {
+    flex: 1 1 auto;
+    gap: 0.25rem;
+  }
+
+  .editor-chrome__select--file {
+    flex: 1 1 5.5rem;
+    width: auto;
+    max-width: 9rem;
+    min-width: 4.5rem;
+  }
+
+  .editor-chrome__select--locale {
+    flex: 0 1 4.5rem;
+    width: auto;
+    max-width: 5.5rem;
+  }
+
+  .editor-chrome__mode .blora-segmented__item {
+    padding: 0.2em 0.4em;
+  }
+
+  /* Icon-only chrome actions on phones */
+  .editor-chrome__btn-label {
+    display: none;
+  }
+
+  .editor-chrome__meta .blora-btn--sm {
+    padding: 0.3em 0.45em;
+    min-width: 2.25rem;
+    min-height: 2.25rem;
+  }
+
+  .editor-chrome__count {
+    display: none;
+  }
+
+  .editor-main-scroll {
+    padding: var(--blora-space-3) var(--blora-space-3) var(--blora-space-2);
+  }
+
+  .editor-compose {
+    padding: var(--blora-space-2) var(--blora-space-3)
+      max(var(--blora-space-2), env(safe-area-inset-bottom, 0px));
+  }
+
+  .editor-draft {
+    min-height: 4.5rem;
+    max-height: 40vh;
+    font-size: 16px; /* avoid iOS zoom on focus */
+  }
+
+  .editor-compose__actions {
+    gap: var(--blora-space-1);
+  }
+
+  .editor-compose__actions .blora-btn--sm {
+    min-height: 2.25rem;
+  }
+
+  .editor-compose__spacer {
+    flex-basis: 100%;
+    height: 0;
+    min-width: 0;
+    order: 5;
+  }
+
+  .editor-compose__actions #editor-prev,
+  .editor-compose__actions #editor-next {
+    order: 6;
+    flex: 1 1 auto;
+  }
+
+  .editor-compose__btn-long {
+    display: none;
+  }
+
+  .editor-compose__btn-short {
+    display: inline;
+  }
+
+  .editor-main-empty__desktop {
+    display: none;
+  }
+
+  .editor-main-empty__mobile {
+    display: block;
   }
 }
 
@@ -668,6 +793,20 @@ html.is-translation-editor .app-main--editor {
   z-index: 7;
 }
 
+/* Long / short compose labels (short shown only on narrow screens) */
+.editor-compose__btn-short {
+  display: none;
+}
+
+.editor-main-empty__mobile {
+  display: none;
+  margin: 0;
+}
+
+.editor-main-empty__desktop {
+  margin: 0;
+}
+
 /*
  * Compose sits at the bottom of the viewport; Blora dropdowns default to
  * top: 100% and would open off-screen / under overflow:hidden on the shell.
@@ -779,6 +918,7 @@ html.is-translation-editor .app-main--editor {
 @media (max-width: 900px) {
   .editor-chrome__toggle {
     display: inline-flex;
+    align-items: center;
   }
 
   .editor-chrome__back {
@@ -807,22 +947,44 @@ html.is-translation-editor .app-main--editor {
     position: relative;
   }
 
+  .editor-drawer-backdrop {
+    display: block;
+    position: absolute;
+    inset: 0;
+    z-index: 3;
+    margin: 0;
+    padding: 0;
+    border: 0;
+    background: color-mix(in srgb, var(--blora-ink) 38%, transparent);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .editor-drawer-backdrop[hidden] {
+    display: none !important;
+  }
+
   .editor-col--list,
   .editor-col--side {
     position: absolute;
     top: 0;
     bottom: 0;
-    z-index: 4;
-    width: min(20rem, 88vw);
-    box-shadow: var(--blora-shadow-2);
+    z-index: 5;
+    width: min(20rem, 90vw);
+    max-width: 100%;
+    box-shadow: var(--blora-shadow-3);
     transform: translateX(-105%);
     transition: transform var(--blora-dur-fast) var(--blora-ease);
+    /* Keep drawers above main; respect notch on landscape phones */
+    padding-left: env(safe-area-inset-left, 0);
   }
 
   .editor-col--side {
     right: 0;
     left: auto;
     transform: translateX(105%);
+    padding-left: 0;
+    padding-right: env(safe-area-inset-right, 0);
   }
 
   .editor-workspace.is-list-open .editor-col--list {
@@ -835,6 +997,13 @@ html.is-translation-editor .app-main--editor {
 
   .editor-col--main {
     min-height: 0;
+  }
+
+  .editor-main-empty {
+    flex-direction: column;
+    gap: var(--blora-space-3);
+    text-align: center;
+    padding-inline: var(--blora-space-4);
   }
 }
 
@@ -1963,13 +2132,22 @@ button.is-btc-busy .loading-spinner {
   .settings-nav {
     position: static;
     flex-direction: row;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     gap: var(--blora-space-1);
     padding: var(--blora-space-2);
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+  }
+
+  .settings-nav::-webkit-scrollbar {
+    display: none;
   }
 
   .settings-nav__link {
     padding: 0.45rem 0.7rem;
+    white-space: nowrap;
+    flex: 0 0 auto;
   }
 
   .settings-nav__link--danger {
@@ -1990,6 +2168,288 @@ button.is-btc-busy .loading-spinner {
 
   .app-main {
     padding-top: var(--blora-space-4);
+    padding-bottom: max(var(--blora-space-8), env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* =========================================================================
+   Global mobile / tablet product chrome
+   ========================================================================= */
+@media (max-width: 880px) {
+  .blora-navbar.app-navbar {
+    padding-inline: var(--blora-space-3);
+    gap: var(--blora-space-2);
+  }
+
+  /* Primary nav links live in the user dropdown on small screens */
+  .app-navbar__nav-link {
+    display: none !important;
+  }
+
+  .app-navbar__brand-text {
+    max-width: 9.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-navbar__username {
+    max-width: 6rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .app-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scrollbar-width: none;
+    margin-inline: calc(-1 * var(--blora-space-1));
+    padding-inline: var(--blora-space-1);
+  }
+
+  .app-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .app-tabs__link {
+    flex: 0 0 auto;
+  }
+
+  .app-page-header {
+    gap: var(--blora-space-3);
+  }
+
+  .app-page-header__actions {
+    width: 100%;
+  }
+
+  .app-page-header__actions .blora-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .progress-table .blora-progress {
+    min-width: 4.5rem;
+    max-width: none;
+  }
+
+  .progress-table td .blora-row {
+    flex-wrap: wrap;
+  }
+
+  .progress-table td .blora-text-mono {
+    width: 100%;
+  }
+
+  .upload-file-list__row {
+    grid-template-columns: 1fr;
+  }
+
+  .export-form__grid,
+  .export-quick-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .settings-panel {
+    padding: var(--blora-space-4);
+  }
+
+  .settings-danger-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .settings-danger-card .blora-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 560px) {
+  :root {
+    --app-navbar-offset: 3.5rem;
+  }
+
+  .blora-container,
+  .blora-container--wide,
+  .blora-container--prose {
+    padding-inline: var(--blora-space-3);
+  }
+
+  .blora-navbar.app-navbar {
+    padding-block: var(--blora-space-2);
+    padding-inline: max(var(--blora-space-3), env(safe-area-inset-left, 0px))
+      max(var(--blora-space-3), env(safe-area-inset-right, 0px));
+  }
+
+  .app-navbar__brand-text {
+    max-width: 7rem;
+    font-size: var(--blora-text-sm);
+  }
+
+  .app-navbar__username {
+    display: none;
+  }
+
+  .app-navbar__user-chevron {
+    display: none;
+  }
+
+  .app-navbar__avatar-img,
+  .app-navbar__avatar-fallback {
+    margin-right: 0;
+  }
+
+  .landing-hero {
+    padding: var(--blora-space-8) var(--blora-space-2) var(--blora-space-6);
+  }
+
+  .landing-hero__lead {
+    font-size: var(--blora-text-base);
+  }
+
+  .landing-hero__actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .landing-hero__actions .blora-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .feature-grid {
+    grid-template-columns: 1fr;
+    gap: var(--blora-space-3);
+    margin-top: var(--blora-space-6);
+  }
+
+  .app-breadcrumb {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    white-space: nowrap;
+    max-width: 100%;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .app-breadcrumb::-webkit-scrollbar {
+    display: none;
+  }
+
+  .blora-h2 {
+    font-size: clamp(1.25rem, 5vw, 1.5rem);
+    word-break: break-word;
+  }
+
+  .blora-panel {
+    padding: var(--blora-space-4);
+  }
+
+  .blora-card {
+    padding: var(--blora-space-4);
+  }
+
+  /* Progress / tasks tables: denser cells */
+  .blora-table thead th,
+  .blora-table tbody td {
+    padding: 0.65em 0.7em;
+  }
+
+  .progress-table .blora-btn--xs {
+    white-space: nowrap;
+  }
+
+  /* Stack language progress: language + bar, then CTA full-width */
+  .progress-table tbody tr {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.35rem;
+    padding: var(--blora-space-3);
+    border-bottom: 1px solid var(--blora-ink-ghost);
+  }
+
+  .progress-table thead {
+    display: none;
+  }
+
+  .progress-table tbody td {
+    border-bottom: 0;
+    padding: 0;
+    display: block;
+  }
+
+  .progress-table tbody td:last-child .blora-row {
+    width: 100%;
+  }
+
+  .progress-table tbody td:last-child .blora-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .blora-table-wrap {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .blora-field .blora-input,
+  .blora-field .blora-select,
+  .blora-field .blora-textarea {
+    max-width: 100%;
+  }
+
+  /* Dialogs near edges on small phones */
+  .blora-modal__dialog {
+    max-width: calc(100vw - 1.25rem);
+    max-height: calc(100dvh - 1.5rem);
+  }
+
+  .settings-shortcut__actions {
+    justify-content: flex-start;
+  }
+
+  .settings-shortcuts-table td {
+    display: block;
+  }
+
+  .settings-shortcuts-table tr {
+    display: block;
+    padding: var(--blora-space-3);
+    border-bottom: var(--blora-border);
+  }
+
+  .settings-shortcuts-table thead {
+    display: none;
+  }
+
+  .locale-picker-dialog {
+    max-width: 100% !important;
+    margin: var(--blora-space-2);
+  }
+
+  .locale-picker-list {
+    min-height: 10rem;
+    max-height: 14rem;
+  }
+
+  .readme-body {
+    padding: var(--blora-space-3);
+  }
+
+  /* Touch: slightly larger hit targets for outline/ghost small buttons in toolbars */
+  .app-page-header__actions .blora-btn--sm,
+  .app-section-head .blora-btn--sm {
+    min-height: 2.35rem;
+  }
+}
+
+/* Prefer reduced motion: skip drawer slide (still toggles) */
+@media (max-width: 900px) and (prefers-reduced-motion: reduce) {
+  .editor-col--list,
+  .editor-col--side {
+    transition: none;
   }
 }
 
