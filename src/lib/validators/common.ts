@@ -49,12 +49,32 @@ const readmeUrlField = z
 
 const readmeField = z.string().max(100_000).optional().nullable();
 
+/** Icon URL: clear with null/"" or set an https URL (prefer image host). */
+export const iconUrlField = z
+  .string()
+  .max(2000)
+  .optional()
+  .nullable()
+  .refine(
+    (v) => {
+      if (v == null || v.trim() === "") return true;
+      try {
+        const u = new URL(v.trim());
+        return u.protocol === "https:";
+      } catch {
+        return false;
+      }
+    },
+    { message: "图标 URL 须为 https:// 开头的有效地址" },
+  );
+
 export const updateOrgSchema = z.object({
   name: z.string().min(1).max(80).optional(),
   description: z.string().max(500).optional().nullable(),
   visibility: orgVisibilitySchema.optional(),
   readme: readmeField,
   readmeUrl: readmeUrlField,
+  iconUrl: iconUrlField,
 });
 
 export const addMemberSchema = z.object({
@@ -86,6 +106,7 @@ export const updateProjectSchema = z.object({
   description: z.string().max(500).optional().nullable(),
   readme: readmeField,
   readmeUrl: readmeUrlField,
+  iconUrl: iconUrlField,
   sourceLocale: localeSchema.optional(),
   visibility: z.enum(["private", "org", "public"]).optional(),
 });

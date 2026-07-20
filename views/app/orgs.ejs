@@ -26,7 +26,14 @@
         <div class="blora-grid blora-grid--3">
           <% orgs.forEach(function (org) { %>
             <a href="/app/o/<%= org.slug %>" class="blora-card blora-card--hover" style="text-decoration:none;color:inherit">
-              <h3 class="blora-card__title org-card-title"><%- sfIcon('building.2.fill') %><%= org.name %></h3>
+              <h3 class="blora-card__title org-card-title entity-title">
+                <% if (org.iconUrl) { %>
+                  <img class="entity-icon" src="<%= org.iconUrl %>" alt="" width="28" height="28" />
+                <% } else { %>
+                  <%- sfIcon('building.2.fill') %>
+                <% } %>
+                <%= org.name %>
+              </h3>
               <p class="blora-card__body blora-text-muted"><%= org.description || '暂无简介' %></p>
               <div class="blora-card__foot blora-row blora-row--between">
                 <span class="blora-badge blora-badge--pill"><%= roleLabels[org.role] %></span>

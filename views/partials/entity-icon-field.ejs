@@ -1,0 +1,54 @@
+<%
+  /* Icon upload field for org/project settings.
+     Expects: iconUrl (string|null), entityKind: 'org'|'project',
+     fallbackSf: SF icon name for empty state */
+  var _icon = typeof iconUrl !== 'undefined' && iconUrl ? iconUrl : '';
+  var _kind = typeof entityKind !== 'undefined' ? entityKind : 'entity';
+  var _fallback = typeof fallbackSf !== 'undefined' ? fallbackSf : 'photo';
+%>
+<div
+  class="entity-icon-field"
+  data-entity-icon
+  data-kind="<%= _kind %>"
+  data-icon-url="<%= _icon %>"
+>
+  <span class="blora-field__label">图标</span>
+  <div class="entity-icon-field__row">
+    <div class="entity-icon-preview" aria-hidden="true">
+      <img
+        class="entity-icon-preview__img"
+        src="<%= _icon %>"
+        alt=""
+        width="64"
+        height="64"
+        <%= _icon ? '' : 'hidden' %>
+      />
+      <span class="entity-icon-preview__fallback" <%= _icon ? 'hidden' : '' %>>
+        <%- sfIcon(_fallback, { className: 'sf-icon--lg' }) %>
+      </span>
+    </div>
+    <div class="entity-icon-field__actions">
+      <input
+        type="file"
+        class="entity-icon-field__file"
+        accept="image/png,image/jpeg,image/gif,image/webp"
+        hidden
+      />
+      <div class="blora-row">
+        <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" data-icon-pick>
+          <%- sfIcon('photo') %>选择图片
+        </button>
+        <button
+          type="button"
+          class="blora-btn blora-btn--ghost blora-btn--sm"
+          data-icon-clear
+          <%= _icon ? '' : 'hidden' %>
+        >
+          <%- sfIcon('trash') %>移除
+        </button>
+      </div>
+      <p class="blora-field__hint u-mt-1">PNG / JPG / WebP / GIF，最大 2MB。上传至 Bloret 图床。</p>
+      <div class="blora-alert blora-alert--danger entity-icon-field__error" hidden></div>
+    </div>
+  </div>
+</div>

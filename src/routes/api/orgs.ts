@@ -1,3 +1,4 @@
+import { randomBytes } from "crypto";
 import { Router } from "express";
 import { and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { requireSession } from "@/lib/auth/session";
@@ -21,6 +22,7 @@ import {
   translations,
   users,
 } from "@/lib/db/schema";
+import { parseImageDataUrl, uploadImageToHost } from "@/lib/image-host";
 import {
   addMemberSchema,
   createOrgSchema,
@@ -72,6 +74,7 @@ orgsRouter.get("/v1/orgs", async (req, res, next) => {
         slug: organizations.slug,
         name: organizations.name,
         description: organizations.description,
+        iconUrl: organizations.iconUrl,
         role: organizationMembers.role,
         createdAt: organizations.createdAt,
         projectCount: orgProjectCountSql,
@@ -170,6 +173,7 @@ orgsRouter.get("/v1/orgs/:orgSlug", async (req, res, next) => {
       name: access.org.name,
       description: access.org.description,
       visibility: access.org.visibility,
+      iconUrl: access.org.iconUrl,
       role: access.role,
       membership: access.membership != null,
       createdAt: access.org.createdAt,
@@ -216,12 +220,90 @@ orgsRouter.patch("/v1/orgs/:orgSlug", async (req, res, next) => {
                 : null,
             }
           : {}),
+        ...(parsed.data.iconUrl !== undefined
+          ? {
+              iconUrl: parsed.data.iconUrl?.trim() ? parsed.data.iconUrl.trim() : null,
+            }
+          : {}),
         updatedAt: new Date(),
       })
       .where(eq(organizations.id, access.org.id))
       .returning();
 
     return jsonOk(res, updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** Upload org icon via Bloret Image Host (data URL body). */
+orgsRouter.post("/v1/orgs/:orgSlug/icon", async (req, res, next) => {
+  try {
+    const session = requireSession(req);
+    if (!session) return unauthorized(res);
+
+    const access = await requireOrgAccess(req.params.orgSlug, session.userId!);
+    if ("error" in access) {
+      if (access.error === "not_found") return notFound(res, "组织不存在");
+      return forbidden(res);
+    }
+    if (!canManageOrg(access.role) || !access.membership) {
+      return forbidden(res, "仅所有者可修改组织图标");
+    }
+
+    const dataUrl = typeof req.body?.imageBase64 === "string" ? req.body.imageBase64 : "";
+    const parsed = parseImageDataUrl(dataUrl);
+    if (!parsed) return jsonError(res, "请上传 data URL 格式的图片 (png/jpg/gif/webp)");
+    if (parsed.buffer.length > 2 * 1024 * 1024) return jsonError(res, "图标不能超过 2MB");
+
+    let uploaded;
+    try {
+      uploaded = await uploadImageToHost({
+        buffer: parsed.buffer,
+        filename: `org-icon-${randomBytes(6).toString("hex")}.${parsed.ext}`,
+        contentType: parsed.contentType,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "图床上传失败";
+      return jsonError(res, msg, 502);
+    }
+
+    const [updated] = await db
+      .update(organizations)
+      .set({ iconUrl: uploaded.url, updatedAt: new Date() })
+      .where(eq(organizations.id, access.org.id))
+      .returning({ id: organizations.id, iconUrl: organizations.iconUrl });
+
+    return jsonOk(res, {
+      iconUrl: updated!.iconUrl,
+      webpUrl: uploaded.webpUrl,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** Clear org icon. */
+orgsRouter.delete("/v1/orgs/:orgSlug/icon", async (req, res, next) => {
+  try {
+    const session = requireSession(req);
+    if (!session) return unauthorized(res);
+
+    const access = await requireOrgAccess(req.params.orgSlug, session.userId!);
+    if ("error" in access) {
+      if (access.error === "not_found") return notFound(res, "组织不存在");
+      return forbidden(res);
+    }
+    if (!canManageOrg(access.role) || !access.membership) {
+      return forbidden(res, "仅所有者可修改组织图标");
+    }
+
+    await db
+      .update(organizations)
+      .set({ iconUrl: null, updatedAt: new Date() })
+      .where(eq(organizations.id, access.org.id));
+
+    return jsonOk(res, { iconUrl: null });
   } catch (err) {
     next(err);
   }
@@ -429,6 +511,7 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects", async (req, res, next) => {
         slug: p.slug,
         name: p.name,
         description: p.description,
+        iconUrl: p.iconUrl,
         sourceLocale: p.sourceLocale,
         visibility: p.visibility,
         targetLocales: langMap.get(p.id) ?? [],
@@ -544,11 +627,16 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects/:projectSlug", async (req, res, next)
       slug: access.project.slug,
       name: access.project.name,
       description: access.project.description,
+      iconUrl: access.project.iconUrl,
       sourceLocale: access.project.sourceLocale,
       visibility: access.project.visibility,
       targetLocales: langs.filter((l) => l.enabled).map((l) => l.locale),
       role: access.role,
-      org: { slug: access.org.slug, name: access.org.name },
+      org: {
+        slug: access.org.slug,
+        name: access.org.name,
+        iconUrl: access.org.iconUrl,
+      },
     });
   } catch (err) {
     next(err);
@@ -592,6 +680,11 @@ orgsRouter.patch("/v1/orgs/:orgSlug/projects/:projectSlug", async (req, res, nex
                 : null,
             }
           : {}),
+        ...(parsed.data.iconUrl !== undefined
+          ? {
+              iconUrl: parsed.data.iconUrl?.trim() ? parsed.data.iconUrl.trim() : null,
+            }
+          : {}),
         ...(parsed.data.sourceLocale !== undefined
           ? { sourceLocale: parsed.data.sourceLocale }
           : {}),
@@ -602,6 +695,85 @@ orgsRouter.patch("/v1/orgs/:orgSlug/projects/:projectSlug", async (req, res, nex
       .returning();
 
     return jsonOk(res, updated);
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** Upload project icon via Bloret Image Host. */
+orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/icon", async (req, res, next) => {
+  try {
+    const session = requireSession(req);
+    if (!session) return unauthorized(res);
+
+    const access = await requireProjectAccess(
+      req.params.orgSlug,
+      req.params.projectSlug,
+      session.userId!,
+      "manager",
+    );
+    if ("error" in access) {
+      if (access.error === "not_found") return notFound(res);
+      return forbidden(res);
+    }
+    if (!canManageProjects(access.role)) return forbidden(res);
+
+    const dataUrl = typeof req.body?.imageBase64 === "string" ? req.body.imageBase64 : "";
+    const parsed = parseImageDataUrl(dataUrl);
+    if (!parsed) return jsonError(res, "请上传 data URL 格式的图片 (png/jpg/gif/webp)");
+    if (parsed.buffer.length > 2 * 1024 * 1024) return jsonError(res, "图标不能超过 2MB");
+
+    let uploaded;
+    try {
+      uploaded = await uploadImageToHost({
+        buffer: parsed.buffer,
+        filename: `project-icon-${randomBytes(6).toString("hex")}.${parsed.ext}`,
+        contentType: parsed.contentType,
+      });
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : "图床上传失败";
+      return jsonError(res, msg, 502);
+    }
+
+    const [updated] = await db
+      .update(projects)
+      .set({ iconUrl: uploaded.url, updatedAt: new Date() })
+      .where(eq(projects.id, access.project.id))
+      .returning({ id: projects.id, iconUrl: projects.iconUrl });
+
+    return jsonOk(res, {
+      iconUrl: updated!.iconUrl,
+      webpUrl: uploaded.webpUrl,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+/** Clear project icon. */
+orgsRouter.delete("/v1/orgs/:orgSlug/projects/:projectSlug/icon", async (req, res, next) => {
+  try {
+    const session = requireSession(req);
+    if (!session) return unauthorized(res);
+
+    const access = await requireProjectAccess(
+      req.params.orgSlug,
+      req.params.projectSlug,
+      session.userId!,
+      "manager",
+    );
+    if ("error" in access) {
+      if (access.error === "not_found") return notFound(res);
+      return forbidden(res);
+    }
+    if (!canManageProjects(access.role)) return forbidden(res);
+
+    await db
+      .update(projects)
+      .set({ iconUrl: null, updatedAt: new Date() })
+      .where(eq(projects.id, access.project.id));
+
+    return jsonOk(res, { iconUrl: null });
   } catch (err) {
     next(err);
   }

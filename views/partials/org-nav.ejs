@@ -6,7 +6,14 @@
 %>
 <header class="app-page-header">
   <div class="app-page-header__copy">
-    <h1 class="blora-h2 sf-inline"><%- sfIcon('building.2.fill') %><%= org.name %></h1>
+    <h1 class="blora-h2 sf-inline entity-title">
+      <% if (org.iconUrl) { %>
+        <img class="entity-icon entity-icon--lg" src="<%= org.iconUrl %>" alt="" width="36" height="36" />
+      <% } else { %>
+        <%- sfIcon('building.2.fill') %>
+      <% } %>
+      <%= org.name %>
+    </h1>
     <p class="blora-text-muted u-mt-2">
       <% if (typeof roleLabel !== 'undefined' && roleLabel) { %>
         <span class="blora-badge blora-badge--pill"><%= roleLabel %></span>

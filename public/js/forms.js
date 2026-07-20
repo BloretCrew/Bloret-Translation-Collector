@@ -685,4 +685,124 @@
       }
     });
   }
+
+  // —— Org / project icon (Bloret Image Host via API) ——
+  function fileToDataUrl(file) {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve(String(reader.result || ""));
+      reader.onerror = () => reject(new Error("读取文件失败"));
+      reader.readAsDataURL(file);
+    });
+  }
+
+  function bindEntityIconField(root) {
+    if (!root || root.dataset.bound === "1") return;
+    root.dataset.bound = "1";
+
+    const img = root.querySelector(".entity-icon-preview__img");
+    const fallback = root.querySelector(".entity-icon-preview__fallback");
+    const fileInput = root.querySelector(".entity-icon-field__file");
+    const pickBtn = root.querySelector("[data-icon-pick]");
+    const clearBtn = root.querySelector("[data-icon-clear]");
+    const errEl = root.querySelector(".entity-icon-field__error");
+    const form = root.closest("form");
+    const orgSlug = form?.dataset.orgSlug || root.dataset.orgSlug;
+    const projectSlug = form?.dataset.projectSlug || root.dataset.projectSlug;
+    const kind = root.dataset.kind || (projectSlug ? "project" : "org");
+
+    function showIconErr(msg) {
+      if (!errEl) return;
+      if (!msg) {
+        errEl.hidden = true;
+        errEl.textContent = "";
+        return;
+      }
+      errEl.hidden = false;
+      errEl.textContent = msg;
+    }
+
+    function setPreview(url) {
+      const u = (url || "").trim();
+      root.dataset.iconUrl = u;
+      if (img) {
+        if (u) {
+          img.src = u;
+          img.hidden = false;
+        } else {
+          img.removeAttribute("src");
+          img.hidden = true;
+        }
+      }
+      if (fallback) fallback.hidden = Boolean(u);
+      if (clearBtn) clearBtn.hidden = !u;
+    }
+
+    function iconEndpoint() {
+      if (kind === "project" && orgSlug && projectSlug) {
+        return `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/icon`;
+      }
+      if (orgSlug) return `/api/v1/orgs/${orgSlug}/icon`;
+      return null;
+    }
+
+    pickBtn?.addEventListener("click", () => fileInput?.click());
+
+    fileInput?.addEventListener("change", async () => {
+      const file = fileInput.files && fileInput.files[0];
+      fileInput.value = "";
+      if (!file) return;
+      showIconErr("");
+      if (file.size > 2 * 1024 * 1024) {
+        showIconErr("图标不能超过 2MB");
+        return;
+      }
+      const endpoint = iconEndpoint();
+      if (!endpoint) {
+        showIconErr("缺少组织/项目上下文");
+        return;
+      }
+      setButtonBusy(pickBtn, true, { busyLabel: "上传中..." });
+      try {
+        const dataUrl = await fileToDataUrl(file);
+        const { res, data } = await json(endpoint, {
+          method: "POST",
+          body: JSON.stringify({ imageBase64: dataUrl }),
+        });
+        if (!res.ok) {
+          showIconErr(data.error || "上传失败");
+          return;
+        }
+        setPreview(data.iconUrl || data.webpUrl || "");
+        toast("success", "图标已更新");
+      } catch {
+        showIconErr("网络错误");
+      } finally {
+        setButtonBusy(pickBtn, false, { idleLabel: "选择图片" });
+      }
+    });
+
+    clearBtn?.addEventListener("click", async () => {
+      showIconErr("");
+      const endpoint = iconEndpoint();
+      if (!endpoint) return;
+      if (!confirm("确定移除图标？")) return;
+      setButtonBusy(clearBtn, true, { busyLabel: "移除中..." });
+      try {
+        const { res, data } = await json(endpoint, { method: "DELETE" });
+        if (!res.ok) {
+          showIconErr(data.error || "移除失败");
+          return;
+        }
+        setPreview("");
+        toast("success", "图标已移除");
+      } catch {
+        showIconErr("网络错误");
+      } finally {
+        setButtonBusy(clearBtn, false, { idleLabel: "移除" });
+      }
+    });
+  }
+
+  document.querySelectorAll("[data-entity-icon]").forEach(bindEntityIconField);
 })();

@@ -96,6 +96,7 @@ pagesRouter.get("/app", async (req, res, next) => {
         slug: organizations.slug,
         name: organizations.name,
         description: organizations.description,
+        iconUrl: organizations.iconUrl,
         role: organizationMembers.role,
         projectCount: sql<number>`(
           select count(*)::int from projects p where p.org_id = ${organizations.id}

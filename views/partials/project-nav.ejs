@@ -11,7 +11,14 @@
 %>
 <header class="app-page-header">
   <div class="app-page-header__copy">
-    <h1 class="blora-h2 sf-inline"><%- sfIcon('folder.fill') %><%= project.name %></h1>
+    <h1 class="blora-h2 sf-inline entity-title">
+      <% if (project.iconUrl) { %>
+        <img class="entity-icon entity-icon--lg" src="<%= project.iconUrl %>" alt="" width="36" height="36" />
+      <% } else { %>
+        <%- sfIcon('folder.fill') %>
+      <% } %>
+      <%= project.name %>
+    </h1>
     <p class="blora-text-muted u-mt-2">
       源语言 <span class="blora-badge"><%= localeLabel(project.sourceLocale) %></span>
       <% if (strings != null) { %>

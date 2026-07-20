@@ -59,6 +59,8 @@ export const organizations = pgTable(
     readme: text("readme"),
     /** Optional remote Markdown URL (e.g. raw.githubusercontent.com). Takes priority when set. */
     readmeUrl: text("readme_url"),
+    /** Optional org icon (absolute URL on Bloret Image Host). */
+    iconUrl: text("icon_url"),
     createdBy: uuid("created_by")
       .notNull()
       .references(() => users.id),
@@ -101,6 +103,8 @@ export const projects = pgTable(
     readme: text("readme"),
     /** Optional remote Markdown URL. Takes priority when set. */
     readmeUrl: text("readme_url"),
+    /** Optional project icon (absolute URL on Bloret Image Host). */
+    iconUrl: text("icon_url"),
     sourceLocale: text("source_locale").notNull().default("en"),
     visibility: projectVisibilityEnum("visibility").notNull().default("org"),
     createdBy: uuid("created_by")

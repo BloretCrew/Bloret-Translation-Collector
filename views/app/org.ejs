@@ -39,7 +39,14 @@
                 <% projects.forEach(function (p) { %>
                   <tr>
                     <td>
-                      <a href="/app/o/<%= orgSlug %>/p/<%= p.slug %>"><%= p.name %></a>
+                      <a href="/app/o/<%= orgSlug %>/p/<%= p.slug %>" class="entity-title entity-title--link">
+                        <% if (p.iconUrl) { %>
+                          <img class="entity-icon entity-icon--sm" src="<%= p.iconUrl %>" alt="" width="22" height="22" />
+                        <% } else { %>
+                          <%- sfIcon('folder.fill', { className: 'sf-icon--sm' }) %>
+                        <% } %>
+                        <%= p.name %>
+                      </a>
                       <div class="blora-text-faint blora-text-mono u-text-xs u-mt-2"><%= p.slug %></div>
                     </td>
                     <td><span class="blora-badge"><%= localeLabel(p.sourceLocale) %></span></td>

@@ -30,6 +30,11 @@
             </header>
             <form id="org-settings-form" class="blora-stack u-mt-4" data-org-slug="<%= orgSlug %>" data-settings-section="general">
               <div id="form-error" class="blora-alert blora-alert--danger" hidden></div>
+              <%- include('../partials/entity-icon-field', {
+                iconUrl: org.iconUrl || '',
+                entityKind: 'org',
+                fallbackSf: 'building.2.fill'
+              }) %>
               <label class="blora-field">
                 <span class="blora-field__label">组织名称</span>
                 <input class="blora-input" name="name" required maxlength="80" value="<%= org.name %>" />

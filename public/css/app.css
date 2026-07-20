@@ -71,6 +71,96 @@
   min-width: 0;
 }
 
+/* —— Entity icons (org / project) —— */
+.entity-icon {
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: var(--blora-radius-sm);
+  object-fit: cover;
+  flex-shrink: 0;
+  background: var(--blora-surface-2);
+  border: 1px solid var(--blora-ink-ghost);
+  vertical-align: middle;
+}
+
+.entity-icon--sm {
+  width: 1.25rem;
+  height: 1.25rem;
+  border-radius: 6px;
+}
+
+.entity-icon--lg {
+  width: 2.25rem;
+  height: 2.25rem;
+  border-radius: var(--blora-radius-md);
+}
+
+.entity-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5em;
+  min-width: 0;
+}
+
+.entity-title--link {
+  text-decoration: none;
+  color: inherit;
+  font-weight: 600;
+}
+
+.entity-title--link:hover {
+  color: var(--blora-seal);
+}
+
+.entity-icon-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--blora-space-2);
+}
+
+.entity-icon-field__row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--blora-space-4);
+}
+
+.entity-icon-preview {
+  width: 4.5rem;
+  height: 4.5rem;
+  border-radius: var(--blora-radius-lg);
+  border: var(--blora-border);
+  background: var(--blora-surface-2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  flex-shrink: 0;
+  color: var(--blora-ink-mist);
+}
+
+.entity-icon-preview__img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.entity-icon-preview__fallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.entity-icon-field__actions {
+  flex: 1 1 12rem;
+  min-width: 0;
+}
+
+.entity-icon-field__error {
+  margin-top: var(--blora-space-2);
+}
+
 /* —— Page shell —— */
 .app-main {
   min-height: calc(100vh - var(--app-navbar-offset));

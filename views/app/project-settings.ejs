@@ -37,6 +37,11 @@
             </header>
             <form id="project-settings-form" class="blora-stack u-mt-4" data-org-slug="<%= orgSlug %>" data-project-slug="<%= projectSlug %>">
               <div id="form-error" class="blora-alert blora-alert--danger" hidden></div>
+              <%- include('../partials/entity-icon-field', {
+                iconUrl: project.iconUrl || '',
+                entityKind: 'project',
+                fallbackSf: 'folder.fill'
+              }) %>
               <label class="blora-field">
                 <span class="blora-field__label">项目名称</span>
                 <input class="blora-input" name="name" required value="<%= project.name %>" />
