@@ -29,6 +29,14 @@
             <span class="blora-field__label">简介（可选）</span>
             <textarea class="blora-textarea" name="description" id="org-desc" rows="3" maxlength="500"></textarea>
           </label>
+          <label class="blora-field">
+            <span class="blora-field__label">可见性</span>
+            <select class="blora-select" name="visibility" id="org-visibility">
+              <option value="private" selected>私有（仅成员可见）</option>
+              <option value="public">公开（登录用户可查看）</option>
+            </select>
+            <span class="blora-field__hint">可在创建后于组织设置中修改。公开后访客仍只能访问标记为公开的项目。</span>
+          </label>
           <div class="blora-row">
             <button class="blora-btn blora-btn--primary" type="submit">创建组织</button>
             <a class="blora-btn blora-btn--ghost" href="/app">取消</a>

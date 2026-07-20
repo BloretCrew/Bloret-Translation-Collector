@@ -12,6 +12,10 @@
         <span class="blora-badge blora-badge--pill"><%= roleLabel %></span>
         <span class="u-ml-1">·</span>
       <% } %>
+      <% if (org.visibility === 'public') { %>
+        <span class="blora-badge">公开</span>
+        <span class="u-ml-1">·</span>
+      <% } %>
       <%= org.description || '暂无简介' %>
     </p>
   </div>

@@ -26,6 +26,9 @@ export const projectVisibilityEnum = pgEnum("project_visibility", [
   "public",
 ]);
 
+/** Organization listing / dashboard visibility for non-members. */
+export const orgVisibilityEnum = pgEnum("org_visibility", ["private", "public"]);
+
 export const translationStatusEnum = pgEnum("translation_status", [
   "empty",
   "draft",
@@ -47,6 +50,11 @@ export const organizations = pgTable(
     slug: text("slug").notNull().unique(),
     name: text("name").notNull(),
     description: text("description"),
+    /**
+     * private: only members can open the org dashboard.
+     * public: any logged-in user can view the org (README + public projects).
+     */
+    visibility: orgVisibilityEnum("visibility").notNull().default("private"),
     /** Inline Markdown README shown on the org dashboard. */
     readme: text("readme"),
     /** Optional remote Markdown URL (e.g. raw.githubusercontent.com). Takes priority when set. */

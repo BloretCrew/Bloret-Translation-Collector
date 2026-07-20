@@ -9,7 +9,7 @@ import { db } from "./db";
 import { organizationMembers, organizations, projectLanguages, projects, users } from "./db/schema";
 import { slugify } from "./slug";
 import { createOrgSchema, createProjectSchema } from "./validators/common";
-import { requireProjectAccess } from "./access";
+import { requireOrgAccess, requireProjectAccess } from "./access";
 
 applyConfigToProcessEnv();
 
@@ -214,5 +214,103 @@ describe("create org → membership-scoped list", () => {
       "manager",
     );
     expect("error" in managerAccess).toBe(true);
+  });
+
+  it("allows a logged-in non-member to view a public org as viewer", async () => {
+    const stamp = Date.now().toString(36);
+    const [owner] = await db
+      .insert(users)
+      .values({ username: `pub-org-owner-${stamp}` })
+      .returning();
+    const [visitor] = await db
+      .insert(users)
+      .values({ username: `pub-org-visitor-${stamp}` })
+      .returning();
+    cleanupUserIds.push(owner!.id, visitor!.id);
+
+    const [org] = await db
+      .insert(organizations)
+      .values({
+        name: "Visible Org",
+        slug: `visible-org-${stamp}`,
+        createdBy: owner!.id,
+        visibility: "public",
+      })
+      .returning();
+    cleanupOrgIds.push(org!.id);
+    await db.insert(organizationMembers).values({
+      orgId: org!.id,
+      userId: owner!.id,
+      role: "owner",
+    });
+
+    const [hidden] = await db
+      .insert(projects)
+      .values({
+        orgId: org!.id,
+        slug: `hidden-${stamp}`,
+        name: "Org-only Project",
+        sourceLocale: "en",
+        visibility: "org",
+        createdBy: owner!.id,
+      })
+      .returning();
+    const [open] = await db
+      .insert(projects)
+      .values({
+        orgId: org!.id,
+        slug: `open-${stamp}`,
+        name: "Open Project",
+        sourceLocale: "en",
+        visibility: "public",
+        createdBy: owner!.id,
+      })
+      .returning();
+
+    const orgAccess = await requireOrgAccess(org!.slug, visitor!.id, "viewer");
+    expect("error" in orgAccess).toBe(false);
+    if (!("error" in orgAccess)) {
+      expect(orgAccess.role).toBe("viewer");
+      expect(orgAccess.membership).toBeNull();
+    }
+
+    const managerDenied = await requireOrgAccess(org!.slug, visitor!.id, "manager");
+    expect("error" in managerDenied).toBe(true);
+
+    const openAccess = await requireProjectAccess(org!.slug, open!.slug, visitor!.id);
+    expect("error" in openAccess).toBe(false);
+    if (!("error" in openAccess)) {
+      expect(openAccess.role).toBe("translator");
+    }
+
+    const hiddenAccess = await requireProjectAccess(org!.slug, hidden!.slug, visitor!.id);
+    expect("error" in hiddenAccess).toBe(true);
+  });
+
+  it("denies non-members for private orgs without public projects", async () => {
+    const stamp = Date.now().toString(36);
+    const [owner] = await db
+      .insert(users)
+      .values({ username: `priv-org-owner-${stamp}` })
+      .returning();
+    const [visitor] = await db
+      .insert(users)
+      .values({ username: `priv-org-visitor-${stamp}` })
+      .returning();
+    cleanupUserIds.push(owner!.id, visitor!.id);
+
+    const [org] = await db
+      .insert(organizations)
+      .values({
+        name: "Private Org",
+        slug: `private-org-${stamp}`,
+        createdBy: owner!.id,
+        visibility: "private",
+      })
+      .returning();
+    cleanupOrgIds.push(org!.id);
+
+    const denied = await requireOrgAccess(org!.slug, visitor!.id, "viewer");
+    expect("error" in denied).toBe(true);
   });
 });

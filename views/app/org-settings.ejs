@@ -38,6 +38,14 @@
                 <span class="blora-field__label">简介</span>
                 <textarea class="blora-textarea" name="description" rows="3" maxlength="500"><%= org.description || '' %></textarea>
               </label>
+              <label class="blora-field">
+                <span class="blora-field__label">可见性</span>
+                <select class="blora-select" name="visibility">
+                  <option value="private" <%= (org.visibility || 'private') === 'private' ? 'selected' : '' %>>私有（仅成员可见）</option>
+                  <option value="public" <%= org.visibility === 'public' ? 'selected' : '' %>>公开（登录用户可查看）</option>
+                </select>
+                <span class="blora-field__hint">公开组织允许任何已登录用户浏览组织首页、README 与公开项目；管理权限仍仅限成员。</span>
+              </label>
               <p class="blora-text-faint u-text-xs">
                 slug <code class="blora-code"><%= orgSlug %></code> 创建后不可修改。
               </p>

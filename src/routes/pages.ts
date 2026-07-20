@@ -131,10 +131,15 @@ pagesRouter.get("/app/o/:org", async (req, res, next) => {
       return res.redirect("/app");
     }
 
+    const isMember = access.membership != null;
     const projectList = await db
       .select()
       .from(projects)
-      .where(eq(projects.orgId, access.org.id))
+      .where(
+        isMember
+          ? eq(projects.orgId, access.org.id)
+          : and(eq(projects.orgId, access.org.id), eq(projects.visibility, "public")),
+      )
       .orderBy(desc(projects.updatedAt));
 
     const projectIds = projectList.map((p) => p.id);
@@ -164,9 +169,9 @@ pagesRouter.get("/app/o/:org", async (req, res, next) => {
       orgSlug,
       org: access.org,
       role: access.role,
-      roleLabel: ROLE_LABELS[access.role],
-      canManage: canManageOrg(access.role),
-      canManageProjects: canManageProjects(access.role),
+      roleLabel: isMember ? ROLE_LABELS[access.role] : "公开访客",
+      canManage: isMember && canManageOrg(access.role),
+      canManageProjects: isMember && canManageProjects(access.role),
       readmeView,
       projects: projectList.map((p) => ({
         ...p,
@@ -190,6 +195,7 @@ pagesRouter.get("/app/o/:org/members", async (req, res, next) => {
       return res.redirect("/app");
     }
 
+    const isMember = access.membership != null;
     const members = await db
       .select({
         userId: users.id,
@@ -206,9 +212,9 @@ pagesRouter.get("/app/o/:org/members", async (req, res, next) => {
       orgSlug,
       org: access.org,
       role: access.role,
-      roleLabel: ROLE_LABELS[access.role],
-      canManage: canManageOrg(access.role),
-      canManageProjects: canManageProjects(access.role),
+      roleLabel: isMember ? ROLE_LABELS[access.role] : "公开访客",
+      canManage: isMember && canManageOrg(access.role),
+      canManageProjects: isMember && canManageProjects(access.role),
       members,
       roleLabels: ROLE_LABELS,
       currentUserId: session.userId!,
@@ -228,7 +234,9 @@ pagesRouter.get("/app/o/:org/settings", async (req, res, next) => {
       if (access.error === "not_found") return res.status(404).render("404", { title: "未找到" });
       return res.redirect("/app");
     }
-    if (!canManageOrg(access.role)) return res.redirect(`/app/o/${orgSlug}`);
+    if (!access.membership || !canManageOrg(access.role)) {
+      return res.redirect(`/app/o/${orgSlug}`);
+    }
 
     const tabParam = typeof req.query.tab === "string" ? req.query.tab : "general";
     const activeTab = ["general", "readme"].includes(tabParam) ? tabParam : "general";

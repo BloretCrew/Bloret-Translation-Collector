@@ -66,10 +66,12 @@
       }
       setButtonBusy(btn, true, { busyLabel: "创建中..." });
       try {
+        const visibilityEl = document.getElementById("org-visibility");
         const body = {
           name: nameEl.value,
           slug: slugEl.value,
           description: document.getElementById("org-desc").value || null,
+          visibility: visibilityEl?.value || "private",
         };
         const { res, data } = await json("/api/v1/orgs", {
           method: "POST",
@@ -105,6 +107,7 @@
           body: JSON.stringify({
             name: fd.get("name"),
             description: fd.get("description") || null,
+            visibility: fd.get("visibility") || "private",
           }),
         });
         if (!res.ok) {

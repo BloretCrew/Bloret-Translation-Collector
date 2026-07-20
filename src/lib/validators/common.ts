@@ -20,10 +20,13 @@ export const memberRoleSchema = z.enum([
   "viewer",
 ]);
 
+export const orgVisibilitySchema = z.enum(["private", "public"]);
+
 export const createOrgSchema = z.object({
   name: z.string().min(1).max(80),
   slug: slugSchema,
   description: z.string().max(500).optional().nullable(),
+  visibility: orgVisibilitySchema.default("private"),
 });
 
 const readmeUrlField = z
@@ -49,6 +52,7 @@ const readmeField = z.string().max(100_000).optional().nullable();
 export const updateOrgSchema = z.object({
   name: z.string().min(1).max(80).optional(),
   description: z.string().max(500).optional().nullable(),
+  visibility: orgVisibilitySchema.optional(),
   readme: readmeField,
   readmeUrl: readmeUrlField,
 });

@@ -30,7 +30,14 @@ export async function requireOrgAccess(
   if (!org) return { error: "not_found" as const };
 
   const membership = await getMembership(org.id, userId);
-  if (!membership) return { error: "forbidden" as const, org };
+  if (!membership) {
+    // Public orgs are readable by any authenticated user as viewer.
+    // Management / translation roles still require real membership.
+    if (org.visibility === "public" && roleAtLeast("viewer", minRole)) {
+      return { org, membership: null, role: "viewer" as const };
+    }
+    return { error: "forbidden" as const, org };
+  }
   if (!roleAtLeast(membership.role, minRole)) {
     return { error: "forbidden" as const, org, membership };
   }
@@ -58,6 +65,20 @@ export async function requireProjectAccess(
         role: access.role,
       };
     }
+
+    // Guest viewers of a public org may only open public projects.
+    if (!access.membership) {
+      if (project.visibility !== "public" || !roleAtLeast("translator", minRole)) {
+        return { error: "forbidden" as const, org: access.org };
+      }
+      return {
+        org: access.org,
+        project,
+        membership: null,
+        role: "translator" as const,
+      };
+    }
+
     const effectiveRole =
       project.visibility === "public" && !roleAtLeast(access.role, "translator")
         ? ("translator" as const)
@@ -72,9 +93,8 @@ export async function requireProjectAccess(
 
   if (access.error === "not_found" || !access.org) return access;
 
-  // Public projects accept any authenticated user as a translator. This is
-  // intentionally limited to viewer/translator access; management and review
-  // rights still require real organization membership.
+  // Public projects accept any authenticated user as a translator even when the
+  // parent org is private. Management and review still require membership.
   const [project] = await db
     .select()
     .from(projects)

@@ -107,7 +107,7 @@ orgsRouter.post("/v1/orgs", async (req, res, next) => {
       return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
     }
 
-    const { name, slug, description } = parsed.data;
+    const { name, slug, description, visibility } = parsed.data;
 
     try {
       const org = await db.transaction(async (tx) => {
@@ -117,6 +117,7 @@ orgsRouter.post("/v1/orgs", async (req, res, next) => {
             name,
             slug,
             description: description ?? null,
+            visibility,
             createdBy: session.userId!,
           })
           .returning();
@@ -135,6 +136,7 @@ orgsRouter.post("/v1/orgs", async (req, res, next) => {
         slug: org.slug,
         name: org.name,
         description: org.description,
+        visibility: org.visibility,
         role: "owner" as const,
       });
     } catch (e) {
@@ -167,7 +169,9 @@ orgsRouter.get("/v1/orgs/:orgSlug", async (req, res, next) => {
       slug: access.org.slug,
       name: access.org.name,
       description: access.org.description,
+      visibility: access.org.visibility,
       role: access.role,
+      membership: access.membership != null,
       createdAt: access.org.createdAt,
     });
   } catch (err) {
@@ -185,7 +189,9 @@ orgsRouter.patch("/v1/orgs/:orgSlug", async (req, res, next) => {
       if (access.error === "not_found") return notFound(res, "组织不存在");
       return forbidden(res);
     }
-    if (!canManageOrg(access.role)) return forbidden(res, "仅所有者可修改组织");
+    if (!canManageOrg(access.role) || !access.membership) {
+      return forbidden(res, "仅所有者可修改组织");
+    }
 
     const parsed = updateOrgSchema.safeParse(req.body);
     if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
@@ -196,6 +202,9 @@ orgsRouter.patch("/v1/orgs/:orgSlug", async (req, res, next) => {
         ...("name" in parsed.data ? { name: parsed.data.name } : {}),
         ...("description" in parsed.data
           ? { description: parsed.data.description ?? null }
+          : {}),
+        ...(parsed.data.visibility !== undefined
+          ? { visibility: parsed.data.visibility }
           : {}),
         ...(parsed.data.readme !== undefined
           ? { readme: parsed.data.readme?.trim() ? parsed.data.readme : null }
@@ -386,10 +395,15 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects", async (req, res, next) => {
       return forbidden(res);
     }
 
+    // Non-members of public orgs only see projects marked public.
     const list = await db
       .select()
       .from(projects)
-      .where(eq(projects.orgId, access.org.id))
+      .where(
+        access.membership
+          ? eq(projects.orgId, access.org.id)
+          : and(eq(projects.orgId, access.org.id), eq(projects.visibility, "public")),
+      )
       .orderBy(desc(projects.updatedAt));
 
     const projectIds = list.map((p) => p.id);
