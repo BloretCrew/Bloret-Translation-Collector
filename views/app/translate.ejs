@@ -21,14 +21,31 @@
         ← <%= project.name %>
       </a>
       <div class="editor-chrome__context">
-        <select class="blora-select blora-select--sm editor-chrome__select" id="editor-file" aria-label="文件" title="源文件">
-          <% files.forEach(function (f) { %>
-            <option value="<%= f.id %>" <%= f.id === fileId ? 'selected' : '' %>><%= f.path %></option>
+        <select
+          class="blora-select blora-select--sm editor-chrome__select editor-chrome__select--file"
+          id="editor-file"
+          aria-label="文件"
+          title="源文件"
+        >
+          <% files.forEach(function (f) {
+            var pathParts = String(f.path || '').split(/[/\\]/);
+            var fileBase = pathParts[pathParts.length - 1] || f.path;
+          %>
+            <option value="<%= f.id %>" title="<%= f.path %>" <%= f.id === fileId ? 'selected' : '' %>><%= fileBase %></option>
           <% }) %>
         </select>
-        <select class="blora-select blora-select--sm editor-chrome__select" id="editor-locale" aria-label="目标语言" title="目标语言">
+        <select
+          class="blora-select blora-select--sm editor-chrome__select editor-chrome__select--locale"
+          id="editor-locale"
+          aria-label="目标语言"
+          title="目标语言"
+        >
           <% (localeLanguages || locales.map(function (l) { return { locale: l, displayName: null }; })).forEach(function (language) { %>
-            <option value="<%= language.locale %>" <%= language.locale === locale ? 'selected' : '' %>><%= languageLabel(language.locale, language.displayName) %></option>
+            <option
+              value="<%= language.locale %>"
+              title="<%= languageLabel(language.locale, language.displayName) %>"
+              <%= language.locale === locale ? 'selected' : '' %>
+            ><%= languageShortLabel(language.locale, language.displayName) %></option>
           <% }) %>
         </select>
         <% var showTranslateMode = typeof canModeTranslate !== 'undefined' && canModeTranslate; %>

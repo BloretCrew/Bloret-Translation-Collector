@@ -214,42 +214,62 @@ html.is-translation-editor .app-main--editor {
   background: var(--blora-surface-0, var(--blora-surface-1));
 }
 
-/* Compact single chrome bar */
+/* Compact single chrome bar — keep one row */
 .editor-chrome {
   flex: 0 0 auto;
   display: flex;
   align-items: center;
-  gap: var(--blora-space-3);
-  padding: 0.4rem var(--blora-space-3);
+  flex-wrap: nowrap;
+  gap: var(--blora-space-2);
+  padding: 0.3rem var(--blora-space-3);
   border-bottom: var(--blora-border);
   background: var(--blora-surface-1);
   z-index: 2;
-  min-height: 2.75rem;
+  min-height: 2.4rem;
+  overflow: hidden;
 }
 
 .editor-chrome__back {
   flex: 0 1 auto;
-  max-width: 11rem;
+  max-width: 8.5rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   min-width: 0;
+  padding-inline: 0.5em;
 }
 
 .editor-chrome__context {
   display: flex;
   align-items: center;
-  gap: var(--blora-space-2);
-  flex: 1 1 auto;
+  gap: 0.35rem;
+  flex: 0 1 auto;
   min-width: 0;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .editor-chrome__select {
-  max-width: 14rem;
-  min-width: 6rem;
-  font-size: var(--blora-text-sm);
-  padding-block: 0.3em;
+  min-width: 0;
+  font-size: var(--blora-text-xs);
+  line-height: 1.2;
+  padding: 0.2em 1.6em 0.2em 0.5em;
+  height: 1.85rem;
+  max-height: 1.85rem;
+  /* Truncate long closed-select labels where the UA allows */
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.editor-chrome__select--file {
+  flex: 0 1 9.5rem;
+  width: 9.5rem;
+  max-width: 9.5rem;
+}
+
+.editor-chrome__select--locale {
+  flex: 0 1 6.25rem;
+  width: 6.25rem;
+  max-width: 6.25rem;
 }
 
 /* Crowdin-style translate / proofread identity switch */
@@ -259,7 +279,7 @@ html.is-translation-editor .app-main--editor {
 }
 
 .editor-chrome__mode .blora-segmented__item {
-  padding: 0.25em 0.7em;
+  padding: 0.2em 0.55em;
   font-size: var(--blora-text-xs);
   border: 0;
   background: transparent;
@@ -288,9 +308,15 @@ html.is-translation-editor .app-main--editor {
 .editor-chrome__meta {
   display: flex;
   align-items: center;
-  gap: var(--blora-space-2);
+  gap: 0.25rem;
   flex: 0 0 auto;
-  margin-left: 0;
+  margin-left: auto;
+  min-width: 0;
+}
+
+.editor-chrome__meta .blora-btn--sm {
+  padding: 0.25em 0.55em;
+  font-size: var(--blora-text-xs);
 }
 
 .editor-chrome__count {
@@ -304,13 +330,13 @@ html.is-translation-editor .app-main--editor {
 
 /* File × locale workflow progress (approved | suggested | empty) */
 .editor-progress {
-  flex: 1 1 12rem;
-  min-width: 8rem;
-  max-width: 28rem;
+  flex: 1 1 5rem;
+  min-width: 4.5rem;
+  max-width: 16rem;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  margin-inline: var(--blora-space-2);
+  gap: 2px;
+  margin-inline: var(--blora-space-1);
 }
 
 .editor-progress__track {
@@ -700,8 +726,25 @@ html.is-translation-editor .app-main--editor {
     display: inline-flex;
   }
 
-  .editor-chrome__select {
-    max-width: 9rem;
+  .editor-chrome__back {
+    max-width: 5.5rem;
+  }
+
+  .editor-chrome__select--file {
+    flex-basis: 7.5rem;
+    width: 7.5rem;
+    max-width: 7.5rem;
+  }
+
+  .editor-chrome__select--locale {
+    flex-basis: 5.25rem;
+    width: 5.25rem;
+    max-width: 5.25rem;
+  }
+
+  .editor-progress {
+    min-width: 3.5rem;
+    max-width: 10rem;
   }
 
   .editor-workspace {
