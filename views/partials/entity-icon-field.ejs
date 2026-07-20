@@ -5,7 +5,6 @@
   var _icon = typeof iconUrl !== 'undefined' && iconUrl ? iconUrl : '';
   var _kind = typeof entityKind !== 'undefined' ? entityKind : 'entity';
   var _fallback = typeof fallbackSf !== 'undefined' ? fallbackSf : 'photo';
-  var _uid = 'entity-icon-' + _kind + '-' + Math.random().toString(36).slice(2, 9);
 %>
 <div
   class="entity-icon-field"
@@ -18,7 +17,7 @@
     <div class="entity-icon-preview" aria-hidden="true">
       <img
         class="entity-icon-preview__img"
-        src="<%= _icon %>"
+        src="<%= _icon || '' %>"
         alt=""
         width="64"
         height="64"
@@ -29,19 +28,17 @@
       </span>
     </div>
     <div class="entity-icon-field__actions">
-      <%# Label + file input (native open; avoid hidden input + programmatic click) %>
       <div class="blora-row entity-icon-field__btns">
-        <label class="blora-btn blora-btn--secondary blora-btn--sm entity-icon-field__pick" for="<%= _uid %>">
+        <%# Single control: file input overlays the styled label — no second native button %>
+        <label class="blora-btn blora-btn--secondary blora-btn--sm entity-icon-field__pick">
+          <input
+            type="file"
+            class="entity-icon-field__file"
+            accept="image/png,image/jpeg,image/gif,image/webp,.png,.jpg,.jpeg,.gif,.webp"
+          />
           <%- sfIcon('photo') %>
           <span class="entity-icon-field__pick-text">选择图片</span>
         </label>
-        <input
-          id="<%= _uid %>"
-          type="file"
-          class="entity-icon-field__file"
-          accept="image/png,image/jpeg,image/gif,image/webp,.png,.jpg,.jpeg,.gif,.webp"
-          tabindex="-1"
-        />
         <button
           type="button"
           class="blora-btn blora-btn--ghost blora-btn--sm"
@@ -51,7 +48,7 @@
           <%- sfIcon('trash') %>移除
         </button>
       </div>
-      <p class="blora-field__hint u-mt-1">PNG / JPG / WebP / GIF，最大 2MB。上传至 Bloret 图床。</p>
+      <p class="blora-field__hint u-mt-1">PNG / JPG / WebP / GIF，最大 2MB。选择后自动上传到图床；也可点下方「保存」一并提交。</p>
       <div class="blora-alert blora-alert--danger entity-icon-field__error" hidden></div>
     </div>
   </div>

@@ -161,24 +161,26 @@
   align-items: center;
 }
 
-/* Visually hide file input but keep it openable via <label for> (not display:none) */
-.entity-icon-field__file {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
+/* One visual button: file input covers the whole label (no native second control) */
+.entity-icon-field__pick {
+  position: relative;
   overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
-  opacity: 0;
-  pointer-events: none;
+  cursor: pointer;
 }
 
-.entity-icon-field__pick {
-  cursor: pointer;
-  position: relative;
+.entity-icon-field__file {
+  position: absolute !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  opacity: 0 !important;
+  cursor: pointer !important;
+  font-size: 0 !important;
+  z-index: 2;
+  border: 0 !important;
+  background: transparent !important;
 }
 
 .entity-icon-field__pick.is-busy {

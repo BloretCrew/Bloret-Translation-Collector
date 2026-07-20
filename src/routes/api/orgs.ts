@@ -22,7 +22,11 @@ import {
   translations,
   users,
 } from "@/lib/db/schema";
-import { parseImageDataUrl, uploadImageToHost } from "@/lib/image-host";
+import {
+  absoluteImageUrl,
+  parseImageDataUrl,
+  uploadImageToHost,
+} from "@/lib/image-host";
 import {
   addMemberSchema,
   createOrgSchema,
@@ -222,7 +226,9 @@ orgsRouter.patch("/v1/orgs/:orgSlug", async (req, res, next) => {
           : {}),
         ...(parsed.data.iconUrl !== undefined
           ? {
-              iconUrl: parsed.data.iconUrl?.trim() ? parsed.data.iconUrl.trim() : null,
+              iconUrl: parsed.data.iconUrl?.trim()
+                ? absoluteImageUrl(parsed.data.iconUrl.trim())
+                : null,
             }
           : {}),
         updatedAt: new Date(),
@@ -268,15 +274,16 @@ orgsRouter.post("/v1/orgs/:orgSlug/icon", async (req, res, next) => {
       return jsonError(res, msg, 502);
     }
 
+    const iconUrl = absoluteImageUrl(uploaded.url);
     const [updated] = await db
       .update(organizations)
-      .set({ iconUrl: uploaded.url, updatedAt: new Date() })
+      .set({ iconUrl, updatedAt: new Date() })
       .where(eq(organizations.id, access.org.id))
       .returning({ id: organizations.id, iconUrl: organizations.iconUrl });
 
     return jsonOk(res, {
-      iconUrl: updated!.iconUrl,
-      webpUrl: uploaded.webpUrl,
+      iconUrl: updated!.iconUrl || iconUrl,
+      webpUrl: absoluteImageUrl(uploaded.webpUrl),
     });
   } catch (err) {
     next(err);
@@ -682,7 +689,9 @@ orgsRouter.patch("/v1/orgs/:orgSlug/projects/:projectSlug", async (req, res, nex
           : {}),
         ...(parsed.data.iconUrl !== undefined
           ? {
-              iconUrl: parsed.data.iconUrl?.trim() ? parsed.data.iconUrl.trim() : null,
+              iconUrl: parsed.data.iconUrl?.trim()
+                ? absoluteImageUrl(parsed.data.iconUrl.trim())
+                : null,
             }
           : {}),
         ...(parsed.data.sourceLocale !== undefined
@@ -735,15 +744,16 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/icon", async (req, res,
       return jsonError(res, msg, 502);
     }
 
+    const iconUrl = absoluteImageUrl(uploaded.url);
     const [updated] = await db
       .update(projects)
-      .set({ iconUrl: uploaded.url, updatedAt: new Date() })
+      .set({ iconUrl, updatedAt: new Date() })
       .where(eq(projects.id, access.project.id))
       .returning({ id: projects.id, iconUrl: projects.iconUrl });
 
     return jsonOk(res, {
-      iconUrl: updated!.iconUrl,
-      webpUrl: uploaded.webpUrl,
+      iconUrl: updated!.iconUrl || iconUrl,
+      webpUrl: absoluteImageUrl(uploaded.webpUrl),
     });
   } catch (err) {
     next(err);

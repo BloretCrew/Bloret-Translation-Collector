@@ -101,13 +101,31 @@
       showError(err, "");
       setButtonBusy(btn, true, { busyLabel: "保存中..." });
       try {
+        // If user picked a file but auto-upload didn't finish, upload before PATCH
+        const iconRoot = orgSettings.querySelector("[data-entity-icon]");
+        const pendingFile = iconRoot?.querySelector(".entity-icon-field__file")?.files?.[0];
+        if (pendingFile && iconRoot) {
+          try {
+            const url = await uploadEntityIconFile(iconRoot, pendingFile);
+            setEntityIconPreview(iconRoot, url);
+          } catch (iconErr) {
+            showError(err, iconErr instanceof Error ? iconErr.message : "图标上传失败");
+            return;
+          }
+        }
         const fd = new FormData(orgSettings);
+        const iconUrl =
+          (iconRoot?.dataset.iconUrl || "").trim() ||
+          null;
         const { res, data } = await json(`/api/v1/orgs/${orgSlug}`, {
           method: "PATCH",
+          credentials: "same-origin",
           body: JSON.stringify({
             name: fd.get("name"),
             description: fd.get("description") || null,
             visibility: fd.get("visibility") || "private",
+            // Persist currently displayed icon (or null if cleared)
+            iconUrl: iconUrl || null,
           }),
         });
         if (!res.ok) {
@@ -282,13 +300,27 @@
       }
       setButtonBusy(btn, true, { busyLabel: "保存中..." });
       try {
+        const iconRoot = projectSettings.querySelector("[data-entity-icon]");
+        const pendingFile = iconRoot?.querySelector(".entity-icon-field__file")?.files?.[0];
+        if (pendingFile && iconRoot) {
+          try {
+            const url = await uploadEntityIconFile(iconRoot, pendingFile);
+            setEntityIconPreview(iconRoot, url);
+          } catch (iconErr) {
+            showError(err, iconErr instanceof Error ? iconErr.message : "图标上传失败");
+            return;
+          }
+        }
+        const iconUrl = (iconRoot?.dataset.iconUrl || "").trim() || null;
         const { res, data } = await json(`/api/v1/orgs/${orgSlug}/projects/${projectSlug}`, {
           method: "PATCH",
+          credentials: "same-origin",
           body: JSON.stringify({
             name: fd.get("name"),
             description: fd.get("description") || null,
             sourceLocale: fd.get("sourceLocale"),
             visibility: fd.get("visibility"),
+            iconUrl,
           }),
         });
         if (!res.ok) {
@@ -297,6 +329,7 @@
         }
         const langRes = await json(`/api/v1/orgs/${orgSlug}/projects/${projectSlug}/languages`, {
           method: "PUT",
+          credentials: "same-origin",
           body: JSON.stringify({ locales, languages: projectLanguages.languages }),
         });
         if (!langRes.res.ok) {
@@ -696,12 +729,71 @@
     });
   }
 
+  /**
+   * Upload selected File to icon endpoint; returns absolute icon URL or throws.
+   * @param {HTMLElement} root
+   * @param {File} file
+   */
+  async function uploadEntityIconFile(root, file) {
+    const form = root.closest("form");
+    const orgSlug = form?.dataset.orgSlug || root.dataset.orgSlug;
+    const projectSlug = form?.dataset.projectSlug || root.dataset.projectSlug;
+    const kind = root.dataset.kind || (projectSlug ? "project" : "org");
+
+    let endpoint = null;
+    if (kind === "project" && orgSlug && projectSlug) {
+      endpoint = `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/icon`;
+    } else if (orgSlug) {
+      endpoint = `/api/v1/orgs/${orgSlug}/icon`;
+    }
+    if (!endpoint) throw new Error("缺少组织/项目上下文");
+
+    if (file.size > 2 * 1024 * 1024) throw new Error("图标不能超过 2MB");
+    if (file.type && !/^image\/(png|jpe?g|gif|webp)$/i.test(file.type)) {
+      if (!/\.(png|jpe?g|gif|webp)$/i.test(file.name || "")) {
+        throw new Error("请选择 PNG / JPG / WebP / GIF 图片");
+      }
+    }
+
+    const dataUrl = await fileToDataUrl(file);
+    if (!dataUrl.startsWith("data:image/")) {
+      throw new Error("无法读取图片，请换一张再试");
+    }
+
+    const { res, data } = await json(endpoint, {
+      method: "POST",
+      credentials: "same-origin",
+      body: JSON.stringify({ imageBase64: dataUrl }),
+    });
+    if (!res.ok) throw new Error(data.error || "上传失败");
+    const url = (data.iconUrl || data.webpUrl || "").trim();
+    if (!url) throw new Error("图床未返回地址");
+    return url;
+  }
+
+  function setEntityIconPreview(root, url) {
+    const img = root.querySelector(".entity-icon-preview__img");
+    const fallback = root.querySelector(".entity-icon-preview__fallback");
+    const clearBtn = root.querySelector("[data-icon-clear]");
+    const u = (url || "").trim();
+    root.dataset.iconUrl = u;
+    if (img) {
+      if (u) {
+        img.src = u;
+        img.hidden = false;
+      } else {
+        img.removeAttribute("src");
+        img.hidden = true;
+      }
+    }
+    if (fallback) fallback.hidden = Boolean(u);
+    if (clearBtn) clearBtn.hidden = !u;
+  }
+
   function bindEntityIconField(root) {
     if (!root || root.dataset.bound === "1") return;
     root.dataset.bound = "1";
 
-    const img = root.querySelector(".entity-icon-preview__img");
-    const fallback = root.querySelector(".entity-icon-preview__fallback");
     const fileInput = root.querySelector(".entity-icon-field__file");
     const pickLabel = root.querySelector(".entity-icon-field__pick");
     const pickText = root.querySelector(".entity-icon-field__pick-text");
@@ -723,120 +815,69 @@
       errEl.textContent = msg;
     }
 
-    function setPreview(url) {
-      const u = (url || "").trim();
-      root.dataset.iconUrl = u;
-      if (img) {
-        if (u) {
-          img.src = u;
-          img.hidden = false;
-        } else {
-          img.removeAttribute("src");
-          img.hidden = true;
-        }
-      }
-      if (fallback) fallback.hidden = Boolean(u);
-      if (clearBtn) clearBtn.hidden = !u;
-    }
-
-    function iconEndpoint() {
-      if (kind === "project" && orgSlug && projectSlug) {
-        return `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/icon`;
-      }
-      if (orgSlug) return `/api/v1/orgs/${orgSlug}/icon`;
-      return null;
-    }
-
     function setPickBusy(busy) {
       if (pickLabel) {
         pickLabel.classList.toggle("is-busy", busy);
         pickLabel.setAttribute("aria-busy", busy ? "true" : "false");
-        // Prevent re-opening file dialog while uploading
-        if (fileInput) fileInput.disabled = busy;
       }
+      if (fileInput) fileInput.disabled = busy;
       if (pickText) pickText.textContent = busy ? "上传中..." : "选择图片";
     }
 
-    // Native <label for=file> opens the picker; keep a JS fallback for older markup
-    pickLabel?.addEventListener("click", (e) => {
-      // If for= is broken, still open the dialog
-      if (!fileInput || fileInput.disabled) return;
-      if (e.target === fileInput) return;
-      // Let the browser handle label→input association when for= matches
-      if (pickLabel.getAttribute("for") && fileInput.id === pickLabel.getAttribute("for")) {
-        return;
-      }
-      e.preventDefault();
-      try {
-        fileInput.click();
-      } catch {
-        /* ignore */
-      }
-    });
-
     fileInput?.addEventListener("change", async () => {
       const file = fileInput.files && fileInput.files[0];
-      // Reset so re-selecting the same file still fires change
-      fileInput.value = "";
       if (!file) return;
       showIconErr("");
-      if (!/^image\/(png|jpe?g|gif|webp)$/i.test(file.type) && file.type !== "") {
-        // Some browsers leave type empty; allow by extension
-        if (!/\.(png|jpe?g|gif|webp)$/i.test(file.name || "")) {
-          showIconErr("请选择 PNG / JPG / WebP / GIF 图片");
-          return;
-        }
-      }
-      if (file.size > 2 * 1024 * 1024) {
-        showIconErr("图标不能超过 2MB");
-        return;
-      }
-      const endpoint = iconEndpoint();
-      if (!endpoint) {
-        showIconErr("缺少组织/项目上下文");
-        return;
-      }
       setPickBusy(true);
       try {
-        const dataUrl = await fileToDataUrl(file);
-        if (!dataUrl.startsWith("data:image/")) {
-          showIconErr("无法读取图片，请换一张再试");
-          return;
-        }
-        const { res, data } = await json(endpoint, {
-          method: "POST",
-          body: JSON.stringify({ imageBase64: dataUrl }),
-        });
-        if (!res.ok) {
-          showIconErr(data.error || "上传失败");
-          return;
-        }
-        setPreview(data.iconUrl || data.webpUrl || "");
-        toast("success", "图标已更新");
+        const url = await uploadEntityIconFile(root, file);
+        setEntityIconPreview(root, url);
+        toast("success", "图标已上传并保存");
+        // Refresh so headers/cards pick up the new icon
+        setTimeout(() => location.reload(), 500);
       } catch (err) {
         console.error("[entity-icon] upload failed", err);
-        showIconErr("网络错误");
+        const msg = err instanceof Error ? err.message : "上传失败";
+        showIconErr(msg);
+        toast("error", msg);
       } finally {
+        // Allow re-selecting the same file later
+        try {
+          fileInput.value = "";
+        } catch {
+          /* ignore */
+        }
         setPickBusy(false);
       }
     });
 
     clearBtn?.addEventListener("click", async () => {
       showIconErr("");
-      const endpoint = iconEndpoint();
+      let endpoint = null;
+      if (kind === "project" && orgSlug && projectSlug) {
+        endpoint = `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/icon`;
+      } else if (orgSlug) {
+        endpoint = `/api/v1/orgs/${orgSlug}/icon`;
+      }
       if (!endpoint) return;
       if (!confirm("确定移除图标？")) return;
       setButtonBusy(clearBtn, true, { busyLabel: "移除中..." });
       try {
-        const { res, data } = await json(endpoint, { method: "DELETE" });
+        const { res, data } = await json(endpoint, {
+          method: "DELETE",
+          credentials: "same-origin",
+        });
         if (!res.ok) {
           showIconErr(data.error || "移除失败");
+          toast("error", data.error || "移除失败");
           return;
         }
-        setPreview("");
+        setEntityIconPreview(root, "");
         toast("success", "图标已移除");
+        setTimeout(() => location.reload(), 400);
       } catch {
         showIconErr("网络错误");
+        toast("error", "网络错误");
       } finally {
         setButtonBusy(clearBtn, false, { idleLabel: "移除" });
       }
@@ -847,6 +888,5 @@
     document.querySelectorAll("[data-entity-icon]").forEach(bindEntityIconField);
   }
   bindAllEntityIcons();
-  // Re-bind after settings tab switches (panels may have been cloned/shown late)
   document.addEventListener("settings:tab", () => bindAllEntityIcons());
 })();
