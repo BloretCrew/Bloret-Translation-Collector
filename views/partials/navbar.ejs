@@ -9,6 +9,13 @@
     <% if (session && session.isLoggedIn) { %>
       <a class="blora-navbar__link" href="/app">我的组织</a>
       <a class="blora-navbar__link" href="/app/tasks">我的任务</a>
+      <button
+        type="button"
+        class="blora-btn blora-btn--ghost blora-btn--sm app-navbar__theme"
+        data-blora-theme-toggle
+        aria-label="切换深浅色"
+        title="切换深浅色"
+      ></button>
       <div class="blora-dropdown">
         <button class="blora-btn blora-btn--ghost blora-btn--sm" data-blora-dropdown-trigger type="button">
           <% if (session.avatarUrl) { %>
@@ -30,6 +37,13 @@
         </div>
       </div>
     <% } else { %>
+      <button
+        type="button"
+        class="blora-btn blora-btn--ghost blora-btn--sm app-navbar__theme"
+        data-blora-theme-toggle
+        aria-label="切换深浅色"
+        title="切换深浅色"
+      ></button>
       <a class="blora-btn blora-btn--primary blora-btn--sm" href="/auth/login">PassPort 登录</a>
     <% } %>
   </div>

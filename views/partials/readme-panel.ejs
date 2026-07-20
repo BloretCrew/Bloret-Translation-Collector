@@ -8,38 +8,37 @@
 %>
 <% if (hasContent || hasWarning || canEdit) { %>
 <section class="app-section readme-section">
-  <div class="app-section-head">
-    <div>
-      <h2 class="blora-h3">README</h2>
-      <% if (rv && rv.source === 'url' && rv.url) { %>
-        <p class="blora-text-faint u-text-xs u-mt-1">
-          来源
-          <a href="<%= rv.url %>" target="_blank" rel="noopener noreferrer" class="blora-text-mono"><%= rv.url.length > 72 ? rv.url.slice(0, 72) + '…' : rv.url %></a>
-        </p>
-      <% } else if (rv && rv.source === 'inline') { %>
-        <p class="blora-text-faint u-text-xs u-mt-1">本地 Markdown</p>
+  <% if (hasContent || hasWarning) { %>
+    <div class="app-section-head">
+      <div>
+        <h2 class="blora-h3">README</h2>
+        <% if (rv && rv.source === 'url' && rv.url) { %>
+          <p class="blora-text-faint u-text-xs u-mt-1">
+            来源
+            <a href="<%= rv.url %>" target="_blank" rel="noopener noreferrer" class="blora-text-mono"><%= rv.url.length > 72 ? rv.url.slice(0, 72) + '…' : rv.url %></a>
+          </p>
+        <% } else if (rv && rv.source === 'inline') { %>
+          <p class="blora-text-faint u-text-xs u-mt-1">本地 Markdown</p>
+        <% } %>
+      </div>
+      <% if (canEdit && edit) { %>
+        <a class="blora-btn blora-btn--ghost blora-btn--sm" href="<%= edit %>">编辑</a>
       <% } %>
     </div>
-    <% if (canEdit && edit) { %>
-      <a class="blora-btn blora-btn--ghost blora-btn--sm" href="<%= edit %>"><%= hasContent ? '编辑 README' : '添加 README' %></a>
+
+    <% if (hasWarning) { %>
+      <div class="blora-alert blora-alert--warning u-mb-3"><%= rv.warning %></div>
     <% } %>
-  </div>
 
-  <% if (hasWarning) { %>
-    <div class="blora-alert blora-alert--warning u-mb-3"><%= rv.warning %></div>
-  <% } %>
-
-  <% if (hasContent) { %>
-    <article class="readme-body blora-panel">
-      <%- rv.html %>
-    </article>
+    <% if (hasContent) { %>
+      <article class="readme-body">
+        <%- rv.html %>
+      </article>
+    <% } %>
   <% } else if (canEdit && edit) { %>
-    <div class="blora-empty blora-empty--compact">
-      <div class="blora-empty__title">尚未添加 README</div>
-      <div class="blora-empty__desc">可在设置中填写 Markdown，或粘贴 raw GitHub 等 HTTPS 链接</div>
-      <div class="app-empty-actions">
-        <a class="blora-btn blora-btn--secondary blora-btn--sm" href="<%= edit %>">去设置</a>
-      </div>
+    <div class="readme-cta">
+      <span>尚未添加 README — 可写 Markdown，或挂 raw HTTPS 链接</span>
+      <a class="blora-btn blora-btn--secondary blora-btn--sm" href="<%= edit %>">添加 README</a>
     </div>
   <% } %>
 </section>

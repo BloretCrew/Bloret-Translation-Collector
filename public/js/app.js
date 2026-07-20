@@ -122,3 +122,11 @@ function escapeLoadingLabel(s) {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
 }
+
+/** Keep color-scheme in sync for native form controls (select/input) in dark mode. */
+function syncColorScheme() {
+  const dark = document.documentElement.classList.contains("blora-dark");
+  document.documentElement.style.colorScheme = dark ? "dark" : "light";
+}
+document.documentElement.addEventListener("blora:appearancechange", syncColorScheme);
+syncColorScheme();

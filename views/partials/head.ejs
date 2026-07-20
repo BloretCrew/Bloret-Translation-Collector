@@ -31,6 +31,9 @@
         const mode = localStorage.getItem('btc-theme');
         if (mode === 'dark' || (!mode && matchMedia('(prefers-color-scheme: dark)').matches)) {
           root.classList.add('blora-dark');
+          root.style.colorScheme = 'dark';
+        } else {
+          root.style.colorScheme = 'light';
         }
       } catch (e) {}
     })();
