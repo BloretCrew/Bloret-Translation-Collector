@@ -6,16 +6,23 @@
       <%- include('../partials/breadcrumbs', { crumbs: [{ label: '组织', href: '/app' }, { label: org.name, href: '/app/o/' + orgSlug }, { label: project.name }] }) %>
       <%- include('../partials/project-nav', { activeNav: 'dashboard' }) %>
 
+      <%
+        var _canManageSettings = typeof canManageSettings !== 'undefined' && canManageSettings;
+        var _canExport = typeof canExport !== 'undefined' && canExport;
+        var _canEdit = typeof canEdit !== 'undefined' && canEdit;
+        var _canUpload = typeof canUpload !== 'undefined' && canUpload;
+        var _readmeView = typeof readmeView !== 'undefined' ? readmeView : null;
+      %>
       <%- include('../partials/readme-panel', {
-        readmeView: typeof readmeView !== 'undefined' ? readmeView : null,
-        canEditReadme: canManageSettings,
+        readmeView: _readmeView,
+        canEditReadme: _canManageSettings,
         editHref: '/app/o/' + orgSlug + '/p/' + projectSlug + '/settings?tab=readme'
       }) %>
 
       <section class="app-section">
         <div class="app-section-head">
           <h2 class="blora-h3">语言进度</h2>
-          <% if (canExport && targetLocales.length) { %>
+          <% if (_canExport && targetLocales.length) { %>
             <a class="blora-btn blora-btn--ghost blora-btn--sm" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/export">前往导出 →</a>
           <% } %>
         </div>
@@ -23,7 +30,7 @@
           <div class="blora-empty">
             <div class="blora-empty__title">尚未配置目标语言</div>
             <div class="blora-empty__desc">在设置中添加目标语言后即可开始翻译</div>
-            <% if (canManageSettings) { %>
+            <% if (_canManageSettings) { %>
               <div class="app-empty-actions">
                 <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/settings">项目设置</a>
               </div>
@@ -63,9 +70,9 @@
                     </td>
                     <td>
                       <div class="blora-row u-gap-1">
-                        <% if (defaultFile && canEdit) { %>
+                        <% if (defaultFile && _canEdit) { %>
                           <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= defaultFile %>&locale=<%= p.locale %>">进入工作台</a>
-                        <% } else if (!defaultFile && canUpload) { %>
+                        <% } else if (!defaultFile && _canUpload) { %>
                           <a class="blora-btn blora-btn--secondary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/import">先导入文件</a>
                         <% } %>
                       </div>
@@ -87,7 +94,7 @@
           <div class="blora-empty">
             <div class="blora-empty__title">尚无源文件</div>
             <div class="blora-empty__desc">导入 JSON 或 .properties 后即可翻译</div>
-            <% if (canUpload) { %>
+            <% if (_canUpload) { %>
               <div class="app-empty-actions">
                 <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/import">导入源文件</a>
               </div>
@@ -113,7 +120,7 @@
                     <td><%= f.stringCount %></td>
                     <td>r<%= f.sourceRevision %></td>
                     <td>
-                      <% if (defaultLocale && canEdit) { %>
+                      <% if (defaultLocale && _canEdit) { %>
                         <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= f.id %>&locale=<%= defaultLocale %>">翻译</a>
                       <% } %>
                     </td>

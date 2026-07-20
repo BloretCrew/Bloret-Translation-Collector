@@ -25,7 +25,7 @@
           <div class="blora-empty">
             <div class="blora-empty__title">没有目标语言</div>
             <div class="blora-empty__desc">请先在项目设置中添加目标语言</div>
-            <% if (canManageSettings) { %>
+            <% if (typeof canManageSettings !== 'undefined' && canManageSettings) { %>
               <div class="app-empty-actions">
                 <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/settings">项目设置</a>
               </div>
@@ -35,7 +35,7 @@
           <div class="blora-empty">
             <div class="blora-empty__title">没有源文件</div>
             <div class="blora-empty__desc">请先导入源文件再导出</div>
-            <% if (canUpload) { %>
+            <% if (typeof canUpload !== 'undefined' && canUpload) { %>
               <div class="app-empty-actions">
                 <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/import">导入源文件</a>
               </div>
