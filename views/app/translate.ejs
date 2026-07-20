@@ -13,67 +13,68 @@
     data-can-approve="<%= typeof canApprove !== 'undefined' && canApprove ? '1' : '0' %>"
     data-project-href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>"
   >
-    <header class="editor-topbar">
-      <a class="editor-topbar__back blora-btn blora-btn--ghost blora-btn--sm" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>">
+    <header class="editor-chrome">
+      <a class="editor-chrome__back blora-btn blora-btn--ghost blora-btn--sm" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>" title="返回项目">
         ← <%= project.name %>
       </a>
-      <div class="editor-topbar__filters">
-        <label class="blora-field editor-topbar__field">
-          <span class="blora-field__label">文件</span>
-          <select class="blora-select" id="editor-file">
-            <% files.forEach(function (f) { %>
-              <option value="<%= f.id %>" <%= f.id === fileId ? 'selected' : '' %>><%= f.path %></option>
-            <% }) %>
-          </select>
-        </label>
-        <label class="blora-field editor-topbar__field">
-          <span class="blora-field__label">语言</span>
-          <select class="blora-select" id="editor-locale">
-            <% locales.forEach(function (l) { %>
-              <option value="<%= l %>" <%= l === locale ? 'selected' : '' %>><%= localeLabel(l) %></option>
-            <% }) %>
-          </select>
-        </label>
-        <label class="blora-field editor-topbar__field">
-          <span class="blora-field__label">筛选</span>
-          <select class="blora-select" id="editor-filter">
-            <option value="all">全部</option>
-            <option value="untranslated">未翻译</option>
-            <option value="pending">有建议未批准</option>
-            <option value="approved">已批准</option>
-          </select>
-        </label>
-        <label class="blora-field editor-topbar__field editor-topbar__field--search">
-          <span class="blora-field__label">搜索</span>
-          <input class="blora-input" id="editor-q" placeholder="key 或源文" autocomplete="off" />
-        </label>
-        <button class="blora-btn blora-btn--secondary blora-btn--sm" type="button" id="editor-refresh">刷新</button>
+      <div class="editor-chrome__context">
+        <select class="blora-select blora-select--sm editor-chrome__select" id="editor-file" aria-label="文件" title="源文件">
+          <% files.forEach(function (f) { %>
+            <option value="<%= f.id %>" <%= f.id === fileId ? 'selected' : '' %>><%= f.path %></option>
+          <% }) %>
+        </select>
+        <select class="blora-select blora-select--sm editor-chrome__select" id="editor-locale" aria-label="目标语言" title="目标语言">
+          <% locales.forEach(function (l) { %>
+            <option value="<%= l %>" <%= l === locale ? 'selected' : '' %>><%= localeLabel(l) %></option>
+          <% }) %>
+        </select>
       </div>
-      <div class="editor-topbar__meta">
-        <span class="blora-text-faint blora-text-mono u-text-xs" id="editor-count">0/0</span>
-        <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm editor-topbar__toggle-list" id="editor-toggle-list" aria-label="切换字符串列表">列表</button>
-        <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm editor-topbar__toggle-side" id="editor-toggle-side" aria-label="切换辅助面板">辅助</button>
+      <div class="editor-chrome__meta">
+        <span class="editor-chrome__count blora-text-mono u-text-xs" id="editor-count" title="当前列表 / 总数">0/0</span>
+        <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm editor-chrome__toggle" id="editor-toggle-list" aria-label="切换字符串列表">列表</button>
+        <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm editor-chrome__toggle" id="editor-toggle-side" aria-label="切换辅助面板">辅助</button>
       </div>
     </header>
 
     <div id="editor-error" class="blora-alert blora-alert--danger editor-shell__alert" hidden></div>
+
     <div id="editor-loading" class="editor-shell__state app-loading">
       <div class="blora-skeleton blora-skeleton--title"></div>
       <div class="blora-skeleton blora-skeleton--block"></div>
     </div>
-    <div id="editor-empty" class="editor-shell__state blora-empty" hidden>
-      <div class="blora-empty__title">没有匹配的字符串</div>
-      <div class="blora-empty__desc">试试调整筛选或搜索条件</div>
-    </div>
 
     <div id="editor-body" class="editor-workspace" hidden>
       <aside class="editor-col editor-col--list" id="editor-list-col" aria-label="字符串列表">
-        <div class="editor-col__head">字符串</div>
+        <div class="editor-list-tools">
+          <input
+            class="blora-input blora-input--sm editor-list-tools__search"
+            id="editor-q"
+            type="search"
+            placeholder="搜索 key 或源文"
+            autocomplete="off"
+            aria-label="搜索"
+          />
+          <div class="editor-list-tools__row">
+            <select class="blora-select blora-select--sm editor-list-tools__filter" id="editor-filter" aria-label="筛选状态">
+              <option value="all">全部</option>
+              <option value="untranslated">未翻译</option>
+              <option value="pending">有建议未批准</option>
+              <option value="approved">已批准</option>
+            </select>
+            <button class="blora-btn blora-btn--ghost blora-btn--sm" type="button" id="editor-refresh" title="刷新列表" aria-label="刷新列表">↻</button>
+          </div>
+        </div>
         <div class="editor-list" id="editor-list" role="listbox"></div>
+        <div id="editor-list-empty" class="editor-list-empty blora-text-muted u-text-sm" hidden>
+          没有匹配的字符串<br />
+          <span class="blora-text-faint u-text-xs">试试调整筛选或搜索</span>
+        </div>
       </aside>
 
       <section class="editor-col editor-col--main" aria-label="翻译区">
-        <div id="editor-panel-empty" class="editor-main-empty blora-text-muted">选择左侧字符串开始翻译</div>
+        <div id="editor-panel-empty" class="editor-main-empty blora-text-muted">
+          选择左侧字符串开始翻译
+        </div>
         <div id="editor-panel-active" class="editor-main-active" hidden>
           <div class="editor-main-scroll">
             <div class="editor-string-head">
@@ -94,68 +95,74 @@
 
           <div class="editor-compose">
             <label class="blora-field editor-compose__field">
-              <span class="blora-field__label">
+              <span class="blora-field__label editor-compose__label">
                 译文 · <%= localeLabel(locale) %>
-                <span class="save-hint" id="editor-save-hint">保存并下一条</span>
+                <span class="save-hint" id="editor-save-hint" title="Ctrl/⌘+Enter 保存并下一条 · Ctrl/⌘+S 仅保存">就绪</span>
               </span>
               <textarea
                 class="blora-textarea editor-draft"
                 id="editor-draft"
-                rows="5"
+                rows="4"
                 placeholder="输入译文…"
                 <%= canEdit ? '' : 'readonly' %>
               ></textarea>
             </label>
             <div class="editor-compose__actions">
               <% if (canEdit) { %>
-                <button type="button" class="blora-btn blora-btn--primary blora-btn--sm" id="editor-save-suggestion">保存并下一条</button>
-                <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm" id="editor-save-only">仅保存</button>
-                <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" id="editor-mt" hidden>机器翻译</button>
-                <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm" id="editor-delete-suggestion">删除建议</button>
+                <button type="button" class="blora-btn blora-btn--primary blora-btn--sm" id="editor-save-suggestion" title="Ctrl/⌘+Enter">保存并下一条</button>
+                <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm" id="editor-save-only" title="Ctrl/⌘+S">仅保存</button>
+                <div class="blora-dropdown editor-compose__more">
+                  <button class="blora-btn blora-btn--ghost blora-btn--sm" type="button" data-blora-dropdown-trigger aria-label="更多操作">⋯</button>
+                  <div class="blora-dropdown-menu">
+                    <button type="button" class="blora-dropdown-menu__item" id="editor-mt" hidden>机器翻译</button>
+                    <button type="button" class="blora-dropdown-menu__item" id="editor-delete-suggestion">删除建议</button>
+                    <button type="button" class="blora-dropdown-menu__item" id="editor-assign-task" hidden>指派任务</button>
+                  </div>
+                </div>
               <% } %>
               <span class="editor-compose__spacer"></span>
-              <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" id="editor-prev">上一条</button>
-              <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" id="editor-next">下一条</button>
-              <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" id="editor-assign-task" hidden>指派</button>
+              <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" id="editor-prev" title="上一条 (↑)">上一条</button>
+              <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" id="editor-next" title="下一条 (↓)">下一条</button>
             </div>
-            <p class="editor-compose__hint blora-text-faint u-text-xs">
-              Ctrl/⌘+Enter 保存并下一条 · Ctrl/⌘+S 仅保存 · ↑↓ 切换字符串
-            </p>
           </div>
         </div>
       </section>
 
       <aside class="editor-col editor-col--side" id="editor-side-col" aria-label="辅助信息">
-        <div class="editor-side-scroll">
-          <div class="collab-suggestions">
-            <div class="blora-text-caps blora-text-faint">全部建议</div>
-            <div id="editor-suggestions" class="collab-suggestions__list"></div>
+        <div class="blora-tabs editor-side-tabs" data-blora-tabs id="editor-side-tabs">
+          <div class="blora-tabs__nav editor-side-tabs__nav">
+            <button type="button" class="blora-tabs__tab is-active" data-tab="0">建议</button>
+            <button type="button" class="blora-tabs__tab" data-tab="1">TM</button>
+            <button type="button" class="blora-tabs__tab" data-tab="2">语境</button>
+            <button type="button" class="blora-tabs__tab" data-tab="3">讨论</button>
           </div>
-
-          <div class="tm-hits u-mt-3" id="editor-tm" hidden>
-            <div class="blora-text-caps blora-text-faint">翻译记忆 (TM)</div>
-            <div id="editor-tm-list" class="tm-hits__list"></div>
-          </div>
-
-          <div class="context-shots u-mt-3" id="editor-contexts" hidden>
-            <div class="blora-text-caps blora-text-faint">截图语境</div>
-            <div id="editor-contexts-list" class="context-shots__list"></div>
-            <div class="blora-row u-mt-2" style="flex-wrap:wrap;gap:8px;align-items:center">
-              <input type="file" id="editor-context-file" accept="image/*" class="blora-input" style="max-width:100%" />
-              <input type="text" id="editor-context-caption" class="blora-input" placeholder="说明（可选）" style="max-width:100%" />
-              <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" id="editor-context-upload">上传截图</button>
+          <div class="editor-side-tabs__body">
+            <div class="blora-tabs__panel editor-side-panel" data-panel="suggestions">
+              <div id="editor-suggestions" class="collab-suggestions__list"></div>
             </div>
-          </div>
-
-          <div class="collab-comments u-mt-3">
-            <div class="blora-text-caps blora-text-faint">讨论</div>
-            <div id="editor-comments" class="collab-comments__list"></div>
-            <div class="collab-comments__compose blora-row u-mt-2" style="align-items:flex-end;flex-wrap:wrap;gap:8px">
-              <label class="blora-field" style="flex:1;min-width:8rem;margin:0">
-                <span class="blora-field__label">评论</span>
-                <textarea class="blora-textarea" id="editor-comment-body" rows="2" placeholder="讨论语境、术语…"></textarea>
-              </label>
-              <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" id="editor-comment-send">发送</button>
+            <div class="blora-tabs__panel editor-side-panel blora-hide" data-panel="tm">
+              <div id="editor-tm" class="tm-hits">
+                <div id="editor-tm-list" class="tm-hits__list"></div>
+              </div>
+            </div>
+            <div class="blora-tabs__panel editor-side-panel blora-hide" data-panel="contexts">
+              <div id="editor-contexts" class="context-shots">
+                <div id="editor-contexts-list" class="context-shots__list"></div>
+                <div class="context-shots__upload u-mt-2">
+                  <input type="file" id="editor-context-file" accept="image/*" class="blora-input blora-input--sm" />
+                  <input type="text" id="editor-context-caption" class="blora-input blora-input--sm" placeholder="说明（可选）" />
+                  <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" id="editor-context-upload">上传截图</button>
+                </div>
+              </div>
+            </div>
+            <div class="blora-tabs__panel editor-side-panel blora-hide" data-panel="comments">
+              <div class="collab-comments">
+                <div id="editor-comments" class="collab-comments__list"></div>
+                <div class="collab-comments__compose">
+                  <textarea class="blora-textarea" id="editor-comment-body" rows="2" placeholder="讨论语境、术语…"></textarea>
+                  <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" id="editor-comment-send">发送</button>
+                </div>
+              </div>
             </div>
           </div>
         </div>

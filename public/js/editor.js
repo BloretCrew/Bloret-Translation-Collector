@@ -1,6 +1,6 @@
 /**
- * Crowdin-style focus editor:
- * fixed viewport · list | compose | side · save & next
+ * Translation workbench:
+ * immersive shell · list | compose | tabbed side · save & next
  */
 (function () {
   const root = document.getElementById("translation-editor");
@@ -31,9 +31,9 @@
     count: document.getElementById("editor-count"),
     error: document.getElementById("editor-error"),
     loading: document.getElementById("editor-loading"),
-    empty: document.getElementById("editor-empty"),
     body: document.getElementById("editor-body"),
     list: document.getElementById("editor-list"),
+    listEmpty: document.getElementById("editor-list-empty"),
     listCol: document.getElementById("editor-list-col"),
     sideCol: document.getElementById("editor-side-col"),
     toggleList: document.getElementById("editor-toggle-list"),
@@ -74,6 +74,12 @@
   let saving = false;
   let mtBusy = false;
 
+  /** @param {'loading'|'workspace'} state */
+  function setShellState(state) {
+    if (els.loading) els.loading.hidden = state !== "loading";
+    if (els.body) els.body.hidden = state !== "workspace";
+  }
+
   function showError(msg) {
     if (!msg) {
       els.error.hidden = true;
@@ -92,14 +98,12 @@
       els.saveHint.textContent = "保存中…";
     } else if (state === "saved") {
       els.saveHint.classList.add("is-saved");
-      els.saveHint.textContent = "建议已保存";
+      els.saveHint.textContent = "已保存";
     } else if (state === "error") {
       els.saveHint.classList.add("is-error");
       els.saveHint.textContent = "保存失败";
     } else {
-      els.saveHint.textContent = canEdit
-        ? "Ctrl/⌘+Enter 保存并下一条 · Ctrl/⌘+S 仅保存"
-        : "只读";
+      els.saveHint.textContent = canEdit ? "就绪" : "只读";
     }
   }
 
@@ -117,6 +121,16 @@
 
   function closeMobileDrawers() {
     els.body?.classList.remove("is-list-open", "is-side-open");
+  }
+
+  function showMainEmpty() {
+    if (els.panelEmpty) els.panelEmpty.hidden = false;
+    if (els.panelActive) els.panelActive.hidden = true;
+  }
+
+  function showMainActive() {
+    if (els.panelEmpty) els.panelEmpty.hidden = true;
+    if (els.panelActive) els.panelActive.hidden = false;
   }
 
   function workflowBadge(status) {
@@ -143,6 +157,8 @@
 
   function renderList() {
     els.list.innerHTML = "";
+    if (els.listEmpty) els.listEmpty.hidden = strings.length > 0;
+
     strings.forEach((s) => {
       const wf = s.workflowStatus || "untranslated";
       const badge = workflowBadge(wf);
@@ -168,24 +184,21 @@
 
   /**
    * @param {{ preferId?: string|null, quiet?: boolean }} [opts]
-   * preferId: pick this after refresh (e.g. next string after save) if still listed
    */
   async function loadList(opts = {}) {
     const preferId = opts.preferId || null;
     const quiet = Boolean(opts.quiet);
     if (!quiet) {
-      els.loading.hidden = false;
-      els.empty.hidden = true;
-      els.body.hidden = true;
+      setShellState("loading");
+      showError("");
     }
-    showError("");
     const params = new URLSearchParams({
       locale,
       pageSize: "200",
     });
-    const filter = els.filter.value;
+    const filter = els.filter?.value;
     if (filter && filter !== "all") params.set("status", filter);
-    if (els.q.value.trim()) params.set("q", els.q.value.trim());
+    if (els.q?.value.trim()) params.set("q", els.q.value.trim());
 
     try {
       const { res, data } = await json(
@@ -193,23 +206,28 @@
       );
       if (!res.ok) {
         showError(data.error || "加载失败");
-        els.loading.hidden = true;
+        setShellState("workspace");
+        strings = [];
+        total = 0;
+        if (els.count) els.count.textContent = "0/0";
+        renderList();
+        showMainEmpty();
+        clearSidePanels();
         return;
       }
       strings = data.strings || [];
       total = data.total || 0;
-      els.count.textContent = `${strings.length}/${total}`;
-      els.loading.hidden = true;
+      if (els.count) els.count.textContent = `${strings.length}/${total}`;
+      setShellState("workspace");
+
       if (!strings.length) {
-        els.empty.hidden = false;
-        els.body.hidden = true;
         activeId = null;
-        if (els.panelActive) els.panelActive.hidden = true;
-        if (els.panelEmpty) els.panelEmpty.hidden = false;
+        renderList();
+        showMainEmpty();
+        clearSidePanels();
         return;
       }
-      els.empty.hidden = true;
-      els.body.hidden = false;
+
       let pick = null;
       if (preferId && strings.some((s) => s.id === preferId)) {
         pick = preferId;
@@ -222,6 +240,7 @@
       } else {
         pick = strings[0].id;
       }
+
       if (pick === activeId) {
         renderList();
         scrollActiveIntoView();
@@ -232,7 +251,25 @@
       }
     } catch {
       showError("网络错误");
-      els.loading.hidden = true;
+      setShellState("workspace");
+      strings = [];
+      renderList();
+      showMainEmpty();
+    }
+  }
+
+  function clearSidePanels() {
+    if (els.suggestions) {
+      els.suggestions.innerHTML = `<div class="blora-text-faint u-text-sm">选择字符串查看建议</div>`;
+    }
+    if (els.tmList) {
+      els.tmList.innerHTML = `<div class="blora-text-faint u-text-sm">暂无</div>`;
+    }
+    if (els.contextsList) {
+      els.contextsList.innerHTML = `<div class="blora-text-faint u-text-sm">暂无截图语境</div>`;
+    }
+    if (els.comments) {
+      els.comments.innerHTML = `<div class="blora-text-faint u-text-sm">暂无讨论</div>`;
     }
   }
 
@@ -241,8 +278,7 @@
     renderList();
     scrollActiveIntoView();
     closeMobileDrawers();
-    if (els.panelEmpty) els.panelEmpty.hidden = true;
-    if (els.panelActive) els.panelActive.hidden = false;
+    showMainActive();
     const row = strings.find((s) => s.id === id);
     if (row) {
       if (els.key) els.key.textContent = row.keyPath;
@@ -254,30 +290,38 @@
 
   async function loadDetail(stringId) {
     detail = null;
-    els.suggestions.innerHTML = `<div class="blora-text-faint">加载建议…</div>`;
+    if (els.suggestions) {
+      els.suggestions.innerHTML = `<div class="blora-text-faint">加载建议…</div>`;
+    }
     if (els.comments) els.comments.innerHTML = "";
-    els.workflow.textContent = "";
+    if (els.workflow) els.workflow.textContent = "";
     try {
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/strings/${stringId}/translations/${encodeURIComponent(locale)}`,
       );
       if (!res.ok) {
-        els.suggestions.innerHTML = `<div class="blora-alert blora-alert--danger">${data.error || "加载失败"}</div>`;
+        if (els.suggestions) {
+          els.suggestions.innerHTML = `<div class="blora-alert blora-alert--danger">${data.error || "加载失败"}</div>`;
+        }
         return;
       }
       detail = data;
       const mine = (data.suggestions || []).find((s) => s.isMine);
-      els.draft.value = mine ? mine.text : "";
+      if (els.draft) els.draft.value = mine ? mine.text : "";
       setSaveHint("idle");
 
       const wf = data.workflowStatus || "untranslated";
       const badge = workflowBadge(wf);
-      els.workflow.innerHTML = `<span class="status-dot ${badge.cls}"></span> <strong>${badge.label}</strong>`;
-      if (wf === "approved") {
-        const approved = (data.suggestions || []).find((s) => s.isApproved);
-        if (approved) {
-          els.workflow.innerHTML +=
-            ` · 定稿：` + escapeHtml(approved.text).slice(0, 80) + (approved.text.length > 80 ? "…" : "");
+      if (els.workflow) {
+        els.workflow.innerHTML = `<span class="status-dot ${badge.cls}"></span> <strong>${badge.label}</strong>`;
+        if (wf === "approved") {
+          const approved = (data.suggestions || []).find((s) => s.isApproved);
+          if (approved) {
+            els.workflow.innerHTML +=
+              ` · 定稿：` +
+              escapeHtml(approved.text).slice(0, 80) +
+              (approved.text.length > 80 ? "…" : "");
+          }
         }
       }
 
@@ -288,7 +332,9 @@
       renderContexts(data.contexts || [], data);
       updateExtrasUi(data);
     } catch {
-      els.suggestions.innerHTML = `<div class="blora-alert blora-alert--danger">网络错误</div>`;
+      if (els.suggestions) {
+        els.suggestions.innerHTML = `<div class="blora-alert blora-alert--danger">网络错误</div>`;
+      }
     }
   }
 
@@ -302,16 +348,15 @@
   }
 
   function renderContexts(contexts, data) {
-    if (!els.contexts || !els.contextsList) return;
+    if (!els.contextsList) return;
     const canUpload = canEdit || data.canManage;
-    els.contexts.hidden = false;
     if (els.contextFile) els.contextFile.hidden = !canUpload;
     if (els.contextCaption) els.contextCaption.hidden = !canUpload;
     if (els.contextUpload) els.contextUpload.hidden = !canUpload;
 
     els.contextsList.innerHTML = "";
     if (!contexts.length) {
-      els.contextsList.innerHTML = `<div class="blora-text-faint u-text-xs">暂无截图语境</div>`;
+      els.contextsList.innerHTML = `<div class="blora-text-faint u-text-sm">暂无截图语境</div>`;
       return;
     }
     contexts.forEach((c) => {
@@ -481,13 +526,11 @@
   }
 
   function renderTm(hits) {
-    if (!els.tm || !els.tmList) return;
+    if (!els.tmList) return;
     if (!hits.length) {
-      els.tm.hidden = true;
-      els.tmList.innerHTML = "";
+      els.tmList.innerHTML = `<div class="blora-text-faint u-text-sm">暂无翻译记忆匹配</div>`;
       return;
     }
-    els.tm.hidden = false;
     els.tmList.innerHTML = "";
     hits.forEach((h) => {
       const row = document.createElement("div");
@@ -563,7 +606,7 @@
   function renderSuggestions(data) {
     const list = data.suggestions || [];
     if (!list.length) {
-      els.suggestions.innerHTML = `<div class="blora-text-faint">暂无建议，成为第一个译者吧</div>`;
+      els.suggestions.innerHTML = `<div class="blora-text-faint u-text-sm">暂无建议，成为第一个译者吧</div>`;
       return;
     }
     els.suggestions.innerHTML = "";
@@ -606,11 +649,11 @@
         const useBtn = document.createElement("button");
         useBtn.type = "button";
         useBtn.className = "blora-btn blora-btn--ghost blora-btn--xs";
-        useBtn.textContent = "采用为我的建议";
+        useBtn.textContent = "采用";
         useBtn.addEventListener("click", () => {
           els.draft.value = s.text;
           els.draft.focus();
-          toast?.("success", "已填入编辑框，请点「保存建议」确认");
+          toast?.("success", "已填入编辑框，请点「保存」确认");
         });
         actions.appendChild(useBtn);
       }
@@ -649,7 +692,7 @@
     if (!els.comments) return;
     els.comments.innerHTML = "";
     if (!comments.length) {
-      els.comments.innerHTML = `<div class="blora-text-faint">暂无讨论</div>`;
+      els.comments.innerHTML = `<div class="blora-text-faint u-text-sm">暂无讨论</div>`;
       return;
     }
     comments.forEach((c) => {
@@ -666,7 +709,6 @@
       item.querySelector(".collab-comment__author").textContent = c.authorUsername;
       item.querySelector(".collab-comment__time").textContent = formatTime(c.createdAt);
       item.querySelector(".collab-comment__body").textContent = c.body;
-      // Delete: API enforces own-or-moderator
       const del = document.createElement("button");
       del.type = "button";
       del.className = "blora-btn blora-btn--ghost blora-btn--xs";
@@ -679,7 +721,6 @@
 
   /**
    * @param {{ advance?: boolean }} [opts]
-   * advance: after non-empty save, jump to next string in current filter list
    */
   async function saveSuggestion(opts = {}) {
     const advance = Boolean(opts.advance);
@@ -689,7 +730,6 @@
 
     const text = (els.draft?.value || "").trim();
     const idx = strings.findIndex((s) => s.id === activeId);
-    // Capture next id BEFORE list refresh (filter "untranslated" drops current row)
     const nextId =
       advance && text && idx >= 0 && idx < strings.length - 1
         ? strings[idx + 1].id
@@ -737,7 +777,7 @@
       }
       els.draft.value = "";
       toast?.("success", "已删除我的建议");
-      await loadList();
+      await loadList({ quiet: true });
       if (activeId) await loadDetail(activeId);
     } catch {
       toast?.("error", "网络错误");
@@ -772,7 +812,7 @@
         return;
       }
       toast?.("success", "已批准");
-      await loadList();
+      await loadList({ quiet: true });
       if (activeId) await loadDetail(activeId);
     } catch {
       toast?.("error", "网络错误");
@@ -792,7 +832,7 @@
         return;
       }
       toast?.("success", "已取消批准");
-      await loadList();
+      await loadList({ quiet: true });
       if (activeId) await loadDetail(activeId);
     } catch {
       toast?.("error", "网络错误");
@@ -850,6 +890,19 @@
     if (next) selectString(next.id);
   }
 
+  function debounce(fn, ms) {
+    let t = null;
+    return (...args) => {
+      clearTimeout(t);
+      t = setTimeout(() => fn(...args), ms);
+    };
+  }
+
+  const debouncedSearch = debounce(() => {
+    activeId = null;
+    loadList();
+  }, 280);
+
   els.file?.addEventListener("change", () => {
     const url = new URL(location.href);
     url.searchParams.set("file", els.file.value);
@@ -864,8 +917,13 @@
     activeId = null;
     loadList();
   });
+  els.q?.addEventListener("input", debouncedSearch);
   els.q?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") loadList();
+    if (e.key === "Enter") {
+      e.preventDefault();
+      activeId = null;
+      loadList();
+    }
   });
   els.refresh?.addEventListener("click", () => loadList());
   els.saveBtn?.addEventListener("click", () => saveSuggestion({ advance: true }));
@@ -902,7 +960,12 @@
     }
   });
   document.addEventListener("keydown", (e) => {
-    if (e.target && (e.target.tagName === "TEXTAREA" || e.target.tagName === "INPUT" || e.target.tagName === "SELECT")) {
+    if (
+      e.target &&
+      (e.target.tagName === "TEXTAREA" ||
+        e.target.tagName === "INPUT" ||
+        e.target.tagName === "SELECT")
+    ) {
       return;
     }
     if (e.key === "ArrowUp" && !e.metaKey && !e.ctrlKey) {
