@@ -465,6 +465,12 @@ html.is-translation-editor .app-main--editor {
   min-height: 0;
   overflow: auto;
   background: var(--blora-surface-1);
+  transition: opacity 0.12s ease;
+}
+
+.editor-list.is-loading {
+  opacity: 0.55;
+  pointer-events: none;
 }
 
 .editor-list-empty {

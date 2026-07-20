@@ -267,11 +267,28 @@
   let detail = null;
   let saving = false;
   let mtBusy = false;
+  /** Monotonic id so out-of-order list responses (fast typing) are ignored */
+  let listRequestId = 0;
 
   /** @param {'loading'|'workspace'} state */
   function setShellState(state) {
     if (els.loading) els.loading.hidden = state !== "loading";
     if (els.body) els.body.hidden = state !== "workspace";
+  }
+
+  function isSearchFocused() {
+    return Boolean(els.q && document.activeElement === els.q);
+  }
+
+  function restoreSearchFocus() {
+    if (!els.q) return;
+    requestAnimationFrame(() => {
+      try {
+        els.q.focus({ preventScroll: true });
+      } catch {
+        els.q.focus();
+      }
+    });
   }
 
   function showError(msg) {
@@ -440,15 +457,23 @@
   }
 
   /**
-   * @param {{ preferId?: string|null, quiet?: boolean }} [opts]
+   * @param {{ preferId?: string|null, quiet?: boolean, keepSearchFocus?: boolean }} [opts]
    */
   async function loadList(opts = {}) {
     const preferId = opts.preferId || null;
     const quiet = Boolean(opts.quiet);
+    const keepSearchFocus = Boolean(opts.keepSearchFocus) || isSearchFocused();
+    const reqId = ++listRequestId;
+
     if (!quiet) {
       setShellState("loading");
       showError("");
+    } else if (els.list) {
+      // In-place refresh: dim list without tearing down the search field.
+      els.list.setAttribute("aria-busy", "true");
+      els.list.classList.add("is-loading");
     }
+
     const params = new URLSearchParams({
       locale,
       pageSize: "200",
@@ -461,6 +486,8 @@
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/files/${fileId}/strings?${params}`,
       );
+      if (reqId !== listRequestId) return;
+
       if (!res.ok) {
         showError(data.error || "加载失败");
         setShellState("workspace");
@@ -470,20 +497,21 @@
         renderList();
         showMainEmpty();
         clearSidePanels();
-        loadProgress();
+        if (!quiet) loadProgress();
         return;
       }
       strings = data.strings || [];
       total = data.total || 0;
       if (els.count) els.count.textContent = `${strings.length}/${total}`;
       setShellState("workspace");
-      loadProgress();
+      if (!quiet) loadProgress();
 
       if (!strings.length) {
         activeId = null;
         renderList();
         showMainEmpty();
         clearSidePanels();
+        if (keepSearchFocus) restoreSearchFocus();
         return;
       }
 
@@ -504,16 +532,27 @@
         renderList();
         scrollActiveIntoView();
         await loadDetail(activeId);
-        focusDraft();
+        if (reqId !== listRequestId) return;
+        if (keepSearchFocus) restoreSearchFocus();
+        else focusDraft();
       } else {
-        await selectString(pick);
+        await selectString(pick, { focusDraft: !keepSearchFocus });
+        if (reqId !== listRequestId) return;
+        if (keepSearchFocus) restoreSearchFocus();
       }
     } catch {
+      if (reqId !== listRequestId) return;
       showError("网络错误");
       setShellState("workspace");
       strings = [];
       renderList();
       showMainEmpty();
+      if (keepSearchFocus) restoreSearchFocus();
+    } finally {
+      if (reqId === listRequestId && els.list) {
+        els.list.removeAttribute("aria-busy");
+        els.list.classList.remove("is-loading");
+      }
     }
   }
 
@@ -532,7 +571,11 @@
     }
   }
 
-  async function selectString(id) {
+  /**
+   * @param {string} id
+   * @param {{ focusDraft?: boolean }} [opts]
+   */
+  async function selectString(id, opts = {}) {
     activeId = id;
     renderList();
     scrollActiveIntoView();
@@ -544,7 +587,7 @@
       if (els.source) els.source.textContent = row.sourceText;
     }
     await loadDetail(id);
-    focusDraft();
+    if (opts.focusDraft !== false) focusDraft();
   }
 
   async function loadDetail(stringId) {
@@ -1192,8 +1235,8 @@
   }
 
   const debouncedSearch = debounce(() => {
-    activeId = null;
-    loadList();
+    // Quiet in-place list refresh — never hide the workspace (would unmount the search field).
+    loadList({ preferId: activeId, quiet: true, keepSearchFocus: true });
   }, 280);
 
   els.file?.addEventListener("change", () => {
@@ -1215,17 +1258,17 @@
   els.filter?.addEventListener("change", () => {
     activeId = null;
     updateEmptyListCopy();
-    loadList();
+    loadList({ quiet: true });
   });
   els.q?.addEventListener("input", debouncedSearch);
   els.q?.addEventListener("keydown", (e) => {
     if (e.key === "Enter") {
       e.preventDefault();
-      activeId = null;
-      loadList();
+      e.stopPropagation();
+      loadList({ preferId: activeId, quiet: true, keepSearchFocus: true });
     }
   });
-  els.refresh?.addEventListener("click", () => loadList());
+  els.refresh?.addEventListener("click", () => loadList({ quiet: true, preferId: activeId }));
   els.saveBtn?.addEventListener("click", () => saveSuggestion({ advance: true }));
   els.saveOnlyBtn?.addEventListener("click", () => saveSuggestion({ advance: false }));
   els.deleteBtn?.addEventListener("click", () => deleteSuggestion());
