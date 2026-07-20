@@ -7,12 +7,12 @@
       return src.indexOf('?') >= 0 ? src + '&v=' + _assetV : src + '?v=' + _assetV;
     }
   %>
-  <script src="<%= withAssetV('/blora/blora.js') %>"></script>
-  <script src="<%= withAssetV('/js/sf-icon.js') %>"></script>
-  <script src="<%= withAssetV('/js/app.js') %>"></script>
-  <script src="<%= withAssetV('/js/locale-picker.js') %>"></script>
+  <script defer src="<%= withAssetV('/blora/blora.js') %>"></script>
+  <script defer src="<%= withAssetV('/js/sf-icon.js') %>"></script>
+  <script defer src="<%= withAssetV('/js/app.js') %>"></script>
+  <script defer src="<%= withAssetV('/js/locale-picker.js') %>"></script>
   <% pageScripts.forEach(function (src) { %>
-    <script src="<%= withAssetV(src) %>"></script>
+    <script defer src="<%= withAssetV(src) %>"></script>
   <% }) %>
 </body>
 </html>

@@ -437,51 +437,50 @@ async function progressForFileIds(fileIds: string[]): Promise<{
     return { totalStrings: 0, byLocale: [] };
   }
 
-  const [countRow] = await db
-    .select({ total: sql<number>`count(*)::int` })
-    .from(stringUnits)
-    .where(and(inArray(stringUnits.fileId, fileIds), eq(stringUnits.orphaned, false)));
+  // Join on file_id in SQL (parallel) — avoids loading every unit UUID into Node.
+  const [countRow, approvedRows, suggestedRows] = await Promise.all([
+    db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(stringUnits)
+      .where(and(inArray(stringUnits.fileId, fileIds), eq(stringUnits.orphaned, false)))
+      .then((rows) => rows[0]),
+    db
+      .select({
+        locale: translations.locale,
+        translated: sql<number>`count(*)::int`,
+      })
+      .from(translations)
+      .innerJoin(stringUnits, eq(translations.stringId, stringUnits.id))
+      .where(
+        and(
+          inArray(stringUnits.fileId, fileIds),
+          eq(stringUnits.orphaned, false),
+          eq(translations.status, "translated"),
+          sql`${translations.text} <> ''`,
+        ),
+      )
+      .groupBy(translations.locale),
+    db
+      .select({
+        locale: translationSuggestions.locale,
+        suggested: sql<number>`count(distinct ${translationSuggestions.stringId})::int`,
+      })
+      .from(translationSuggestions)
+      .innerJoin(stringUnits, eq(translationSuggestions.stringId, stringUnits.id))
+      .where(
+        and(
+          inArray(stringUnits.fileId, fileIds),
+          eq(stringUnits.orphaned, false),
+          sql`coalesce(${translationSuggestions.text}, '') <> ''`,
+        ),
+      )
+      .groupBy(translationSuggestions.locale),
+  ]);
 
   const total = Number(countRow?.total ?? 0);
-
-  const unitRows = await db
-    .select({ id: stringUnits.id })
-    .from(stringUnits)
-    .where(and(inArray(stringUnits.fileId, fileIds), eq(stringUnits.orphaned, false)));
-
-  const unitIds = unitRows.map((u) => u.id);
-  if (unitIds.length === 0) {
+  if (total === 0) {
     return { totalStrings: 0, byLocale: [] };
   }
-
-  const approvedRows = await db
-    .select({
-      locale: translations.locale,
-      translated: sql<number>`count(*)::int`,
-    })
-    .from(translations)
-    .where(
-      and(
-        inArray(translations.stringId, unitIds),
-        eq(translations.status, "translated"),
-        sql`${translations.text} <> ''`,
-      ),
-    )
-    .groupBy(translations.locale);
-
-  const suggestedRows = await db
-    .select({
-      locale: translationSuggestions.locale,
-      suggested: sql<number>`count(distinct ${translationSuggestions.stringId})::int`,
-    })
-    .from(translationSuggestions)
-    .where(
-      and(
-        inArray(translationSuggestions.stringId, unitIds),
-        sql`coalesce(${translationSuggestions.text}, '') <> ''`,
-      ),
-    )
-    .groupBy(translationSuggestions.locale);
 
   const suggestedMap = new Map(
     suggestedRows.map((r) => [r.locale, Number(r.suggested)]),
@@ -502,7 +501,7 @@ async function progressForFileIds(fileIds: string[]): Promise<{
       translated,
       suggested,
       total,
-      percent: total === 0 ? 0 : Math.round((translated / total) * 100),
+      percent: Math.round((translated / total) * 100),
     });
   }
 

@@ -1,8 +1,19 @@
 import { marked } from "marked";
 
 const MAX_BYTES = 512 * 1024;
-const FETCH_TIMEOUT_MS = 8_000;
+/** Keep SSR unblocked when remote README is slow (was 8s). */
+const FETCH_TIMEOUT_MS = 2_500;
 const MAX_REDIRECTS = 3;
+/** In-process cache so repeat visits / multi-tab don't re-fetch GitHub raw every time. */
+const README_CACHE_TTL_MS = 5 * 60_000;
+const README_CACHE_MAX = 64;
+
+type CacheEntry = {
+  expires: number;
+  value: { ok: true; text: string } | { ok: false; error: string };
+};
+
+const readmeFetchCache = new Map<string, CacheEntry>();
 
 export type ReadmeResolveInput = {
   readme?: string | null;
@@ -96,9 +107,30 @@ export function normalizeUrl(raw: string | null | undefined): string | null {
   return u.toString();
 }
 
+function getCachedReadme(url: string): CacheEntry["value"] | null {
+  const hit = readmeFetchCache.get(url);
+  if (!hit) return null;
+  if (hit.expires < Date.now()) {
+    readmeFetchCache.delete(url);
+    return null;
+  }
+  return hit.value;
+}
+
+function setCachedReadme(url: string, value: CacheEntry["value"]) {
+  if (readmeFetchCache.size >= README_CACHE_MAX) {
+    const first = readmeFetchCache.keys().next().value;
+    if (first) readmeFetchCache.delete(first);
+  }
+  readmeFetchCache.set(url, { expires: Date.now() + README_CACHE_TTL_MS, value });
+}
+
 export async function fetchReadmeUrl(
   url: string,
 ): Promise<{ ok: true; text: string } | { ok: false; error: string }> {
+  const cached = getCachedReadme(url);
+  if (cached) return cached;
+
   let current = url;
   for (let hop = 0; hop <= MAX_REDIRECTS; hop++) {
     const controller = new AbortController();
@@ -125,7 +157,10 @@ export async function fetchReadmeUrl(
       }
 
       if (!res.ok) {
-        return { ok: false, error: `HTTP ${res.status}` };
+        const fail = { ok: false as const, error: `HTTP ${res.status}` };
+        // Cache short failures briefly to avoid stampede on bad URLs
+        setCachedReadme(url, fail);
+        return fail;
       }
 
       const ctype = (res.headers.get("content-type") || "").toLowerCase();
@@ -143,7 +178,9 @@ export async function fetchReadmeUrl(
       if (buf.byteLength > MAX_BYTES) {
         return { ok: false, error: `文件超过 ${MAX_BYTES / 1024}KB` };
       }
-      return { ok: true, text: buf.toString("utf8") };
+      const ok = { ok: true as const, text: buf.toString("utf8") };
+      setCachedReadme(url, ok);
+      return ok;
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
         return { ok: false, error: "请求超时" };

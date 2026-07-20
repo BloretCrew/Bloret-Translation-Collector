@@ -1,6 +1,8 @@
+import compression from "compression";
 import express from "express";
 import path from "path";
 import { fileURLToPath } from "url";
+import { computeAssetV } from "@/lib/asset-v";
 import { sessionMiddleware } from "@/lib/auth/session";
 import { loadConfig } from "@/lib/config";
 import { Logger } from "@/lib/logger";
@@ -19,8 +21,8 @@ import { pagesRouter } from "@/routes/pages";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
 
-/** Bust long-lived browser caches after each process start (static maxAge is 1d). */
-const ASSET_V = process.env.BTC_ASSET_V || String(Date.now());
+/** Stable across restarts when public assets unchanged (see computeAssetV). */
+const ASSET_V = computeAssetV();
 
 export function createApp() {
   const app = express();
@@ -29,6 +31,19 @@ export function createApp() {
   app.set("view engine", "ejs");
   app.set("views", path.join(root, "views"));
   app.set("trust proxy", 1);
+  // Skip etag on HTML so dynamic pages aren't 304'd with stale session UI
+  app.set("etag", "weak");
+
+  // Gzip/brotli-friendly transfer for HTML, CSS, JS (big win for blora.css ~127KB)
+  app.use(
+    compression({
+      threshold: 1024,
+      filter: (req, res) => {
+        if (req.headers["x-no-compression"]) return false;
+        return compression.filter(req, res);
+      },
+    }),
+  );
 
   // 5mb: context screenshots still arrive as base64 before proxy upload to img.bloret.net
   app.use(express.json({ limit: "5mb" }));
@@ -69,7 +84,19 @@ export function createApp() {
     next();
   });
 
-  app.use(express.static(path.join(root, "public"), { maxAge: "1d" }));
+  app.use(
+    express.static(path.join(root, "public"), {
+      maxAge: "7d",
+      etag: true,
+      lastModified: true,
+      // versioned ?v= assets can be treated as immutable by the browser
+      setHeaders(res, filePath) {
+        if (/\.(?:css|js|svg|woff2?|png|jpg|webp|ico)$/i.test(filePath)) {
+          res.setHeader("Cache-Control", "public, max-age=604800, stale-while-revalidate=86400");
+        }
+      },
+    }),
+  );
   // uploaded context screenshots
   app.use(
     "/uploads",

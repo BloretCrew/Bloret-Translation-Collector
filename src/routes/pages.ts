@@ -132,15 +132,21 @@ pagesRouter.get("/app/o/:org", async (req, res, next) => {
     }
 
     const isMember = access.membership != null;
-    const projectList = await db
-      .select()
-      .from(projects)
-      .where(
-        isMember
-          ? eq(projects.orgId, access.org.id)
-          : and(eq(projects.orgId, access.org.id), eq(projects.visibility, "public")),
-      )
-      .orderBy(desc(projects.updatedAt));
+    const [projectList, readmeView] = await Promise.all([
+      db
+        .select()
+        .from(projects)
+        .where(
+          isMember
+            ? eq(projects.orgId, access.org.id)
+            : and(eq(projects.orgId, access.org.id), eq(projects.visibility, "public")),
+        )
+        .orderBy(desc(projects.updatedAt)),
+      resolveReadme({
+        readme: access.org.readme,
+        readmeUrl: access.org.readmeUrl,
+      }),
+    ]);
 
     const projectIds = projectList.map((p) => p.id);
     const allLangs =
@@ -158,11 +164,6 @@ pagesRouter.get("/app/o/:org", async (req, res, next) => {
       arr.push({ locale: l.locale, displayName: l.displayName });
       langMap.set(l.projectId, arr);
     }
-
-    const readmeView = await resolveReadme({
-      readme: access.org.readme,
-      readmeUrl: access.org.readmeUrl,
-    });
 
     return res.render("app/org", {
       title: access.org.name,
@@ -337,32 +338,33 @@ async function loadProjectPageContext(
     return { error: "not_found" };
   }
 
-  const langs = await db
-    .select()
-    .from(projectLanguages)
-    .where(eq(projectLanguages.projectId, access.project.id));
+  const [langs, files, progress] = await Promise.all([
+    db
+      .select()
+      .from(projectLanguages)
+      .where(eq(projectLanguages.projectId, access.project.id)),
+    db
+      .select({
+        id: sourceFiles.id,
+        path: sourceFiles.path,
+        format: sourceFiles.format,
+        sourceRevision: sourceFiles.sourceRevision,
+        updatedAt: sourceFiles.updatedAt,
+        stringCount: sql<number>`(
+          select count(*)::int from ${stringUnits} s
+          where s.file_id = ${sourceFiles.id} and s.orphaned = false
+        )`,
+      })
+      .from(sourceFiles)
+      .where(eq(sourceFiles.projectId, access.project.id))
+      .orderBy(desc(sourceFiles.updatedAt)),
+    getProjectProgress(access.project.id),
+  ]);
+
   const targetLanguages = langs
     .filter((l) => l.enabled)
     .map((l) => ({ locale: l.locale, displayName: l.displayName }));
   const targetLocales = targetLanguages.map((l) => l.locale);
-
-  const files = await db
-    .select({
-      id: sourceFiles.id,
-      path: sourceFiles.path,
-      format: sourceFiles.format,
-      sourceRevision: sourceFiles.sourceRevision,
-      updatedAt: sourceFiles.updatedAt,
-      stringCount: sql<number>`(
-          select count(*)::int from ${stringUnits} s
-          where s.file_id = ${sourceFiles.id} and s.orphaned = false
-        )`,
-    })
-    .from(sourceFiles)
-    .where(eq(sourceFiles.projectId, access.project.id))
-    .orderBy(desc(sourceFiles.updatedAt));
-
-  const progress = await getProjectProgress(access.project.id);
   const progressMap = new Map(progress.byLocale.map((p) => [p.locale, p]));
 
   const localeProgress = targetLocales.map((locale) => {

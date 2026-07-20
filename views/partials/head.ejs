@@ -39,8 +39,8 @@
     })();
   </script>
   <% var _assetV = typeof assetV !== 'undefined' && assetV ? assetV : '1'; %>
+  <%# No Google Fonts — remote CSS+WOFF often dominate first paint (esp. CN networks). System CJK stack is set in app.css. %>
   <link rel="stylesheet" href="/blora/blora.css?v=<%= _assetV %>" />
-  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/app.css?v=<%= _assetV %>" />
 </head>
 <body class="blora-page blora-scope">
