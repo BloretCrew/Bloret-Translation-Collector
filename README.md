@@ -77,6 +77,7 @@ bash start.sh
 | 能力 | 说明 |
 |------|------|
 | 组织 / 成员 | 创建组织；Owner 按 PassPort 用户名添加成员 |
+| 组织 / 项目 README | 本地 Markdown 或 HTTPS README URL（如 raw.githubusercontent.com）展示在首页 |
 | 项目 / 语言 | 源语言 + 多目标语言 |
 | 源文件 | JSON（嵌套/扁平）与 `.properties`；更新源保留译文；原文与缩进/键序会保存以便导出保真 |
 | 翻译工作台 | 身份切换（翻译/审核）、筛选未译、搜索、自动保存；`?mode=translate\|proofread` |

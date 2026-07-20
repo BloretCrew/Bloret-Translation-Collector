@@ -57,6 +57,13 @@
       "when": 1784600000000,
       "tag": "0007_source_file_raw_content",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1784601000000,
+      "tag": "0008_readme_fields",
+      "breakpoints": true
     }
   ]
 }

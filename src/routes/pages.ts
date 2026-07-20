@@ -24,6 +24,7 @@ import {
 } from "@/lib/permissions/roles";
 import { getFileProgress, getProjectProgress } from "@/lib/services/files";
 import { isLocaleAssignee } from "@/lib/services/glossary";
+import { resolveReadme, type ReadmeView } from "@/lib/readme";
 import { requirePageAuth } from "@/middleware/requireAuth";
 
 export const pagesRouter = Router();
@@ -153,6 +154,11 @@ pagesRouter.get("/app/o/:org", async (req, res, next) => {
       langMap.set(l.projectId, arr);
     }
 
+    const readmeView = await resolveReadme({
+      readme: access.org.readme,
+      readmeUrl: access.org.readmeUrl,
+    });
+
     return res.render("app/org", {
       title: access.org.name,
       orgSlug,
@@ -161,6 +167,7 @@ pagesRouter.get("/app/o/:org", async (req, res, next) => {
       roleLabel: ROLE_LABELS[access.role],
       canManage: canManageOrg(access.role),
       canManageProjects: canManageProjects(access.role),
+      readmeView,
       projects: projectList.map((p) => ({
         ...p,
         targetLanguages: langMap.get(p.id) ?? [],
@@ -224,7 +231,7 @@ pagesRouter.get("/app/o/:org/settings", async (req, res, next) => {
     if (!canManageOrg(access.role)) return res.redirect(`/app/o/${orgSlug}`);
 
     const tabParam = typeof req.query.tab === "string" ? req.query.tab : "general";
-    const activeTab = ["general"].includes(tabParam) ? tabParam : "general";
+    const activeTab = ["general", "readme"].includes(tabParam) ? tabParam : "general";
 
     return res.render("app/org-settings", {
       title: `设置 · ${access.org.name}`,
@@ -273,6 +280,8 @@ type ProjectPageCtx = {
     slug: string;
     name: string;
     description: string | null;
+    readme: string | null;
+    readmeUrl: string | null;
     sourceLocale: string;
     visibility: string;
   };
@@ -302,6 +311,7 @@ type ProjectPageCtx = {
   canEdit: boolean;
   canExport: boolean;
   canManageSettings: boolean;
+  readmeView: ReadmeView | null;
 };
 
 /** Shared project page payload (dashboard / sources / import / export / settings shell). */
@@ -381,6 +391,7 @@ async function loadProjectPageContext(
     canEdit: canEditTranslations(access.role),
     canExport: canExport(access.role),
     canManageSettings: canManageProjects(access.role),
+    readmeView: null,
   };
 }
 
@@ -395,9 +406,15 @@ pagesRouter.get("/app/o/:org/p/:project", async (req, res, next) => {
       return res.redirect("/app");
     }
 
+    const readmeView = await resolveReadme({
+      readme: ctx.project.readme,
+      readmeUrl: ctx.project.readmeUrl,
+    });
+
     return res.render("app/project", {
       title: ctx.project.name,
       ...ctx,
+      readmeView,
     });
   } catch (e) {
     next(e);
@@ -485,7 +502,7 @@ pagesRouter.get("/app/o/:org/p/:project/settings", async (req, res, next) => {
     }
 
     const tabParam = typeof req.query.tab === "string" ? req.query.tab : "general";
-    const allowedTabs = ["general", "glossary", "assignees", "danger"] as const;
+    const allowedTabs = ["general", "readme", "glossary", "assignees", "danger"] as const;
     const activeTab = (allowedTabs as readonly string[]).includes(tabParam)
       ? tabParam
       : "general";

@@ -197,6 +197,16 @@ orgsRouter.patch("/v1/orgs/:orgSlug", async (req, res, next) => {
         ...("description" in parsed.data
           ? { description: parsed.data.description ?? null }
           : {}),
+        ...(parsed.data.readme !== undefined
+          ? { readme: parsed.data.readme?.trim() ? parsed.data.readme : null }
+          : {}),
+        ...(parsed.data.readmeUrl !== undefined
+          ? {
+              readmeUrl: parsed.data.readmeUrl?.trim()
+                ? parsed.data.readmeUrl.trim()
+                : null,
+            }
+          : {}),
         updatedAt: new Date(),
       })
       .where(eq(organizations.id, access.org.id))
@@ -557,6 +567,16 @@ orgsRouter.patch("/v1/orgs/:orgSlug/projects/:projectSlug", async (req, res, nex
         ...(parsed.data.name !== undefined ? { name: parsed.data.name } : {}),
         ...(parsed.data.description !== undefined
           ? { description: parsed.data.description ?? null }
+          : {}),
+        ...(parsed.data.readme !== undefined
+          ? { readme: parsed.data.readme?.trim() ? parsed.data.readme : null }
+          : {}),
+        ...(parsed.data.readmeUrl !== undefined
+          ? {
+              readmeUrl: parsed.data.readmeUrl?.trim()
+                ? parsed.data.readmeUrl.trim()
+                : null,
+            }
           : {}),
         ...(parsed.data.sourceLocale !== undefined
           ? { sourceLocale: parsed.data.sourceLocale }

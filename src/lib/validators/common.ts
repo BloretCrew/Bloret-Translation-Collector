@@ -26,9 +26,31 @@ export const createOrgSchema = z.object({
   description: z.string().max(500).optional().nullable(),
 });
 
+const readmeUrlField = z
+  .string()
+  .max(2000)
+  .optional()
+  .nullable()
+  .refine(
+    (v) => {
+      if (v == null || v.trim() === "") return true;
+      try {
+        const u = new URL(v.trim());
+        return u.protocol === "https:";
+      } catch {
+        return false;
+      }
+    },
+    { message: "README URL 须为 https:// 开头的有效地址" },
+  );
+
+const readmeField = z.string().max(100_000).optional().nullable();
+
 export const updateOrgSchema = z.object({
   name: z.string().min(1).max(80).optional(),
   description: z.string().max(500).optional().nullable(),
+  readme: readmeField,
+  readmeUrl: readmeUrlField,
 });
 
 export const addMemberSchema = z.object({
@@ -58,6 +80,8 @@ export const createProjectSchema = z.object({
 export const updateProjectSchema = z.object({
   name: z.string().min(1).max(80).optional(),
   description: z.string().max(500).optional().nullable(),
+  readme: readmeField,
+  readmeUrl: readmeUrlField,
   sourceLocale: localeSchema.optional(),
   visibility: z.enum(["private", "org", "public"]).optional(),
 });

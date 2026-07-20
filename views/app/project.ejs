@@ -6,6 +6,12 @@
       <%- include('../partials/breadcrumbs', { crumbs: [{ label: '组织', href: '/app' }, { label: org.name, href: '/app/o/' + orgSlug }, { label: project.name }] }) %>
       <%- include('../partials/project-nav', { activeNav: 'dashboard' }) %>
 
+      <%- include('../partials/readme-panel', {
+        readmeView: typeof readmeView !== 'undefined' ? readmeView : null,
+        canEditReadme: canManageSettings,
+        editHref: '/app/o/' + orgSlug + '/p/' + projectSlug + '/settings?tab=readme'
+      }) %>
+
       <section class="app-section">
         <div class="app-section-head">
           <h2 class="blora-h3">语言进度</h2>

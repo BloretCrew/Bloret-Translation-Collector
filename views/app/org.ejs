@@ -6,6 +6,12 @@
       <%- include('../partials/breadcrumbs', { crumbs: [{ label: '组织', href: '/app' }, { label: org.name }] }) %>
       <%- include('../partials/org-nav', { activeNav: 'projects' }) %>
 
+      <%- include('../partials/readme-panel', {
+        readmeView: typeof readmeView !== 'undefined' ? readmeView : null,
+        canEditReadme: canManage,
+        editHref: '/app/o/' + orgSlug + '/settings?tab=readme'
+      }) %>
+
       <section class="app-section">
         <% if (!projects.length) { %>
           <div class="blora-empty">

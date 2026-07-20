@@ -24,12 +24,14 @@
     "esbuild": "^0.25.12",
     "express": "^5.1.0",
     "iron-session": "^8.0.4",
+    "marked": "^18.0.6",
     "postgres": "^3.4.7",
     "zod": "^3.25.76"
   },
   "devDependencies": {
     "@types/ejs": "^3.1.5",
     "@types/express": "^5.0.3",
+    "@types/marked": "^5.0.2",
     "@types/node": "^22.16.5",
     "drizzle-kit": "^0.31.4",
     "tsx": "^4.20.3",

@@ -1536,6 +1536,135 @@ button.is-btc-busy .loading-spinner {
   border-bottom: 1px solid var(--blora-border-color, rgba(0, 0, 0, 0.06));
 }
 
+/* README panel */
+.readme-section {
+  margin-bottom: var(--blora-space-2);
+}
+
+.readme-body {
+  padding: var(--blora-space-5);
+  overflow-x: auto;
+  line-height: 1.65;
+  font-size: 0.95rem;
+}
+
+.readme-body > :first-child {
+  margin-top: 0;
+}
+
+.readme-body > :last-child {
+  margin-bottom: 0;
+}
+
+.readme-body h1,
+.readme-body h2,
+.readme-body h3,
+.readme-body h4 {
+  margin: 1.25em 0 0.5em;
+  line-height: 1.3;
+  font-weight: 650;
+}
+
+.readme-body h1 {
+  font-size: 1.5rem;
+  border-bottom: var(--blora-border);
+  padding-bottom: 0.35em;
+}
+
+.readme-body h2 {
+  font-size: 1.25rem;
+  border-bottom: 1px solid var(--blora-border-color, rgba(0, 0, 0, 0.08));
+  padding-bottom: 0.3em;
+}
+
+.readme-body h3 {
+  font-size: 1.1rem;
+}
+
+.readme-body p,
+.readme-body ul,
+.readme-body ol,
+.readme-body pre,
+.readme-body blockquote,
+.readme-body table {
+  margin: 0.75em 0;
+}
+
+.readme-body ul,
+.readme-body ol {
+  padding-left: 1.4em;
+}
+
+.readme-body a {
+  color: var(--blora-seal, #c45c26);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.readme-body code {
+  font-family: var(--blora-font-mono, ui-monospace, monospace);
+  font-size: 0.88em;
+  padding: 0.12em 0.35em;
+  border-radius: 4px;
+  background: var(--blora-surface-2, rgba(0, 0, 0, 0.05));
+}
+
+.readme-body pre {
+  padding: var(--blora-space-3);
+  border-radius: var(--blora-radius-md, 8px);
+  background: var(--blora-surface-2, rgba(0, 0, 0, 0.04));
+  overflow-x: auto;
+}
+
+.readme-body pre code {
+  padding: 0;
+  background: transparent;
+}
+
+.readme-body blockquote {
+  margin-left: 0;
+  padding: 0.25em 0 0.25em 1em;
+  border-left: 3px solid var(--blora-border-color, rgba(0, 0, 0, 0.15));
+  color: var(--blora-ink-mid, #555);
+}
+
+.readme-body img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 6px;
+}
+
+.readme-body table {
+  border-collapse: collapse;
+  width: 100%;
+}
+
+.readme-body th,
+.readme-body td {
+  border: 1px solid var(--blora-border-color, rgba(0, 0, 0, 0.1));
+  padding: 0.4em 0.65em;
+  text-align: left;
+}
+
+.readme-body th {
+  background: var(--blora-surface-2, rgba(0, 0, 0, 0.03));
+}
+
+.blora-empty--compact {
+  padding: var(--blora-space-5);
+}
+
+.blora-field__hint {
+  display: block;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  color: var(--blora-text-faint, #999);
+}
+
+.u-mb-3 {
+  margin-bottom: var(--blora-space-3, 0.75rem);
+}
+
 .app-advanced {
   border: var(--blora-border);
   border-radius: var(--blora-radius-md);

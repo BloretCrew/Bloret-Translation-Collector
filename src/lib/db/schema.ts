@@ -47,6 +47,10 @@ export const organizations = pgTable(
     slug: text("slug").notNull().unique(),
     name: text("name").notNull(),
     description: text("description"),
+    /** Inline Markdown README shown on the org dashboard. */
+    readme: text("readme"),
+    /** Optional remote Markdown URL (e.g. raw.githubusercontent.com). Takes priority when set. */
+    readmeUrl: text("readme_url"),
     createdBy: uuid("created_by")
       .notNull()
       .references(() => users.id),
@@ -85,6 +89,10 @@ export const projects = pgTable(
     slug: text("slug").notNull(),
     name: text("name").notNull(),
     description: text("description"),
+    /** Inline Markdown README shown on the project dashboard. */
+    readme: text("readme"),
+    /** Optional remote Markdown URL. Takes priority when set. */
+    readmeUrl: text("readme_url"),
     sourceLocale: text("source_locale").notNull().default("en"),
     visibility: projectVisibilityEnum("visibility").notNull().default("org"),
     createdBy: uuid("created_by")

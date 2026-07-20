@@ -21,6 +21,7 @@
       >
         <nav class="settings-nav" aria-label="设置分区">
           <a class="settings-nav__link<%= settingsTab === 'general' ? ' is-active' : '' %>" href="?tab=general" data-tab="general">基本信息</a>
+          <a class="settings-nav__link<%= settingsTab === 'readme' ? ' is-active' : '' %>" href="?tab=readme" data-tab="readme">README</a>
           <a class="settings-nav__link<%= settingsTab === 'glossary' ? ' is-active' : '' %>" href="?tab=glossary" data-tab="glossary">术语表</a>
           <a class="settings-nav__link<%= settingsTab === 'assignees' ? ' is-active' : '' %>" href="?tab=assignees" data-tab="assignees">语言负责人</a>
           <a class="settings-nav__link settings-nav__link--danger<%= settingsTab === 'danger' ? ' is-active' : '' %>" href="?tab=danger" data-tab="danger">危险区域</a>
@@ -59,6 +60,31 @@
               </p>
               <div class="settings-panel__footer">
                 <button class="blora-btn blora-btn--primary" type="submit">保存设置</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="settings-panel blora-panel" data-tab-panel="readme" <%= settingsTab === 'readme' ? '' : 'hidden' %>>
+            <header class="settings-panel__head">
+              <div>
+                <h2 class="blora-h3">README</h2>
+                <p class="blora-text-faint u-text-sm u-mt-1">展示在项目总览。若填写 URL，将优先从远程加载 Markdown。</p>
+              </div>
+            </header>
+            <form id="project-readme-form" class="blora-stack u-mt-4" data-org-slug="<%= orgSlug %>" data-project-slug="<%= projectSlug %>">
+              <div id="readme-form-error" class="blora-alert blora-alert--danger" hidden></div>
+              <label class="blora-field">
+                <span class="blora-field__label">README URL（可选）</span>
+                <input class="blora-input blora-text-mono" name="readmeUrl" type="url" placeholder="https://raw.githubusercontent.com/org/repo/refs/heads/main/README.md" value="<%= project.readmeUrl || '' %>" />
+                <span class="blora-field__hint">仅支持 HTTPS。示例：raw.githubusercontent.com/…/README.md</span>
+              </label>
+              <label class="blora-field">
+                <span class="blora-field__label">本地 Markdown（URL 不可用时的后备）</span>
+                <textarea class="blora-textarea blora-text-mono" name="readme" rows="14" placeholder="# 项目说明&#10;&#10;翻译约定……"><%= project.readme || '' %></textarea>
+              </label>
+              <div class="settings-panel__footer">
+                <button class="blora-btn blora-btn--primary" type="submit">保存 README</button>
+                <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>">查看总览</a>
               </div>
             </form>
           </section>

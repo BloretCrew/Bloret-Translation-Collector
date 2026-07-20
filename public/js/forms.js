@@ -121,6 +121,73 @@
     });
   }
 
+  // Org README
+  const orgReadme = document.getElementById("org-readme-form");
+  if (orgReadme) {
+    orgReadme.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const orgSlug = orgReadme.dataset.orgSlug;
+      const err = document.getElementById("readme-form-error");
+      const btn = orgReadme.querySelector('button[type="submit"]');
+      showError(err, "");
+      setButtonBusy(btn, true, { busyLabel: "保存中..." });
+      try {
+        const fd = new FormData(orgReadme);
+        const { res, data } = await json(`/api/v1/orgs/${orgSlug}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            readme: fd.get("readme") || null,
+            readmeUrl: (fd.get("readmeUrl") || "").toString().trim() || null,
+          }),
+        });
+        if (!res.ok) {
+          showError(err, data.error || "保存失败");
+          return;
+        }
+        toast("success", "README 已更新");
+        location.reload();
+      } catch {
+        showError(err, "网络错误");
+      } finally {
+        setButtonBusy(btn, false, { idleLabel: "保存 README" });
+      }
+    });
+  }
+
+  // Project README
+  const projectReadme = document.getElementById("project-readme-form");
+  if (projectReadme) {
+    projectReadme.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const orgSlug = projectReadme.dataset.orgSlug;
+      const projectSlug = projectReadme.dataset.projectSlug;
+      const err = document.getElementById("readme-form-error");
+      const btn = projectReadme.querySelector('button[type="submit"]');
+      showError(err, "");
+      setButtonBusy(btn, true, { busyLabel: "保存中..." });
+      try {
+        const fd = new FormData(projectReadme);
+        const { res, data } = await json(`/api/v1/orgs/${orgSlug}/projects/${projectSlug}`, {
+          method: "PATCH",
+          body: JSON.stringify({
+            readme: fd.get("readme") || null,
+            readmeUrl: (fd.get("readmeUrl") || "").toString().trim() || null,
+          }),
+        });
+        if (!res.ok) {
+          showError(err, data.error || "保存失败");
+          return;
+        }
+        toast("success", "README 已更新");
+        location.reload();
+      } catch {
+        showError(err, "网络错误");
+      } finally {
+        setButtonBusy(btn, false, { idleLabel: "保存 README" });
+      }
+    });
+  }
+
   // Create project
   const createProject = document.getElementById("create-project-form");
   if (createProject) {
