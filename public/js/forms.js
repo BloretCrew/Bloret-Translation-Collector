@@ -27,12 +27,19 @@
         const displayName = fromInput || fromCatalog || null;
         return {
           locale,
-          // Keep real human names; if label is only the code, still send it so custom
-          // locales without a separate name round-trip consistently.
           displayName: displayName || null,
         };
       }),
     };
+  }
+
+  /** Custom locales must have a human display name distinct from the code. */
+  function languagesMissingDisplayName(projectLanguages) {
+    return (projectLanguages.languages || []).filter((lang) => {
+      const dn = (lang.displayName || "").trim();
+      if (!dn) return true;
+      return dn.toLowerCase() === String(lang.locale).toLowerCase();
+    });
   }
 
   // Create org
@@ -143,6 +150,14 @@
         showError(err, "请至少选择一种目标语言");
         return;
       }
+      const missingNames = languagesMissingDisplayName(projectLanguages);
+      if (missingNames.length) {
+        showError(
+          err,
+          `请为自定义语言填写显示名（不可与代码相同）：${missingNames.map((l) => l.locale).join("、")}。打开「选择语言…」→ 底部「添加自定义语言」重新填写后确定`,
+        );
+        return;
+      }
       setButtonBusy(btn, true, { busyLabel: "创建中..." });
       try {
         const { res, data } = await json(`/api/v1/orgs/${orgSlug}/projects`, {
@@ -185,6 +200,14 @@
       showError(err, "");
       if (!locales.length) {
         showError(err, "请至少选择一种目标语言");
+        return;
+      }
+      const missingNames = languagesMissingDisplayName(projectLanguages);
+      if (missingNames.length) {
+        showError(
+          err,
+          `请为自定义语言填写显示名（不可与代码相同）：${missingNames.map((l) => l.locale).join("、")}。打开「选择语言…」→ 底部填写代码与显示名后点「添加」，再确定并保存`,
+        );
         return;
       }
       setButtonBusy(btn, true, { busyLabel: "保存中..." });

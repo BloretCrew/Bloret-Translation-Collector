@@ -27,8 +27,8 @@
           <% }) %>
         </select>
         <select class="blora-select blora-select--sm editor-chrome__select" id="editor-locale" aria-label="目标语言" title="目标语言">
-          <% (localeLanguages || locales.map(function (l) { return { locale: l, displayName: '' }; })).forEach(function (language) { %>
-            <option value="<%= language.locale %>" <%= language.locale === locale ? 'selected' : '' %>><%= language.displayName || localeLabel(language.locale) %></option>
+          <% (localeLanguages || locales.map(function (l) { return { locale: l, displayName: null }; })).forEach(function (language) { %>
+            <option value="<%= language.locale %>" <%= language.locale === locale ? 'selected' : '' %>><%= languageLabel(language.locale, language.displayName) %></option>
           <% }) %>
         </select>
         <% var showTranslateMode = typeof canModeTranslate !== 'undefined' && canModeTranslate; %>
@@ -145,7 +145,11 @@
             </p>
             <label class="blora-field editor-compose__field">
               <span class="blora-field__label editor-compose__label">
-                译文 · <%= localeLabel(locale) %>
+                <%
+                  var _locMeta = (localeLanguages || []).find(function (l) { return l.locale === locale; });
+                  var _locDisplay = _locMeta ? _locMeta.displayName : null;
+                %>
+                译文 · <%= languageLabel(locale, _locDisplay) %>
                 <span class="save-hint" id="editor-save-hint" title="Ctrl/⌘+Enter 保存并下一条 · Ctrl/⌘+S 仅保存">就绪</span>
               </span>
               <textarea

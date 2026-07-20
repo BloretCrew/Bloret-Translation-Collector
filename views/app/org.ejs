@@ -61,8 +61,8 @@
                     <td><span class="blora-badge"><%= localeLabel(p.sourceLocale) %></span></td>
                     <td>
                       <div class="blora-row u-gap-1">
-                        <% (p.targetLocales || []).forEach(function (l) { %>
-                          <span class="blora-badge"><%= localeShortLabel(l) %></span>
+                        <% (p.targetLanguages || (p.targetLocales || []).map(function (l) { return { locale: l, displayName: null }; })).forEach(function (lang) { %>
+                          <span class="blora-badge"><%= languageShortLabel(lang.locale, lang.displayName) %></span>
                         <% }) %>
                       </div>
                     </td>

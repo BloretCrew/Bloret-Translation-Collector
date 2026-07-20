@@ -145,11 +145,11 @@ pagesRouter.get("/app/o/:org", async (req, res, next) => {
             .from(projectLanguages)
             .where(inArray(projectLanguages.projectId, projectIds));
 
-    const langMap = new Map<string, string[]>();
+    const langMap = new Map<string, { locale: string; displayName: string | null }[]>();
     for (const l of allLangs) {
       if (!l.enabled) continue;
       const arr = langMap.get(l.projectId) ?? [];
-      arr.push(l.locale);
+      arr.push({ locale: l.locale, displayName: l.displayName });
       langMap.set(l.projectId, arr);
     }
 
@@ -163,7 +163,8 @@ pagesRouter.get("/app/o/:org", async (req, res, next) => {
       canManageProjects: canManageProjects(access.role),
       projects: projectList.map((p) => ({
         ...p,
-        targetLocales: langMap.get(p.id) ?? [],
+        targetLanguages: langMap.get(p.id) ?? [],
+        targetLocales: (langMap.get(p.id) ?? []).map((l) => l.locale),
       })),
     });
   } catch (e) {

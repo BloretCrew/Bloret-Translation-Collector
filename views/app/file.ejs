@@ -47,7 +47,12 @@
               <tbody>
                 <% localeProgress.forEach(function (p) { %>
                   <tr>
-                    <td><strong><%= p.displayName || localeLabel(p.locale) %></strong></td>
+                    <td>
+                      <strong><%= languageShortLabel(p.locale, p.displayName) %></strong>
+                      <% if (p.displayName && String(p.displayName).trim().toLowerCase() !== String(p.locale).toLowerCase()) { %>
+                        <span class="blora-text-mono blora-text-faint u-text-xs u-ml-1"><%= p.locale %></span>
+                      <% } %>
+                    </td>
                     <td>
                       <div class="blora-row blora-row--center u-gap-1">
                         <div class="blora-progress" data-value="<%= p.percent %>" style="flex:1">

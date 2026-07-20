@@ -51,8 +51,43 @@ export function localeShortLabel(code: string | null | undefined): string {
   return code;
 }
 
+/**
+ * Project-aware label: prefer stored displayName, then COMMON_LOCALES, then code.
+ * Use for any UI that shows a project language (progress, export, editor, …).
+ */
+export function languageLabel(
+  locale: string | null | undefined,
+  displayName?: string | null,
+  opts?: { withCode?: boolean },
+): string {
+  if (!locale) return (displayName || "").trim();
+  const custom = (displayName || "").trim();
+  const known = byCode.get(locale.toLowerCase());
+  const withCode = opts?.withCode !== false;
+
+  // Distinct human name from project settings / custom language.
+  if (custom && custom.toLowerCase() !== locale.toLowerCase()) {
+    return withCode ? `${custom} (${locale})` : custom;
+  }
+  if (known) {
+    return withCode ? `${known.label} (${known.code})` : known.label;
+  }
+  // Custom locale without a usable display name — last resort is the code.
+  return custom || locale;
+}
+
+export function languageShortLabel(
+  locale: string | null | undefined,
+  displayName?: string | null,
+): string {
+  return languageLabel(locale, displayName, { withCode: false });
+}
+
 /** For EJS: merge known options with any project locales not in the catalog */
-export function localeOptionsWithExtras(extraCodes: string[] = []): LocaleOption[] {
+export function localeOptionsWithExtras(
+  extraCodes: string[] = [],
+  labelByCode: Record<string, string | null | undefined> = {},
+): LocaleOption[] {
   const seen = new Set(COMMON_LOCALES.map((l) => l.code.toLowerCase()));
   const extras: LocaleOption[] = [];
   for (const raw of extraCodes) {
@@ -60,7 +95,12 @@ export function localeOptionsWithExtras(extraCodes: string[] = []): LocaleOption
     if (!code) continue;
     if (seen.has(code.toLowerCase())) continue;
     seen.add(code.toLowerCase());
-    extras.push({ code, label: code });
+    const fromMap =
+      labelByCode[code] ||
+      labelByCode[code.toLowerCase()] ||
+      Object.entries(labelByCode).find(([k]) => k.toLowerCase() === code.toLowerCase())?.[1];
+    const label = (fromMap || "").trim() || code;
+    extras.push({ code, label });
   }
   return extras.length ? [...COMMON_LOCALES, ...extras] : COMMON_LOCALES;
 }

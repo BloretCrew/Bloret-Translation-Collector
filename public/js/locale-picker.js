@@ -253,19 +253,28 @@
         toast("error", "请填写语言代码");
         return;
       }
+      if (!rawLabel) {
+        toast("error", "请填写语言显示名（项目页会显示此名称）");
+        customLabel?.focus();
+        return;
+      }
+      if (rawLabel.toLowerCase() === code.toLowerCase()) {
+        toast("error", "显示名不能与代码相同，请填写人类可读名称");
+        customLabel?.focus();
+        return;
+      }
       if (!/^[a-zA-Z]{2,3}([_-][a-zA-Z0-9]+)*$/.test(code)) {
         toast("error", "语言代码格式无效（如 en、zh-CN、yue）");
         return;
       }
-      // Display name is optional in UI, but empty falls back to code for list rendering.
-      const label = rawLabel || code;
+      const label = rawLabel;
       const canonical = upsertCatalog(catalog, code, label);
       // If user re-adds an existing custom locale with a new name, draft may already include it.
       moveToSelected([canonical]);
       persistJson();
       if (customCode) customCode.value = "";
       if (customLabel) customLabel.value = "";
-      toast("success", `已添加 ${label}${rawLabel && rawLabel !== code ? `（${canonical}）` : ""}`);
+      toast("success", `已添加 ${label}（${canonical}）`);
     });
 
     modal.querySelector("[data-locale-confirm]")?.addEventListener("click", () => {

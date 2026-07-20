@@ -101,11 +101,11 @@
           <div class="locale-picker-custom">
             <span class="blora-field__label">添加自定义语言</span>
             <div class="locale-picker-custom__row">
-              <input type="text" class="blora-input" data-custom-code placeholder="代码，如 yue" maxlength="16" />
-              <input type="text" class="blora-input" data-custom-label placeholder="显示名（可选）" maxlength="40" />
+              <input type="text" class="blora-input" data-custom-code placeholder="代码，如 yue" maxlength="16" autocomplete="off" />
+              <input type="text" class="blora-input" data-custom-label placeholder="显示名，如 粤语" maxlength="40" autocomplete="off" required />
               <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" data-custom-add>添加</button>
             </div>
-            <p class="blora-field__hint">代码将作为 locale 标识写入项目</p>
+            <p class="blora-field__hint">代码是 locale 标识；显示名会出现在项目页与工作台（必填）</p>
           </div>
         </div>
 
