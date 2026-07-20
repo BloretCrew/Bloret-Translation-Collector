@@ -3,6 +3,20 @@
    Rules: no hard-coded hex; colors/radii/shadows only via --blora-* tokens.
    ========================================================================= */
 
+/*
+ * Author `display:flex|grid|block` on components (e.g. .blora-alert, .blora-empty)
+ * can defeat the HTML [hidden] attribute in some engines when UA rule is not
+ * !important. Force hide globally for empty/error banners and any hidden node.
+ */
+[hidden] {
+  display: none !important;
+}
+
+/* Empty alert shells must not paint a coloured bar with no message */
+.blora-alert:empty {
+  display: none !important;
+}
+
 /* —— Product solid navbar (override framework glass/transparent default) —— */
 .blora-navbar.app-navbar {
   position: sticky;
