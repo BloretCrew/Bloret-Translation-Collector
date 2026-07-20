@@ -256,7 +256,7 @@ html.is-translation-editor .app-main--editor {
   align-items: center;
   gap: var(--blora-space-2);
   flex: 0 0 auto;
-  margin-left: auto;
+  margin-left: 0;
 }
 
 .editor-chrome__count {
@@ -266,6 +266,108 @@ html.is-translation-editor .app-main--editor {
 
 .editor-chrome__toggle {
   display: none;
+}
+
+/* File × locale workflow progress (empty | approved | suggested) */
+.editor-progress {
+  flex: 1 1 12rem;
+  min-width: 8rem;
+  max-width: 28rem;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-inline: var(--blora-space-2);
+}
+
+.editor-progress__track {
+  display: flex;
+  width: 100%;
+  height: 8px;
+  border-radius: var(--blora-radius-full);
+  overflow: hidden;
+  background: var(--blora-surface-3);
+  border: var(--blora-border);
+}
+
+.editor-progress__seg {
+  display: block;
+  min-width: 0;
+  height: 100%;
+  transition: flex-grow var(--blora-dur-base) var(--blora-ease);
+}
+
+.editor-progress__seg--empty {
+  background: var(--blora-ink-ghost, var(--blora-surface-3));
+}
+
+.editor-progress__seg--approved {
+  background: var(--blora-success, var(--blora-moss));
+}
+
+.editor-progress__seg--suggested {
+  background: var(--blora-warning, var(--blora-gold));
+}
+
+.editor-progress__legend {
+  display: none;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+  font-size: 10px;
+  color: var(--blora-ink-mist);
+  line-height: 1;
+}
+
+.editor-progress__legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  white-space: nowrap;
+}
+
+.editor-progress__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: var(--blora-radius-full);
+  flex: none;
+}
+
+.editor-progress__dot--empty {
+  background: var(--blora-ink-ghost, var(--blora-surface-3));
+}
+
+.editor-progress__dot--approved {
+  background: var(--blora-success, var(--blora-moss));
+}
+
+.editor-progress__dot--suggested {
+  background: var(--blora-warning, var(--blora-gold));
+}
+
+.editor-progress__text {
+  color: var(--blora-ink-mist);
+  white-space: nowrap;
+  line-height: 1.2;
+}
+
+@media (min-width: 900px) {
+  .editor-progress__legend {
+    display: flex;
+  }
+}
+
+@media (max-width: 720px) {
+  .editor-progress {
+    order: 10;
+    flex: 1 1 100%;
+    max-width: none;
+    margin-inline: 0;
+    margin-top: 2px;
+  }
+
+  .editor-chrome {
+    flex-wrap: wrap;
+  }
 }
 
 .editor-shell__alert {

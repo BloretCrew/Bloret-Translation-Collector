@@ -68,6 +68,11 @@
     q: document.getElementById("editor-q"),
     refresh: document.getElementById("editor-refresh"),
     count: document.getElementById("editor-count"),
+    progress: document.getElementById("editor-progress"),
+    progressEmpty: document.getElementById("editor-progress-empty"),
+    progressApproved: document.getElementById("editor-progress-approved"),
+    progressSuggested: document.getElementById("editor-progress-suggested"),
+    progressText: document.getElementById("editor-progress-text"),
     error: document.getElementById("editor-error"),
     loading: document.getElementById("editor-loading"),
     body: document.getElementById("editor-body"),
@@ -143,6 +148,63 @@
       els.saveHint.textContent = "保存失败";
     } else {
       els.saveHint.textContent = canEdit ? "就绪" : "只读";
+    }
+  }
+
+  /**
+   * Three-segment bar for current file × locale:
+   * gray empty · green approved · yellow has suggestion (not approved)
+   */
+  function renderProgress(stats) {
+    const total = Math.max(0, Number(stats?.total) || 0);
+    const approved = Math.max(0, Math.min(total, Number(stats?.approved) || 0));
+    const suggestedRaw = Math.max(0, Number(stats?.suggested) || 0);
+    // suggested API count includes approved strings → yellow = suggested − approved
+    const suggestedOnly = Math.max(0, Math.min(total - approved, suggestedRaw - approved));
+    const empty = Math.max(0, total - approved - suggestedOnly);
+
+    const setFlex = (el, n) => {
+      if (!el) return;
+      el.style.flex = total === 0 ? (el === els.progressEmpty ? "1" : "0") : String(n);
+    };
+    setFlex(els.progressEmpty, empty);
+    setFlex(els.progressApproved, approved);
+    setFlex(els.progressSuggested, suggestedOnly);
+
+    const pct = (n) => (total === 0 ? 0 : Math.round((n / total) * 100));
+    const title = total
+      ? `未翻译 ${empty}（${pct(empty)}%）· 已批准 ${approved}（${pct(approved)}%）· 有译文 ${suggestedOnly}（${pct(suggestedOnly)}%）· 共 ${total}`
+      : "暂无字符串";
+    if (els.progress) {
+      els.progress.title = title;
+      els.progress.setAttribute("aria-label", title);
+    }
+    if (els.progressText) {
+      els.progressText.textContent = total
+        ? `${approved + suggestedOnly}/${total} · ${pct(approved)}% 批准`
+        : "0/0";
+    }
+  }
+
+  async function loadProgress() {
+    try {
+      const { res, data } = await json(
+        `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/files/${fileId}`,
+      );
+      if (!res.ok) {
+        renderProgress({ total: 0, approved: 0, suggested: 0 });
+        return;
+      }
+      const byLocale = data.progress?.byLocale || [];
+      const row = byLocale.find((p) => p.locale === locale);
+      const total = data.progress?.totalStrings ?? row?.total ?? 0;
+      renderProgress({
+        total,
+        approved: row?.translated ?? 0,
+        suggested: row?.suggested ?? 0,
+      });
+    } catch {
+      /* keep last bar */
     }
   }
 
@@ -252,12 +314,14 @@
         renderList();
         showMainEmpty();
         clearSidePanels();
+        loadProgress();
         return;
       }
       strings = data.strings || [];
       total = data.total || 0;
       if (els.count) els.count.textContent = `${strings.length}/${total}`;
       setShellState("workspace");
+      loadProgress();
 
       if (!strings.length) {
         activeId = null;

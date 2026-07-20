@@ -29,6 +29,25 @@
           <% }) %>
         </select>
       </div>
+      <div
+        class="editor-progress"
+        id="editor-progress"
+        role="img"
+        aria-label="翻译进度"
+        title="灰：未翻译 · 绿：已批准 · 黄：有保存译文"
+      >
+        <div class="editor-progress__track" id="editor-progress-track">
+          <span class="editor-progress__seg editor-progress__seg--empty" id="editor-progress-empty" style="flex:1"></span>
+          <span class="editor-progress__seg editor-progress__seg--approved" id="editor-progress-approved" style="flex:0"></span>
+          <span class="editor-progress__seg editor-progress__seg--suggested" id="editor-progress-suggested" style="flex:0"></span>
+        </div>
+        <div class="editor-progress__legend" aria-hidden="true">
+          <span class="editor-progress__legend-item"><i class="editor-progress__dot editor-progress__dot--empty"></i>未译</span>
+          <span class="editor-progress__legend-item"><i class="editor-progress__dot editor-progress__dot--approved"></i>已批准</span>
+          <span class="editor-progress__legend-item"><i class="editor-progress__dot editor-progress__dot--suggested"></i>有译文</span>
+        </div>
+        <span class="editor-progress__text blora-text-mono u-text-xs" id="editor-progress-text">—</span>
+      </div>
       <div class="editor-chrome__meta">
         <span class="editor-chrome__count blora-text-mono u-text-xs" id="editor-count" title="当前列表 / 总数">0/0</span>
         <a class="blora-btn blora-btn--ghost blora-btn--sm" href="/app/settings" title="用户设置 · 快捷键">设置</a>
