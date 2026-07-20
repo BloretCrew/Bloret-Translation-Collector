@@ -1032,6 +1032,9 @@ html.is-translation-editor .app-main--editor {
 }
 
 .save-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
   font-size: var(--blora-text-xs);
   color: var(--blora-ink-mist);
   font-family: var(--blora-font-mono);
@@ -1043,6 +1046,12 @@ html.is-translation-editor .app-main--editor {
   color: var(--blora-info);
 }
 
+.save-hint__spinner {
+  /* inherit info color as ring highlight */
+  border-color: color-mix(in srgb, currentColor 30%, transparent);
+  border-top-color: currentColor;
+}
+
 .save-hint.is-saved {
   color: var(--blora-success);
 }
@@ -1051,18 +1060,113 @@ html.is-translation-editor .app-main--editor {
   color: var(--blora-danger);
 }
 
-/* —— Loading skeletons: prefer framework .blora-skeleton —— */
+/* —— Loading spinner (LoadingAnimationDesign · Fluent ring) —— */
+.loading-spinner {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--blora-ink-ghost);
+  border-top-color: var(--blora-seal);
+  border-radius: 50%;
+  animation: btc-spin 0.8s linear infinite;
+  flex-shrink: 0;
+  box-sizing: border-box;
+  vertical-align: middle;
+}
+
+/* Buttons: ring spinner + label while request is in flight */
+.blora-btn.is-btc-busy,
+button.is-btc-busy {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.45em;
+  pointer-events: none;
+  cursor: wait;
+}
+
+.blora-btn.is-btc-busy .loading-spinner,
+button.is-btc-busy .loading-spinner {
+  /* Prefer light track on filled primary buttons */
+  border-color: color-mix(in srgb, currentColor 35%, transparent);
+  border-top-color: currentColor;
+}
+
+.loading-spinner.sm {
+  width: 16px;
+  height: 16px;
+  border-width: 2px;
+}
+
+.loading-spinner.md {
+  width: 22px;
+  height: 22px;
+  border-width: 3px;
+}
+
+.loading-spinner.lg {
+  width: 38px;
+  height: 38px;
+  border-width: 4px;
+}
+
+@keyframes btc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .loading-spinner {
+    animation: none;
+    border-top-color: var(--blora-seal);
+    opacity: 0.85;
+  }
+}
+
+/* Full-area page / panel loading placeholder */
+.page-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  min-height: 180px;
+  padding: var(--blora-space-6) var(--blora-space-4);
+  color: var(--blora-ink-light);
+  font-size: 14px;
+  text-align: center;
+}
+
+/* Compact inline loading (lists, side panels) */
+.inline-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: var(--blora-space-5) var(--blora-space-3);
+  min-height: 4.5rem;
+  color: var(--blora-ink-light);
+  font-size: 14px;
+  text-align: center;
+}
+
+.inline-loading--row {
+  flex-direction: row;
+  gap: 10px;
+  min-height: 0;
+  padding: var(--blora-space-3);
+}
+
+/* Legacy class used by editor shell — now hosts .page-loading */
 .app-loading {
-  padding: var(--blora-space-6) 0;
+  padding: 0;
 }
 
-.app-loading .blora-skeleton--title {
-  width: 12rem;
-  height: 2rem;
-}
-
-.app-loading .blora-skeleton--block {
-  height: 7.5rem;
+.editor-shell__state.app-loading,
+.editor-shell__state.page-loading {
+  align-items: center;
 }
 
 /* —— Locale transfer picker (Crowdin-style) —— */

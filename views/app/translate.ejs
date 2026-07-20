@@ -85,8 +85,7 @@
     <div id="editor-error" class="blora-alert blora-alert--danger editor-shell__alert" hidden></div>
 
     <div id="editor-loading" class="editor-shell__state app-loading">
-      <div class="blora-skeleton blora-skeleton--title"></div>
-      <div class="blora-skeleton blora-skeleton--block"></div>
+      <%- include('../partials/loading', { layout: 'page', label: '加载中...' }) %>
     </div>
 
     <div id="editor-body" class="editor-workspace" hidden>

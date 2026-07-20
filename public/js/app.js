@@ -20,6 +20,64 @@ window.BTC = {
       console.log(`[${type}] ${message}`);
     }
   },
+  /**
+   * Ring spinner markup from LoadingAnimationDesign.
+   * @param {{ size?: 'sm'|'md'|''|'lg', label?: string|false, layout?: 'page'|'inline'|'row' }} [opts]
+   * @returns {string} HTML
+   */
+  loadingHtml(opts = {}) {
+    const size = opts.size || "";
+    const label = opts.label === false ? "" : opts.label != null ? opts.label : "加载中...";
+    const layout = opts.layout || "inline";
+    const sizeClass = size ? ` ${size}` : "";
+    const spinner = `<span class="loading-spinner${sizeClass}" aria-hidden="true"></span>`;
+    if (layout === "page") {
+      return `<div class="page-loading" role="status" aria-live="polite">${spinner}${
+        label ? `<div>${escapeLoadingLabel(label)}</div>` : ""
+      }</div>`;
+    }
+    if (layout === "row") {
+      return `<div class="inline-loading inline-loading--row" role="status" aria-live="polite">${spinner}${
+        label ? `<span>${escapeLoadingLabel(label)}</span>` : ""
+      }</div>`;
+    }
+    return `<div class="inline-loading" role="status" aria-live="polite">${spinner}${
+      label ? `<div>${escapeLoadingLabel(label)}</div>` : ""
+    }</div>`;
+  },
+  /**
+   * Put a button into busy state with ring spinner (or restore idle label).
+   * @param {HTMLElement|null} btn
+   * @param {boolean} busy
+   * @param {{ busyLabel?: string, idleLabel?: string }} [opts]
+   */
+  setButtonBusy(btn, busy, opts = {}) {
+    if (!btn) return;
+    if (busy) {
+      if (btn.dataset.btcIdleLabel == null) {
+        btn.dataset.btcIdleLabel = btn.textContent || "";
+      }
+      const busyLabel = opts.busyLabel != null ? opts.busyLabel : "处理中...";
+      btn.disabled = true;
+      btn.classList.add("is-btc-busy");
+      btn.setAttribute("aria-busy", "true");
+      btn.innerHTML = `<span class="loading-spinner sm" aria-hidden="true"></span><span>${escapeLoadingLabel(
+        busyLabel,
+      )}</span>`;
+    } else {
+      const idle =
+        opts.idleLabel != null
+          ? opts.idleLabel
+          : btn.dataset.btcIdleLabel != null
+            ? btn.dataset.btcIdleLabel
+            : btn.textContent;
+      btn.disabled = false;
+      btn.classList.remove("is-btc-busy");
+      btn.removeAttribute("aria-busy");
+      btn.textContent = idle;
+      delete btn.dataset.btcIdleLabel;
+    }
+  },
   /** Match server slugify: non-Latin-only names get a fallback slug */
   toSlug(name, fallbackPrefix) {
     const base = name
@@ -46,3 +104,11 @@ window.BTC = {
     el.textContent = message;
   },
 };
+
+function escapeLoadingLabel(s) {
+  return String(s)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
+}

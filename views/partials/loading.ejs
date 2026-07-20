@@ -1,0 +1,27 @@
+<%#
+  Ring loading placeholder (LoadingAnimationDesign).
+  locals:
+    - size: 'sm' | 'md' | '' | 'lg' (optional)
+    - label: string (default 加载中...) or false to hide
+    - layout: 'page' | 'inline' | 'row' (default page)
+%>
+<%
+  var _size = typeof size !== 'undefined' && size ? String(size) : '';
+  var _label = (typeof label !== 'undefined' && label === false)
+    ? ''
+    : (typeof label !== 'undefined' && label != null ? String(label) : '加载中...');
+  var _layout = typeof layout !== 'undefined' && layout ? String(layout) : 'page';
+  var _wrap =
+    _layout === 'row'
+      ? 'inline-loading inline-loading--row'
+      : _layout === 'inline'
+        ? 'inline-loading'
+        : 'page-loading';
+  var _sizeClass = _size ? ' ' + _size : '';
+%>
+<div class="<%= _wrap %>" role="status" aria-live="polite">
+  <span class="loading-spinner<%= _sizeClass %>" aria-hidden="true"></span>
+  <% if (_label) { %>
+    <% if (_layout === 'row') { %><span><%= _label %></span><% } else { %><div><%= _label %></div><% } %>
+  <% } %>
+</div>

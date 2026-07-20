@@ -39,7 +39,9 @@
 
     async function loadGlossary() {
       if (!listEl) return;
-      listEl.innerHTML = `<div class="blora-text-faint">加载中…</div>`;
+      listEl.innerHTML =
+        window.BTC?.loadingHtml?.({ size: "md", label: "加载中...", layout: "inline" }) ||
+        `<div class="inline-loading" role="status"><div class="loading-spinner md" aria-hidden="true"></div><div>加载中...</div></div>`;
       const { res, data } = await json(
         `/api/v1/orgs/${org}/projects/${project}/glossary`,
       );
@@ -88,35 +90,46 @@
         save.className = "blora-btn blora-btn--ghost blora-btn--sm";
         save.textContent = "保存译法";
         save.addEventListener("click", async () => {
-          for (const loc of locales) {
-            const input = edit.querySelector(`input[data-loc="${loc}"]`);
-            const val = input?.value?.trim();
-            if (!val) continue;
-            const r = await json(
-              `/api/v1/orgs/${org}/projects/${project}/glossary/${t.id}/translations/${encodeURIComponent(loc)}`,
-              { method: "PUT", body: JSON.stringify({ translation: val }) },
-            );
-            if (!r.res.ok) {
-              toast?.("error", r.data.error || "保存失败");
-              return;
+          window.BTC?.setButtonBusy?.(save, true, { busyLabel: "保存中..." });
+          try {
+            for (const loc of locales) {
+              const input = edit.querySelector(`input[data-loc="${loc}"]`);
+              const val = input?.value?.trim();
+              if (!val) continue;
+              const r = await json(
+                `/api/v1/orgs/${org}/projects/${project}/glossary/${t.id}/translations/${encodeURIComponent(loc)}`,
+                { method: "PUT", body: JSON.stringify({ translation: val }) },
+              );
+              if (!r.res.ok) {
+                toast?.("error", r.data.error || "保存失败");
+                return;
+              }
             }
+            toast?.("success", "术语译法已保存");
+            loadGlossary();
+          } finally {
+            window.BTC?.setButtonBusy?.(save, false, { idleLabel: "保存译法" });
           }
-          toast?.("success", "术语译法已保存");
-          loadGlossary();
         });
         edit.appendChild(save);
 
         card.querySelector("[data-del]").addEventListener("click", async () => {
           if (!confirm(`删除术语「${t.sourceTerm}」？`)) return;
-          const r = await json(
-            `/api/v1/orgs/${org}/projects/${project}/glossary/${t.id}`,
-            { method: "DELETE" },
-          );
-          if (!r.res.ok) {
-            toast?.("error", r.data.error || "删除失败");
-            return;
+          const delBtn = card.querySelector("[data-del]");
+          window.BTC?.setButtonBusy?.(delBtn, true, { busyLabel: "删除中..." });
+          try {
+            const r = await json(
+              `/api/v1/orgs/${org}/projects/${project}/glossary/${t.id}`,
+              { method: "DELETE" },
+            );
+            if (!r.res.ok) {
+              toast?.("error", r.data.error || "删除失败");
+              return;
+            }
+            loadGlossary();
+          } finally {
+            window.BTC?.setButtonBusy?.(delBtn, false, { idleLabel: "删除" });
           }
-          loadGlossary();
         });
         listEl.appendChild(card);
       });
@@ -124,6 +137,7 @@
 
     form?.addEventListener("submit", async (e) => {
       e.preventDefault();
+      const btn = form.querySelector('button[type="submit"]');
       const fd = new FormData(form);
       const translations = locales
         .map((loc) => ({
@@ -131,24 +145,29 @@
           translation: String(fd.get(`tr_${loc}`) || "").trim(),
         }))
         .filter((t) => t.translation);
-      const { res, data } = await json(
-        `/api/v1/orgs/${org}/projects/${project}/glossary`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            sourceTerm: fd.get("sourceTerm"),
-            description: fd.get("description") || null,
-            translations,
-          }),
-        },
-      );
-      if (!res.ok) {
-        toast?.("error", data.error || "添加失败");
-        return;
+      window.BTC?.setButtonBusy?.(btn, true, { busyLabel: "添加中..." });
+      try {
+        const { res, data } = await json(
+          `/api/v1/orgs/${org}/projects/${project}/glossary`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              sourceTerm: fd.get("sourceTerm"),
+              description: fd.get("description") || null,
+              translations,
+            }),
+          },
+        );
+        if (!res.ok) {
+          toast?.("error", data.error || "添加失败");
+          return;
+        }
+        toast?.("success", "术语已添加");
+        form.reset();
+        loadGlossary();
+      } finally {
+        window.BTC?.setButtonBusy?.(btn, false);
       }
-      toast?.("success", "术语已添加");
-      form.reset();
-      loadGlossary();
     });
 
     loadGlossary();
@@ -172,6 +191,9 @@
 
     async function loadAssignees() {
       if (!listEl) return;
+      listEl.innerHTML =
+        window.BTC?.loadingHtml?.({ size: "md", label: "加载中...", layout: "inline" }) ||
+        `<div class="inline-loading" role="status"><div class="loading-spinner md" aria-hidden="true"></div><div>加载中...</div></div>`;
       const { res, data } = await json(
         `/api/v1/orgs/${org}/projects/${project}/assignees`,
       );
@@ -201,15 +223,20 @@
         btn.textContent = "移除";
         btn.addEventListener("click", async () => {
           if (!confirm(`移除 ${a.username} 的 ${a.locale} 指派？`)) return;
-          const r = await json(
-            `/api/v1/orgs/${org}/projects/${project}/assignees/${a.id}`,
-            { method: "DELETE" },
-          );
-          if (!r.res.ok) {
-            toast?.("error", r.data.error || "移除失败");
-            return;
+          window.BTC?.setButtonBusy?.(btn, true, { busyLabel: "移除中..." });
+          try {
+            const r = await json(
+              `/api/v1/orgs/${org}/projects/${project}/assignees/${a.id}`,
+              { method: "DELETE" },
+            );
+            if (!r.res.ok) {
+              toast?.("error", r.data.error || "移除失败");
+              return;
+            }
+            loadAssignees();
+          } finally {
+            window.BTC?.setButtonBusy?.(btn, false, { idleLabel: "移除" });
           }
-          loadAssignees();
         });
         tr.cells[3].appendChild(btn);
         tbody.appendChild(tr);
@@ -219,25 +246,31 @@
 
     form?.addEventListener("submit", async (e) => {
       e.preventDefault();
+      const submitBtn = form.querySelector('button[type="submit"]');
       const fd = new FormData(form);
-      const { res, data } = await json(
-        `/api/v1/orgs/${org}/projects/${project}/assignees`,
-        {
-          method: "POST",
-          body: JSON.stringify({
-            locale: fd.get("locale"),
-            username: fd.get("username"),
-            kind: fd.get("kind"),
-          }),
-        },
-      );
-      if (!res.ok) {
-        toast?.("error", data.error || "添加失败");
-        return;
+      window.BTC?.setButtonBusy?.(submitBtn, true, { busyLabel: "添加中..." });
+      try {
+        const { res, data } = await json(
+          `/api/v1/orgs/${org}/projects/${project}/assignees`,
+          {
+            method: "POST",
+            body: JSON.stringify({
+              locale: fd.get("locale"),
+              username: fd.get("username"),
+              kind: fd.get("kind"),
+            }),
+          },
+        );
+        if (!res.ok) {
+          toast?.("error", data.error || "添加失败");
+          return;
+        }
+        toast?.("success", "已添加指派");
+        form.reset();
+        loadAssignees();
+      } finally {
+        window.BTC?.setButtonBusy?.(submitBtn, false);
       }
-      toast?.("success", "已添加指派");
-      form.reset();
-      loadAssignees();
     });
 
     loadAssignees();

@@ -1,5 +1,5 @@
 (function () {
-  const { json, toast, toSlug, showError } = window.BTC;
+  const { json, toast, toSlug, showError, setButtonBusy } = window.BTC;
 
   // Create org
   const createOrg = document.getElementById("create-org-form");
@@ -23,8 +23,7 @@
         slugEl.value = toSlug(nameEl.value || "org", "org");
         slugTouched = true;
       }
-      btn.disabled = true;
-      btn.textContent = "创建中…";
+      setButtonBusy(btn, true, { busyLabel: "创建中..." });
       try {
         const body = {
           name: nameEl.value,
@@ -43,8 +42,7 @@
       } catch {
         showError(err, "网络错误");
       } finally {
-        btn.disabled = false;
-        btn.textContent = "创建组织";
+        setButtonBusy(btn, false, { idleLabel: "创建组织" });
       }
     });
   }
@@ -58,8 +56,7 @@
       const err = document.getElementById("form-error");
       const btn = orgSettings.querySelector('button[type="submit"]');
       showError(err, "");
-      btn.disabled = true;
-      btn.textContent = "保存中…";
+      setButtonBusy(btn, true, { busyLabel: "保存中..." });
       try {
         const fd = new FormData(orgSettings);
         const { res, data } = await json(`/api/v1/orgs/${orgSlug}`, {
@@ -78,8 +75,7 @@
       } catch {
         showError(err, "网络错误");
       } finally {
-        btn.disabled = false;
-        btn.textContent = "保存";
+        setButtonBusy(btn, false, { idleLabel: "保存" });
       }
     });
   }
@@ -112,8 +108,7 @@
         showError(err, "请至少选择一种目标语言");
         return;
       }
-      btn.disabled = true;
-      btn.textContent = "创建中…";
+      setButtonBusy(btn, true, { busyLabel: "创建中..." });
       try {
         const { res, data } = await json(`/api/v1/orgs/${orgSlug}/projects`, {
           method: "POST",
@@ -134,8 +129,7 @@
       } catch {
         showError(err, "网络错误");
       } finally {
-        btn.disabled = false;
-        btn.textContent = "创建项目";
+        setButtonBusy(btn, false, { idleLabel: "创建项目" });
       }
     });
   }
@@ -156,8 +150,7 @@
         showError(err, "请至少选择一种目标语言");
         return;
       }
-      btn.disabled = true;
-      btn.textContent = "保存中…";
+      setButtonBusy(btn, true, { busyLabel: "保存中..." });
       try {
         const { res, data } = await json(`/api/v1/orgs/${orgSlug}/projects/${projectSlug}`, {
           method: "PATCH",
@@ -185,8 +178,7 @@
       } catch {
         showError(err, "网络错误");
       } finally {
-        btn.disabled = false;
-        btn.textContent = "保存设置";
+        setButtonBusy(btn, false, { idleLabel: "保存设置" });
       }
     });
   }
@@ -198,8 +190,7 @@
       if (!confirm(`确定删除项目「${name}」？所有文件与译文将不可恢复。`)) return;
       const orgSlug = deleteProjectBtn.dataset.orgSlug;
       const projectSlug = deleteProjectBtn.dataset.projectSlug;
-      deleteProjectBtn.disabled = true;
-      deleteProjectBtn.textContent = "删除中…";
+      setButtonBusy(deleteProjectBtn, true, { busyLabel: "删除中..." });
       try {
         const { res, data } = await json(`/api/v1/orgs/${orgSlug}/projects/${projectSlug}`, {
           method: "DELETE",
@@ -212,8 +203,7 @@
       } catch {
         toast("error", "网络错误");
       } finally {
-        deleteProjectBtn.disabled = false;
-        deleteProjectBtn.textContent = "删除项目";
+        setButtonBusy(deleteProjectBtn, false, { idleLabel: "删除项目" });
       }
     });
   }
@@ -252,8 +242,7 @@
         showError(err, "请填写项目内路径");
         return;
       }
-      btn.disabled = true;
-      btn.textContent = "上传中…";
+      setButtonBusy(btn, true, { busyLabel: "上传中..." });
       try {
         const { res, data } = await json(`/api/v1/orgs/${orgSlug}/projects/${projectSlug}/files`, {
           method: "POST",
@@ -275,8 +264,7 @@
       } catch {
         showError(err, "网络错误");
       } finally {
-        btn.disabled = false;
-        btn.textContent = "上传 / 更新";
+        setButtonBusy(btn, false, { idleLabel: "上传 / 更新" });
       }
     });
   }
@@ -305,8 +293,7 @@
       const orgSlug = deleteFileBtn.dataset.orgSlug;
       const projectSlug = deleteFileBtn.dataset.projectSlug;
       const fileId = deleteFileBtn.dataset.fileId;
-      deleteFileBtn.disabled = true;
-      deleteFileBtn.textContent = "删除中…";
+      setButtonBusy(deleteFileBtn, true, { busyLabel: "删除中..." });
       try {
         const { res, data } = await json(
           `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/files/${fileId}`,
@@ -321,8 +308,7 @@
       } catch {
         toast("error", "网络错误");
       } finally {
-        deleteFileBtn.disabled = false;
-        deleteFileBtn.textContent = "删除文件";
+        setButtonBusy(deleteFileBtn, false, { idleLabel: "删除文件" });
       }
     });
   }
@@ -360,7 +346,7 @@
       btn.addEventListener("click", async () => {
         if (!confirm(`确定移除成员 ${btn.dataset.username}？`)) return;
         showError(err, "");
-        btn.disabled = true;
+        setButtonBusy(btn, true, { busyLabel: "移除中..." });
         try {
           const { res, data } = await json(
             `/api/v1/orgs/${orgSlug}/members/${btn.dataset.userId}`,
@@ -375,7 +361,7 @@
         } catch {
           showError(err, "网络错误");
         } finally {
-          btn.disabled = false;
+          setButtonBusy(btn, false, { idleLabel: "移除" });
         }
       });
     });
@@ -390,8 +376,7 @@
       const btn = addMember.querySelector('button[type="submit"]');
       const fd = new FormData(addMember);
       showError(err, "");
-      btn.disabled = true;
-      btn.textContent = "添加中…";
+      setButtonBusy(btn, true, { busyLabel: "添加中..." });
       try {
         const { res, data } = await json(`/api/v1/orgs/${orgSlug}/members`, {
           method: "POST",
@@ -409,8 +394,7 @@
       } catch {
         showError(err, "网络错误");
       } finally {
-        btn.disabled = false;
-        btn.textContent = "添加成员";
+        setButtonBusy(btn, false, { idleLabel: "添加成员" });
       }
     });
   }

@@ -289,7 +289,8 @@
     els.saveHint.classList.remove("is-saving", "is-saved", "is-error");
     if (state === "saving") {
       els.saveHint.classList.add("is-saving");
-      els.saveHint.textContent = "保存中…";
+      els.saveHint.innerHTML =
+        `<span class="loading-spinner sm save-hint__spinner" aria-hidden="true"></span>保存中...`;
     } else if (state === "saved") {
       els.saveHint.classList.add("is-saved");
       els.saveHint.textContent = "已保存";
@@ -549,7 +550,10 @@
   async function loadDetail(stringId) {
     detail = null;
     if (els.suggestions) {
-      els.suggestions.innerHTML = `<div class="blora-text-faint">加载建议…</div>`;
+      els.suggestions.innerHTML =
+        (window.BTC && window.BTC.loadingHtml
+          ? window.BTC.loadingHtml({ size: "md", label: "加载中...", layout: "inline" })
+          : `<div class="inline-loading" role="status"><div class="loading-spinner md" aria-hidden="true"></div><div>加载中...</div></div>`);
     }
     if (els.comments) els.comments.innerHTML = "";
     if (els.workflow) els.workflow.textContent = "";
@@ -751,8 +755,7 @@
     }
     mtBusy = true;
     if (els.mtBtn) {
-      els.mtBtn.disabled = true;
-      els.mtBtn.textContent = "翻译中…";
+      window.BTC?.setButtonBusy?.(els.mtBtn, true, { busyLabel: "翻译中..." });
     }
     try {
       const { res, data } = await json(
@@ -780,8 +783,7 @@
     } finally {
       mtBusy = false;
       if (els.mtBtn) {
-        els.mtBtn.disabled = false;
-        els.mtBtn.textContent = "机器翻译";
+        window.BTC?.setButtonBusy?.(els.mtBtn, false, { idleLabel: "机器翻译" });
       }
     }
   }
