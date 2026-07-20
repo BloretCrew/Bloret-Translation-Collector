@@ -4,7 +4,7 @@
  * (falls back to building dist/ if missing)
  */
 import { spawnSync } from "child_process";
-import { existsSync, statSync } from "fs";
+import { existsSync, readdirSync, statSync } from "fs";
 import { join } from "path";
 import { configToEnv, loadConfigFile, root } from "./lib-config.mjs";
 import { Logger } from "./lib-logger.mjs";
@@ -22,14 +22,48 @@ const port = Number(config.port) || 3000;
 const env = configToEnv(config, { NODE_ENV: "production" });
 
 const distServer = join(root, "dist", "server.mjs");
-const entryTs = join(root, "src", "server.ts");
+const srcDir = join(root, "src");
 const buildScript = join(root, "scripts", "build.mjs");
+const buildScriptSelf = join(root, "scripts", "build.mjs");
+
+/** Newest mtime under a directory (recursive). */
+function newestMtime(dir) {
+  let newest = 0;
+  const stack = [dir];
+  while (stack.length) {
+    const cur = stack.pop();
+    let entries;
+    try {
+      entries = readdirSync(cur, { withFileTypes: true });
+    } catch {
+      continue;
+    }
+    for (const ent of entries) {
+      const p = join(cur, ent.name);
+      if (ent.isDirectory()) {
+        if (ent.name === "node_modules" || ent.name === ".git") continue;
+        stack.push(p);
+      } else if (ent.isFile()) {
+        try {
+          const m = statSync(p).mtimeMs;
+          if (m > newest) newest = m;
+        } catch {
+          /* skip */
+        }
+      }
+    }
+  }
+  return newest;
+}
 
 function needsBuild() {
   if (!existsSync(distServer)) return true;
   try {
     const distM = statSync(distServer).mtimeMs;
-    if (statSync(entryTs).mtimeMs > distM) return true;
+    // Any change under src/ or the bundler script should trigger rebuild
+    // (previously only server.ts was checked — left dist stale after other edits)
+    if (newestMtime(srcDir) > distM) return true;
+    if (existsSync(buildScriptSelf) && statSync(buildScriptSelf).mtimeMs > distM) return true;
     return false;
   } catch {
     return true;
