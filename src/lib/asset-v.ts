@@ -15,6 +15,16 @@ export function computeAssetV(files: string[] = [
   "public/blora/blora.js",
   "public/css/app.css",
   "public/js/app.js",
+  // Page scripts are also versioned with ?v=assetV — include so deploys bust cache
+  "public/js/forms.js",
+  "public/js/editor.js",
+  "public/js/sf-icon.js",
+  "public/js/settings-tabs.js",
+  "public/js/project-settings.js",
+  "public/js/locale-picker.js",
+  "public/js/user-settings.js",
+  "public/js/export-page.js",
+  "public/js/editor-shortcuts.js",
 ]): string {
   if (process.env.BTC_ASSET_V) return process.env.BTC_ASSET_V;
 

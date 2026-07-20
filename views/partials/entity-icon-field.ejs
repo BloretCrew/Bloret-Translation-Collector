@@ -5,6 +5,7 @@
   var _icon = typeof iconUrl !== 'undefined' && iconUrl ? iconUrl : '';
   var _kind = typeof entityKind !== 'undefined' ? entityKind : 'entity';
   var _fallback = typeof fallbackSf !== 'undefined' ? fallbackSf : 'photo';
+  var _uid = 'entity-icon-' + _kind + '-' + Math.random().toString(36).slice(2, 9);
 %>
 <div
   class="entity-icon-field"
@@ -28,16 +29,19 @@
       </span>
     </div>
     <div class="entity-icon-field__actions">
-      <input
-        type="file"
-        class="entity-icon-field__file"
-        accept="image/png,image/jpeg,image/gif,image/webp"
-        hidden
-      />
-      <div class="blora-row">
-        <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" data-icon-pick>
-          <%- sfIcon('photo') %>选择图片
-        </button>
+      <%# Label + file input (native open; avoid hidden input + programmatic click) %>
+      <div class="blora-row entity-icon-field__btns">
+        <label class="blora-btn blora-btn--secondary blora-btn--sm entity-icon-field__pick" for="<%= _uid %>">
+          <%- sfIcon('photo') %>
+          <span class="entity-icon-field__pick-text">选择图片</span>
+        </label>
+        <input
+          id="<%= _uid %>"
+          type="file"
+          class="entity-icon-field__file"
+          accept="image/png,image/jpeg,image/gif,image/webp,.png,.jpg,.jpeg,.gif,.webp"
+          tabindex="-1"
+        />
         <button
           type="button"
           class="blora-btn blora-btn--ghost blora-btn--sm"

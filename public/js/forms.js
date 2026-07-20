@@ -703,7 +703,8 @@
     const img = root.querySelector(".entity-icon-preview__img");
     const fallback = root.querySelector(".entity-icon-preview__fallback");
     const fileInput = root.querySelector(".entity-icon-field__file");
-    const pickBtn = root.querySelector("[data-icon-pick]");
+    const pickLabel = root.querySelector(".entity-icon-field__pick");
+    const pickText = root.querySelector(".entity-icon-field__pick-text");
     const clearBtn = root.querySelector("[data-icon-clear]");
     const errEl = root.querySelector(".entity-icon-field__error");
     const form = root.closest("form");
@@ -746,13 +747,46 @@
       return null;
     }
 
-    pickBtn?.addEventListener("click", () => fileInput?.click());
+    function setPickBusy(busy) {
+      if (pickLabel) {
+        pickLabel.classList.toggle("is-busy", busy);
+        pickLabel.setAttribute("aria-busy", busy ? "true" : "false");
+        // Prevent re-opening file dialog while uploading
+        if (fileInput) fileInput.disabled = busy;
+      }
+      if (pickText) pickText.textContent = busy ? "上传中..." : "选择图片";
+    }
+
+    // Native <label for=file> opens the picker; keep a JS fallback for older markup
+    pickLabel?.addEventListener("click", (e) => {
+      // If for= is broken, still open the dialog
+      if (!fileInput || fileInput.disabled) return;
+      if (e.target === fileInput) return;
+      // Let the browser handle label→input association when for= matches
+      if (pickLabel.getAttribute("for") && fileInput.id === pickLabel.getAttribute("for")) {
+        return;
+      }
+      e.preventDefault();
+      try {
+        fileInput.click();
+      } catch {
+        /* ignore */
+      }
+    });
 
     fileInput?.addEventListener("change", async () => {
       const file = fileInput.files && fileInput.files[0];
+      // Reset so re-selecting the same file still fires change
       fileInput.value = "";
       if (!file) return;
       showIconErr("");
+      if (!/^image\/(png|jpe?g|gif|webp)$/i.test(file.type) && file.type !== "") {
+        // Some browsers leave type empty; allow by extension
+        if (!/\.(png|jpe?g|gif|webp)$/i.test(file.name || "")) {
+          showIconErr("请选择 PNG / JPG / WebP / GIF 图片");
+          return;
+        }
+      }
       if (file.size > 2 * 1024 * 1024) {
         showIconErr("图标不能超过 2MB");
         return;
@@ -762,9 +796,13 @@
         showIconErr("缺少组织/项目上下文");
         return;
       }
-      setButtonBusy(pickBtn, true, { busyLabel: "上传中..." });
+      setPickBusy(true);
       try {
         const dataUrl = await fileToDataUrl(file);
+        if (!dataUrl.startsWith("data:image/")) {
+          showIconErr("无法读取图片，请换一张再试");
+          return;
+        }
         const { res, data } = await json(endpoint, {
           method: "POST",
           body: JSON.stringify({ imageBase64: dataUrl }),
@@ -775,10 +813,11 @@
         }
         setPreview(data.iconUrl || data.webpUrl || "");
         toast("success", "图标已更新");
-      } catch {
+      } catch (err) {
+        console.error("[entity-icon] upload failed", err);
         showIconErr("网络错误");
       } finally {
-        setButtonBusy(pickBtn, false, { idleLabel: "选择图片" });
+        setPickBusy(false);
       }
     });
 
@@ -804,5 +843,10 @@
     });
   }
 
-  document.querySelectorAll("[data-entity-icon]").forEach(bindEntityIconField);
+  function bindAllEntityIcons() {
+    document.querySelectorAll("[data-entity-icon]").forEach(bindEntityIconField);
+  }
+  bindAllEntityIcons();
+  // Re-bind after settings tab switches (panels may have been cloned/shown late)
+  document.addEventListener("settings:tab", () => bindAllEntityIcons());
 })();
