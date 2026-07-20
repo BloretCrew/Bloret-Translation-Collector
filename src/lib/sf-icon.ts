@@ -1,10 +1,19 @@
 /**
  * SF Symbols via Bloret Image Host: https://img.bloret.net/api/doc
- * GET /SF/{name}  — SVG; optional ?color= for tinted raster/SVG fill.
+ * Upstream: GET /SF/{name}
+ *
+ * Icons used as CSS masks must be same-origin (mask-image is CORS-tainted
+ * without Access-Control-Allow-Origin). We serve them under /sf/* via proxy.
  */
 
 export const SF_ICON_HOST = "https://img.bloret.net";
-export const SF_ICON_BASE = `${SF_ICON_HOST}/SF`;
+/** Absolute upstream base (server-side fetch only). */
+export const SF_ICON_UPSTREAM_BASE = `${SF_ICON_HOST}/SF`;
+/** Public same-origin path used in HTML/CSS masks. */
+export const SF_ICON_PUBLIC_BASE = "/sf";
+
+/** @deprecated Use SF_ICON_PUBLIC_BASE or sfIconUrl(); kept for imports */
+export const SF_ICON_BASE = SF_ICON_PUBLIC_BASE;
 
 function escapeAttr(value: string): string {
   return value
@@ -21,19 +30,32 @@ export function normalizeSfName(name: string): string {
     .replace(/\.svg$/i, "");
 }
 
+function encodeSfPath(name: string): string {
+  return name
+    .split("/")
+    .map((s) => encodeURIComponent(s))
+    .join("/");
+}
+
 /**
- * Absolute URL for an SF icon.
- * Prefer CSS-mask usage (no color) so icons follow `currentColor` / theme.
+ * Same-origin URL for an SF icon (CSS mask + currentColor).
+ * Prefer this over the absolute img.bloret.net URL.
  */
 export function sfIconUrl(name: string, color?: string | null): string {
   const clean = normalizeSfName(name);
   if (!clean) return "";
-  // encodeURI keeps dots; encode each path segment safely for odd names
-  const path = clean
-    .split("/")
-    .map((s) => encodeURIComponent(s))
-    .join("/");
-  const url = `${SF_ICON_BASE}/${path}`;
+  const url = `${SF_ICON_PUBLIC_BASE}/${encodeSfPath(clean)}`;
+  if (color != null && String(color).trim() !== "") {
+    return `${url}?color=${encodeURIComponent(String(color).trim())}`;
+  }
+  return url;
+}
+
+/** Absolute upstream URL for server-side fetch / debugging. */
+export function sfIconUpstreamUrl(name: string, color?: string | null): string {
+  const clean = normalizeSfName(name);
+  if (!clean) return "";
+  const url = `${SF_ICON_UPSTREAM_BASE}/${encodeSfPath(clean)}`;
   if (color != null && String(color).trim() !== "") {
     return `${url}?color=${encodeURIComponent(String(color).trim())}`;
   }

@@ -17,6 +17,7 @@ import { sfIcon, sfIconUrl } from "@/lib/sf-icon";
 import { authRouter } from "@/routes/auth";
 import { apiRouter } from "@/routes/api";
 import { pagesRouter } from "@/routes/pages";
+import { sfIconsRouter } from "@/routes/sf-icons";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(__dirname, "..");
@@ -76,7 +77,7 @@ export function createApp() {
     res.locals.localeShortLabel = localeShortLabel;
     res.locals.languageLabel = languageLabel;
     res.locals.languageShortLabel = languageShortLabel;
-    /** SF Symbols via https://img.bloret.net/SF/{name} — use <%- sfIcon('name') %> */
+    /** SF Symbols via same-origin /sf/{name} (proxy) — use <%- sfIcon('name') %> */
     res.locals.sfIcon = sfIcon;
     res.locals.sfIconUrl = sfIconUrl;
     res.locals.isDev =
@@ -102,6 +103,9 @@ export function createApp() {
     "/uploads",
     express.static(path.join(root, "public", "uploads"), { maxAge: "7d" }),
   );
+
+  // SF Symbols same-origin proxy (CSS mask needs non-tainted images)
+  app.use(sfIconsRouter);
 
   app.use(authRouter);
   app.use("/api", apiRouter);

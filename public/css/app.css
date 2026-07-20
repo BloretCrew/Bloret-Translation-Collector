@@ -2476,8 +2476,9 @@ button.is-btc-busy .loading-spinner {
   color: var(--blora-ink-deep);
 }
 
-/* —— SF Icons (https://img.bloret.net/SF/{name}) ——
- * Mask + currentColor so icons track light/dark ink without per-theme tint. */
+/* —— SF Icons (same-origin /sf/{name} → img.bloret.net) ——
+ * Mask + currentColor so icons track light/dark ink without per-theme tint.
+ * Must be same-origin: CSS mask-image is CORS-tainted without ACAO headers. */
 .sf-icon {
   --sf-size: 1.125em;
   display: inline-block;

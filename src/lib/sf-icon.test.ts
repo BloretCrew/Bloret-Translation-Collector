@@ -1,23 +1,35 @@
 import { describe, expect, it } from "vitest";
-import { normalizeSfName, sfIcon, sfIconUrl } from "./sf-icon";
+import {
+  normalizeSfName,
+  sfIcon,
+  sfIconUrl,
+  sfIconUpstreamUrl,
+  SF_ICON_PUBLIC_BASE,
+} from "./sf-icon";
 
 describe("sf-icon", () => {
-  it("builds SF URL without color for CSS mask use", () => {
-    expect(sfIconUrl("building.2")).toBe("https://img.bloret.net/SF/building.2");
-    expect(sfIconUrl("house.svg")).toBe("https://img.bloret.net/SF/house");
+  it("builds same-origin /sf URL for CSS mask use", () => {
+    expect(sfIconUrl("building.2")).toBe("/sf/building.2");
+    expect(sfIconUrl("house.svg")).toBe("/sf/house");
+    expect(SF_ICON_PUBLIC_BASE).toBe("/sf");
+  });
+
+  it("exposes absolute upstream URL for proxy fetch", () => {
+    expect(sfIconUpstreamUrl("building.2")).toBe("https://img.bloret.net/SF/building.2");
   });
 
   it("encodes color query when provided", () => {
     expect(sfIconUrl("star", "#1456f0")).toBe(
-      "https://img.bloret.net/SF/star?color=" + encodeURIComponent("#1456f0"),
+      "/sf/star?color=" + encodeURIComponent("#1456f0"),
     );
   });
 
-  it("renders theme-aware mask span", () => {
+  it("renders theme-aware mask span with same-origin url", () => {
     const html = sfIcon("gearshape", { className: "sf-icon--sm" });
     expect(html).toContain('class="sf-icon sf-icon--sm"');
     expect(html).toContain("--sf-url:url(");
-    expect(html).toContain("https://img.bloret.net/SF/gearshape");
+    expect(html).toContain("/sf/gearshape");
+    expect(html).not.toContain("img.bloret.net");
     expect(html).toContain('aria-hidden="true"');
   });
 

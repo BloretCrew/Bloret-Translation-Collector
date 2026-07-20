@@ -1,9 +1,9 @@
 /**
- * Client helper for Bloret SF icon API (https://img.bloret.net/api/doc).
+ * Client helper for SF icons (same-origin /sf/* proxy → img.bloret.net).
  * Prefer CSS-mask spans so icons follow currentColor / theme.
  */
 (function () {
-  const BASE = "https://img.bloret.net/SF";
+  const BASE = "/sf";
 
   function normalize(name) {
     return String(name || "")
