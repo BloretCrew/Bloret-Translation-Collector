@@ -15,16 +15,16 @@
 
       <div class="settings-layout" data-settings-tabs data-default-tab="general">
         <nav class="settings-nav" aria-label="设置分区">
-          <a class="settings-nav__link<%= settingsTab === 'general' ? ' is-active' : '' %>" href="?tab=general" data-tab="general">基本信息</a>
-          <a class="settings-nav__link<%= settingsTab === 'readme' ? ' is-active' : '' %>" href="?tab=readme" data-tab="readme">README</a>
-          <a class="settings-nav__link" href="/app/o/<%= orgSlug %>/members">成员管理</a>
+          <a class="settings-nav__link<%= settingsTab === 'general' ? ' is-active' : '' %>" href="?tab=general" data-tab="general"><%- sfIcon('info.circle') %>基本信息</a>
+          <a class="settings-nav__link<%= settingsTab === 'readme' ? ' is-active' : '' %>" href="?tab=readme" data-tab="readme"><%- sfIcon('text.book.closed') %>README</a>
+          <a class="settings-nav__link" href="/app/o/<%= orgSlug %>/members"><%- sfIcon('person.2') %>成员管理</a>
         </nav>
 
         <div class="settings-main">
           <section class="settings-panel blora-panel" data-tab-panel="general" <%= settingsTab === 'general' ? '' : 'hidden' %>>
             <header class="settings-panel__head">
               <div>
-                <h2 class="blora-h3">基本信息</h2>
+                <h2 class="blora-h3 sf-inline"><%- sfIcon('info.circle') %>基本信息</h2>
                 <p class="blora-text-faint u-text-sm u-mt-1">组织名称与简介</p>
               </div>
             </header>
@@ -50,7 +50,7 @@
                 slug <code class="blora-code"><%= orgSlug %></code> 创建后不可修改。
               </p>
               <div class="settings-panel__footer">
-                <button class="blora-btn blora-btn--primary" type="submit">保存</button>
+                <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %>保存</button>
               </div>
             </form>
           </section>
@@ -58,7 +58,7 @@
           <section class="settings-panel blora-panel" data-tab-panel="readme" <%= settingsTab === 'readme' ? '' : 'hidden' %>>
             <header class="settings-panel__head">
               <div>
-                <h2 class="blora-h3">README</h2>
+                <h2 class="blora-h3 sf-inline"><%- sfIcon('text.book.closed') %>README</h2>
                 <p class="blora-text-faint u-text-sm u-mt-1">展示在组织首页。若填写 URL，将优先从远程加载 Markdown。</p>
               </div>
             </header>
@@ -74,8 +74,8 @@
                 <textarea class="blora-textarea blora-text-mono" name="readme" rows="14" placeholder="# 关于本组织&#10;&#10;欢迎参与翻译……"><%= org.readme || '' %></textarea>
               </label>
               <div class="settings-panel__footer">
-                <button class="blora-btn blora-btn--primary" type="submit">保存 README</button>
-                <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>">查看组织首页</a>
+                <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %>保存 README</button>
+                <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>"><%- sfIcon('eye') %>查看组织首页</a>
               </div>
             </form>
           </section>

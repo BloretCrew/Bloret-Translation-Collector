@@ -18,7 +18,7 @@
   >
     <header class="editor-chrome">
       <a class="editor-chrome__back blora-btn blora-btn--ghost blora-btn--sm" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>" title="返回项目">
-        ← <%= project.name %>
+        <%- sfIcon('arrow.left') %> <%= project.name %>
       </a>
       <div class="editor-chrome__context">
         <select
@@ -64,7 +64,7 @@
                 class="blora-segmented__item<%= initialMode === 'translate' ? ' is-active' : '' %>"
                 data-mode="translate"
                 aria-pressed="<%= initialMode === 'translate' ? 'true' : 'false' %>"
-              >翻译</button>
+              ><%- sfIcon('translate', { className: 'sf-icon--sm' }) %>翻译</button>
             <% } %>
             <% if (showProofreadMode) { %>
               <button
@@ -72,7 +72,7 @@
                 class="blora-segmented__item<%= initialMode === 'proofread' ? ' is-active' : '' %>"
                 data-mode="proofread"
                 aria-pressed="<%= initialMode === 'proofread' ? 'true' : 'false' %>"
-              >审核</button>
+              ><%- sfIcon('checkmark.circle', { className: 'sf-icon--sm' }) %>审核</button>
             <% } %>
           </div>
         <% } %>
@@ -93,9 +93,9 @@
       </div>
       <div class="editor-chrome__meta">
         <span class="editor-chrome__count blora-text-mono u-text-xs" id="editor-count" title="当前列表 / 总数">0/0</span>
-        <a class="blora-btn blora-btn--ghost blora-btn--sm" href="/app/settings" title="用户设置 · 快捷键">设置</a>
-        <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm editor-chrome__toggle" id="editor-toggle-list" aria-label="切换字符串列表">列表</button>
-        <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm editor-chrome__toggle" id="editor-toggle-side" aria-label="切换辅助面板">辅助</button>
+        <a class="blora-btn blora-btn--ghost blora-btn--sm" href="/app/settings" title="用户设置 · 快捷键"><%- sfIcon('gearshape') %>设置</a>
+        <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm editor-chrome__toggle" id="editor-toggle-list" aria-label="切换字符串列表"><%- sfIcon('list.bullet') %>列表</button>
+        <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm editor-chrome__toggle" id="editor-toggle-side" aria-label="切换辅助面板"><%- sfIcon('sidebar.right') %>辅助</button>
       </div>
     </header>
 
@@ -124,7 +124,7 @@
               <option value="pending">有建议未批准</option>
               <option value="approved">已批准</option>
             </select>
-            <button class="blora-btn blora-btn--ghost blora-btn--sm" type="button" id="editor-refresh" title="刷新列表" aria-label="刷新列表">↻</button>
+            <button class="blora-btn blora-btn--ghost blora-btn--sm blora-btn--icon" type="button" id="editor-refresh" title="刷新列表" aria-label="刷新列表"><%- sfIcon('arrow.clockwise') %></button>
           </div>
         </div>
         <div class="editor-list" id="editor-list" role="listbox"></div>
@@ -179,26 +179,26 @@
             </label>
             <div class="editor-compose__actions">
               <% if (canEdit) { %>
-                <button type="button" class="blora-btn blora-btn--primary blora-btn--sm" id="editor-save-suggestion" title="Ctrl/⌘+Enter">保存并下一条</button>
-                <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm" id="editor-save-only" title="Ctrl/⌘+S">仅保存</button>
+                <button type="button" class="blora-btn blora-btn--primary blora-btn--sm" id="editor-save-suggestion" title="Ctrl/⌘+Enter"><%- sfIcon('checkmark.circle') %>保存并下一条</button>
+                <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm" id="editor-save-only" title="Ctrl/⌘+S"><%- sfIcon('square.and.arrow.down') %>仅保存</button>
                 <button
                   type="button"
                   class="blora-btn blora-btn--ghost blora-btn--sm"
                   id="editor-insert-source"
                   title="在光标处插入源文"
-                >插入原文</button>
+                ><%- sfIcon('text.alignleft') %>插入原文</button>
                 <div class="blora-dropdown editor-compose__more">
-                  <button class="blora-btn blora-btn--ghost blora-btn--sm" type="button" data-blora-dropdown-trigger aria-label="更多操作">⋯</button>
+                  <button class="blora-btn blora-btn--ghost blora-btn--sm blora-btn--icon" type="button" data-blora-dropdown-trigger aria-label="更多操作"><%- sfIcon('ellipsis') %></button>
                   <div class="blora-dropdown-menu">
-                    <button type="button" class="blora-dropdown-menu__item" id="editor-mt" hidden>机器翻译</button>
-                    <button type="button" class="blora-dropdown-menu__item" id="editor-delete-suggestion">删除建议</button>
-                    <button type="button" class="blora-dropdown-menu__item" id="editor-assign-task" hidden>指派任务</button>
+                    <button type="button" class="blora-dropdown-menu__item" id="editor-mt" hidden><%- sfIcon('globe') %>机器翻译</button>
+                    <button type="button" class="blora-dropdown-menu__item" id="editor-delete-suggestion"><%- sfIcon('trash') %>删除建议</button>
+                    <button type="button" class="blora-dropdown-menu__item" id="editor-assign-task" hidden><%- sfIcon('person.badge.plus') %>指派任务</button>
                   </div>
                 </div>
               <% } %>
               <span class="editor-compose__spacer"></span>
-              <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" id="editor-prev" title="上一条 (↑)">上一条</button>
-              <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" id="editor-next" title="下一条 (↓)">下一条</button>
+              <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" id="editor-prev" title="上一条 (↑)"><%- sfIcon('chevron.left') %>上一条</button>
+              <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" id="editor-next" title="下一条 (↓)">下一条<%- sfIcon('chevron.right') %></button>
             </div>
           </div>
         </div>
@@ -207,10 +207,10 @@
       <aside class="editor-col editor-col--side" id="editor-side-col" aria-label="辅助信息">
         <div class="blora-tabs editor-side-tabs" data-blora-tabs id="editor-side-tabs">
           <div class="blora-tabs__nav editor-side-tabs__nav">
-            <button type="button" class="blora-tabs__tab is-active" data-tab="0">建议</button>
-            <button type="button" class="blora-tabs__tab" data-tab="1">TM</button>
-            <button type="button" class="blora-tabs__tab" data-tab="2">语境</button>
-            <button type="button" class="blora-tabs__tab" data-tab="3">讨论</button>
+            <button type="button" class="blora-tabs__tab is-active" data-tab="0"><%- sfIcon('list.bullet', { className: 'sf-icon--sm' }) %>建议</button>
+            <button type="button" class="blora-tabs__tab" data-tab="1"><%- sfIcon('rectangle.stack', { className: 'sf-icon--sm' }) %>TM</button>
+            <button type="button" class="blora-tabs__tab" data-tab="2"><%- sfIcon('photo', { className: 'sf-icon--sm' }) %>语境</button>
+            <button type="button" class="blora-tabs__tab" data-tab="3"><%- sfIcon('bubble.left', { className: 'sf-icon--sm' }) %>讨论</button>
           </div>
           <div class="editor-side-tabs__body">
             <div class="blora-tabs__panel editor-side-panel" data-panel="suggestions">
@@ -227,7 +227,7 @@
                 <div class="context-shots__upload u-mt-2">
                   <input type="file" id="editor-context-file" accept="image/*" class="blora-input blora-input--sm" />
                   <input type="text" id="editor-context-caption" class="blora-input blora-input--sm" placeholder="说明（可选）" />
-                  <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" id="editor-context-upload">上传截图</button>
+                  <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" id="editor-context-upload"><%- sfIcon('photo') %>上传截图</button>
                 </div>
               </div>
             </div>
@@ -236,7 +236,7 @@
                 <div id="editor-comments" class="collab-comments__list"></div>
                 <div class="collab-comments__compose">
                   <textarea class="blora-textarea" id="editor-comment-body" rows="2" placeholder="讨论语境、术语…"></textarea>
-                  <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" id="editor-comment-send">发送</button>
+                  <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" id="editor-comment-send"><%- sfIcon('paperplane') %>发送</button>
                 </div>
               </div>
             </div>

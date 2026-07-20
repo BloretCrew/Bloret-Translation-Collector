@@ -15,11 +15,12 @@
       <section class="app-section">
         <% if (!projects.length) { %>
           <div class="blora-empty">
+            <div class="blora-empty__icon"><%- sfIcon('folder') %></div>
             <div class="blora-empty__title">尚无项目</div>
             <div class="blora-empty__desc">创建项目后即可上传源文件并开始翻译</div>
             <% if (canManageProjects) { %>
               <div class="app-empty-actions">
-                <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/projects/new">创建项目</a>
+                <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/projects/new"><%- sfIcon('plus.circle') %>创建项目</a>
               </div>
             <% } %>
           </div>
@@ -50,7 +51,7 @@
                       </div>
                     </td>
                     <td>
-                      <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= p.slug %>">打开</a>
+                      <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= p.slug %>"><%- sfIcon('arrow.right') %>打开</a>
                     </td>
                   </tr>
                 <% }) %>

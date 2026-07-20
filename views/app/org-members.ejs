@@ -53,7 +53,7 @@
                     <% if (canManage) { %>
                       <td>
                         <% if (m.role !== 'owner') { %>
-                          <button type="button" class="blora-btn blora-btn--danger blora-btn--xs member-remove" data-user-id="<%= m.userId %>" data-username="<%= m.username %>">移除</button>
+                          <button type="button" class="blora-btn blora-btn--danger blora-btn--xs member-remove" data-user-id="<%= m.userId %>" data-username="<%= m.username %>"><%- sfIcon('trash') %>移除</button>
                         <% } %>
                       </td>
                     <% } %>
@@ -66,7 +66,7 @@
 
         <% if (canManage) { %>
           <div class="blora-panel u-mt-4">
-            <div class="blora-panel__header"><h3 class="blora-h4">添加成员</h3></div>
+            <div class="blora-panel__header"><h3 class="blora-h4 sf-inline"><%- sfIcon('person.badge.plus') %>添加成员</h3></div>
             <form id="add-member-form" class="blora-row" style="align-items:flex-end;flex-wrap:wrap" data-org-slug="<%= orgSlug %>">
               <div id="add-member-error" class="blora-alert blora-alert--danger" style="width:100%" hidden></div>
               <label class="blora-field" style="flex:1;min-width:160px">
@@ -82,7 +82,7 @@
                   <option value="viewer">访客</option>
                 </select>
               </label>
-              <button class="blora-btn blora-btn--primary" type="submit">添加成员</button>
+              <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('person.badge.plus') %>添加成员</button>
             </form>
           </div>
         <% } %>

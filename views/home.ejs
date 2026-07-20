@@ -4,6 +4,7 @@
   <div class="blora-container">
     <% if (errorMsg) { %>
       <div class="blora-alert blora-alert--danger u-mb-3" role="alert">
+        <%- sfIcon('exclamationmark.triangle') %>
         登录失败：<%= errorMsg %>
       </div>
     <% } %>
@@ -18,8 +19,8 @@
         一键导出目标语言文件。通过 Bloret PassPort 安全登录。
       </p>
       <div class="blora-row landing-hero__actions">
-        <a class="blora-btn blora-btn--primary blora-btn--lg" href="/auth/login">PassPort 登录</a>
-        <a class="blora-btn blora-btn--outline blora-btn--lg" href="#features">了解能力</a>
+        <a class="blora-btn blora-btn--primary blora-btn--lg" href="/auth/login"><%- sfIcon('person.crop.circle') %>PassPort 登录</a>
+        <a class="blora-btn blora-btn--outline blora-btn--lg" href="#features"><%- sfIcon('info.circle') %>了解能力</a>
       </div>
       <% if (typeof isDev !== 'undefined' && isDev) { %>
       <p class="blora-text-faint landing-hero__hint">
@@ -34,19 +35,19 @@
 
     <section id="features" class="feature-grid" aria-label="产品能力">
       <article class="blora-card">
-        <h3 class="blora-card__title">组织与权限</h3>
+        <h3 class="blora-card__title"><%- sfIcon('person.2') %>组织与权限</h3>
         <p class="blora-card__body blora-text-muted">
           所有者 / 管理员 / 译者 / 访客 四级角色，协作边界清晰。
         </p>
       </article>
       <article class="blora-card">
-        <h3 class="blora-card__title">JSON 源文件</h3>
+        <h3 class="blora-card__title"><%- sfIcon('document') %>JSON 源文件</h3>
         <p class="blora-card__body blora-text-muted">
           支持扁平与嵌套 i18n JSON，保留结构导出，更新源文不丢已有译文。
         </p>
       </article>
       <article class="blora-card">
-        <h3 class="blora-card__title">翻译工作台</h3>
+        <h3 class="blora-card__title"><%- sfIcon('translate') %>翻译工作台</h3>
         <p class="blora-card__body blora-text-muted">
           左 key 右译文，筛选未译、自动保存，进度一目了然。
         </p>

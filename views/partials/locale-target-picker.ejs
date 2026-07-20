@@ -104,15 +104,15 @@
               <input type="text" class="blora-input" data-custom-code placeholder="代码，如 yue" maxlength="16" autocomplete="off" />
               <!-- no HTML required: modal sits inside host form; browser would block Save silently -->
               <input type="text" class="blora-input" data-custom-label placeholder="显示名，如 粤语" maxlength="40" autocomplete="off" />
-              <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" data-custom-add>添加</button>
+              <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" data-custom-add><%- sfIcon('plus') %>添加</button>
             </div>
             <p class="blora-field__hint">代码是 locale 标识；显示名会出现在项目页与工作台（必填）</p>
           </div>
         </div>
 
         <div class="locale-picker-actions">
-          <button type="button" class="blora-btn blora-btn--primary blora-btn--sm" data-move-right title="添加到已选">→</button>
-          <button type="button" class="blora-btn blora-btn--outline blora-btn--sm" data-move-left title="从已选移除">←</button>
+          <button type="button" class="blora-btn blora-btn--primary blora-btn--sm blora-btn--icon" data-move-right title="添加到已选" aria-label="添加到已选"><%- sfIcon('chevron.right') %></button>
+          <button type="button" class="blora-btn blora-btn--outline blora-btn--sm blora-btn--icon" data-move-left title="从已选移除" aria-label="从已选移除"><%- sfIcon('chevron.left') %></button>
         </div>
 
         <div class="locale-picker-pane">
@@ -126,8 +126,8 @@
       </div>
     </div>
     <div class="blora-modal__foot">
-      <button type="button" class="blora-btn blora-btn--ghost" data-blora-close>取消</button>
-      <button type="button" class="blora-btn blora-btn--primary" data-locale-confirm>确定</button>
+      <button type="button" class="blora-btn blora-btn--ghost" data-blora-close><%- sfIcon('xmark') %>取消</button>
+      <button type="button" class="blora-btn blora-btn--primary" data-locale-confirm><%- sfIcon('checkmark') %>确定</button>
     </div>
   </div>
 </div>

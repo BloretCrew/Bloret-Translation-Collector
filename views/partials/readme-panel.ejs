@@ -11,7 +11,7 @@
   <% if (hasContent || hasWarning) { %>
     <div class="app-section-head">
       <div>
-        <h2 class="blora-h3">README</h2>
+        <h2 class="blora-h3"><%- sfIcon('text.book.closed') %>README</h2>
         <% if (rv && rv.source === 'url' && rv.url) { %>
           <p class="blora-text-faint u-text-xs u-mt-1">
             来源
@@ -22,7 +22,7 @@
         <% } %>
       </div>
       <% if (canEdit && edit) { %>
-        <a class="blora-btn blora-btn--ghost blora-btn--sm" href="<%= edit %>">编辑</a>
+        <a class="blora-btn blora-btn--ghost blora-btn--sm" href="<%= edit %>"><%- sfIcon('square.and.pencil') %>编辑</a>
       <% } %>
     </div>
 
@@ -38,7 +38,7 @@
   <% } else if (canEdit && edit) { %>
     <div class="readme-cta">
       <span>尚未添加 README — 可写 Markdown，或挂 raw HTTPS 链接</span>
-      <a class="blora-btn blora-btn--secondary blora-btn--sm" href="<%= edit %>">添加 README</a>
+      <a class="blora-btn blora-btn--secondary blora-btn--sm" href="<%= edit %>"><%- sfIcon('plus.circle') %>添加 README</a>
     </div>
   <% } %>
 </section>

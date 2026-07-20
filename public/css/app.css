@@ -2015,3 +2015,164 @@ button.is-btc-busy .loading-spinner {
 :root.blora-dark .settings-nav__link.is-active {
   color: var(--blora-ink-deep);
 }
+
+/* —— SF Icons (https://img.bloret.net/SF/{name}) ——
+ * Mask + currentColor so icons track light/dark ink without per-theme tint. */
+.sf-icon {
+  --sf-size: 1.125em;
+  display: inline-block;
+  width: var(--sf-size);
+  height: var(--sf-size);
+  flex-shrink: 0;
+  vertical-align: -0.15em;
+  background-color: currentColor;
+  -webkit-mask: var(--sf-url) center / contain no-repeat;
+  mask: var(--sf-url) center / contain no-repeat;
+  pointer-events: none;
+}
+
+.sf-icon--sm {
+  --sf-size: 0.95em;
+}
+
+.sf-icon--md {
+  --sf-size: 1.25em;
+}
+
+.sf-icon--lg {
+  --sf-size: 1.5em;
+}
+
+.sf-icon--xl {
+  --sf-size: 2.5rem;
+}
+
+.sf-icon--2xl {
+  --sf-size: 3rem;
+}
+
+/* Inline label + icon rows */
+.sf-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.sf-inline--tight {
+  gap: 0.3em;
+}
+
+/* Buttons already flex in blora; ensure icon + label spacing */
+.blora-btn .sf-icon {
+  margin-inline-end: 0.15em;
+}
+
+.blora-btn--icon .sf-icon,
+.blora-btn.blora-btn--icon .sf-icon {
+  margin-inline-end: 0;
+}
+
+.blora-navbar__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.blora-dropdown-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.app-tabs__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4em;
+}
+
+.settings-nav__link {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.blora-empty__icon {
+  display: flex;
+  justify-content: center;
+  margin-bottom: var(--blora-space-3);
+  color: var(--blora-ink-faint);
+  opacity: 0.85;
+}
+
+.blora-empty__icon .sf-icon {
+  --sf-size: 3rem;
+}
+
+.blora-card__icon {
+  display: flex;
+  margin-bottom: var(--blora-space-3);
+  color: var(--blora-seal, var(--blora-ink-mid));
+}
+
+.blora-card__icon .sf-icon {
+  --sf-size: 1.75rem;
+}
+
+.blora-card__title {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+}
+
+.app-section-head .blora-h3 {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45em;
+}
+
+.blora-breadcrumb__sep .sf-icon {
+  --sf-size: 0.65em;
+  opacity: 0.55;
+  vertical-align: 0.05em;
+}
+
+.app-navbar__theme .sf-icon {
+  --sf-size: 1.15em;
+}
+
+.feature-grid .blora-card__title .sf-icon {
+  color: var(--blora-seal, var(--blora-ink-mid));
+}
+
+.org-card-title {
+  display: flex;
+  align-items: center;
+  gap: 0.45em;
+}
+
+.org-card-title .sf-icon {
+  color: var(--blora-ink-mid);
+  flex-shrink: 0;
+}
+
+.blora-segmented__item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3em;
+}
+
+.blora-tabs__tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+}
+
+.blora-alert {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5em;
+}
+
+.blora-alert .sf-icon {
+  margin-top: 0.1em;
+}

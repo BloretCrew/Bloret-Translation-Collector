@@ -3,7 +3,7 @@
   <% crumbs.forEach(function (item, i) { %>
     <span class="app-breadcrumb__item">
       <% if (i > 0) { %>
-        <span class="blora-breadcrumb__sep" aria-hidden>/</span>
+        <span class="blora-breadcrumb__sep" aria-hidden="true"><%- sfIcon('chevron.right', { className: 'sf-icon--sm' }) %></span>
       <% } %>
       <% if (i === crumbs.length - 1 || !item.href) { %>
         <span class="blora-breadcrumb__current"><%= item.label %></span>

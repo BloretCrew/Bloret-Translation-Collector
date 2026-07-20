@@ -20,18 +20,18 @@
         data-default-tab="general"
       >
         <nav class="settings-nav" aria-label="设置分区">
-          <a class="settings-nav__link<%= settingsTab === 'general' ? ' is-active' : '' %>" href="?tab=general" data-tab="general">基本信息</a>
-          <a class="settings-nav__link<%= settingsTab === 'readme' ? ' is-active' : '' %>" href="?tab=readme" data-tab="readme">README</a>
-          <a class="settings-nav__link<%= settingsTab === 'glossary' ? ' is-active' : '' %>" href="?tab=glossary" data-tab="glossary">术语表</a>
-          <a class="settings-nav__link<%= settingsTab === 'assignees' ? ' is-active' : '' %>" href="?tab=assignees" data-tab="assignees">语言负责人</a>
-          <a class="settings-nav__link settings-nav__link--danger<%= settingsTab === 'danger' ? ' is-active' : '' %>" href="?tab=danger" data-tab="danger">危险区域</a>
+          <a class="settings-nav__link<%= settingsTab === 'general' ? ' is-active' : '' %>" href="?tab=general" data-tab="general"><%- sfIcon('info.circle') %>基本信息</a>
+          <a class="settings-nav__link<%= settingsTab === 'readme' ? ' is-active' : '' %>" href="?tab=readme" data-tab="readme"><%- sfIcon('text.book.closed') %>README</a>
+          <a class="settings-nav__link<%= settingsTab === 'glossary' ? ' is-active' : '' %>" href="?tab=glossary" data-tab="glossary"><%- sfIcon('character.book.closed') %>术语表</a>
+          <a class="settings-nav__link<%= settingsTab === 'assignees' ? ' is-active' : '' %>" href="?tab=assignees" data-tab="assignees"><%- sfIcon('person.2') %>语言负责人</a>
+          <a class="settings-nav__link settings-nav__link--danger<%= settingsTab === 'danger' ? ' is-active' : '' %>" href="?tab=danger" data-tab="danger"><%- sfIcon('exclamationmark.triangle') %>危险区域</a>
         </nav>
 
         <div class="settings-main">
           <section class="settings-panel blora-panel" data-tab-panel="general" <%= settingsTab === 'general' ? '' : 'hidden' %>>
             <header class="settings-panel__head">
               <div>
-                <h2 class="blora-h3">基本信息</h2>
+                <h2 class="blora-h3 sf-inline"><%- sfIcon('info.circle') %>基本信息</h2>
                 <p class="blora-text-faint u-text-sm u-mt-1">名称、语言与可见性</p>
               </div>
             </header>
@@ -59,7 +59,7 @@
                 Slug <code class="blora-code"><%= projectSlug %></code> 创建后不可修改。
               </p>
               <div class="settings-panel__footer">
-                <button class="blora-btn blora-btn--primary" type="submit">保存设置</button>
+                <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %>保存设置</button>
               </div>
             </form>
           </section>
@@ -67,7 +67,7 @@
           <section class="settings-panel blora-panel" data-tab-panel="readme" <%= settingsTab === 'readme' ? '' : 'hidden' %>>
             <header class="settings-panel__head">
               <div>
-                <h2 class="blora-h3">README</h2>
+                <h2 class="blora-h3 sf-inline"><%- sfIcon('text.book.closed') %>README</h2>
                 <p class="blora-text-faint u-text-sm u-mt-1">展示在项目总览。若填写 URL，将优先从远程加载 Markdown。</p>
               </div>
             </header>
@@ -83,7 +83,7 @@
                 <textarea class="blora-textarea blora-text-mono" name="readme" rows="14" placeholder="# 项目说明&#10;&#10;翻译约定……"><%= project.readme || '' %></textarea>
               </label>
               <div class="settings-panel__footer">
-                <button class="blora-btn blora-btn--primary" type="submit">保存 README</button>
+                <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %>保存 README</button>
                 <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>">查看总览</a>
               </div>
             </form>
@@ -100,13 +100,13 @@
           >
             <header class="settings-panel__head">
               <div>
-                <h2 class="blora-h3">术语表</h2>
+                <h2 class="blora-h3 sf-inline"><%- sfIcon('character.book.closed') %>术语表</h2>
                 <p class="blora-text-faint u-text-sm u-mt-1">源文命中术语时，工作台会提示推荐译法</p>
               </div>
             </header>
             <div id="glossary-list" class="glossary-list u-mt-4"></div>
             <form id="glossary-add-form" class="blora-stack u-mt-4 settings-subform">
-              <h3 class="blora-h4">添加术语</h3>
+              <h3 class="blora-h4 sf-inline"><%- sfIcon('plus.circle') %>添加术语</h3>
               <div class="blora-grid blora-grid--2">
                 <label class="blora-field">
                   <span class="blora-field__label">源术语</span>
@@ -122,7 +122,7 @@
                 <div class="blora-row" style="flex-wrap:wrap;gap:8px" id="glossary-tr-fields"></div>
               </label>
               <div class="settings-panel__footer">
-                <button type="submit" class="blora-btn blora-btn--secondary">添加术语</button>
+                <button type="submit" class="blora-btn blora-btn--secondary"><%- sfIcon('plus.circle') %>添加术语</button>
               </div>
             </form>
           </section>
@@ -138,13 +138,13 @@
           >
             <header class="settings-panel__head">
               <div>
-                <h2 class="blora-h3">语言负责人</h2>
+                <h2 class="blora-h3 sf-inline"><%- sfIcon('person.2') %>语言负责人</h2>
                 <p class="blora-text-faint u-text-sm u-mt-1">为某语言指派审核员或译者（审核员可批准该语言译文）</p>
               </div>
             </header>
             <div id="assignees-list" class="assignees-list u-mt-4"></div>
             <form id="assignee-add-form" class="settings-subform u-mt-4">
-              <h3 class="blora-h4">添加指派</h3>
+              <h3 class="blora-h4 sf-inline"><%- sfIcon('person.badge.plus') %>添加指派</h3>
               <div class="blora-row" style="align-items:flex-end;flex-wrap:wrap;gap:8px">
                 <label class="blora-field">
                   <span class="blora-field__label">语言</span>
@@ -161,7 +161,7 @@
                     <option value="translator">译者</option>
                   </select>
                 </label>
-                <button type="submit" class="blora-btn blora-btn--secondary">添加指派</button>
+                <button type="submit" class="blora-btn blora-btn--secondary"><%- sfIcon('person.badge.plus') %>添加指派</button>
               </div>
             </form>
           </section>
@@ -169,7 +169,7 @@
           <section class="settings-panel blora-panel settings-panel--danger" data-tab-panel="danger" <%= settingsTab === 'danger' ? '' : 'hidden' %>>
             <header class="settings-panel__head">
               <div>
-                <h2 class="blora-h3">危险区域</h2>
+                <h2 class="blora-h3 sf-inline"><%- sfIcon('exclamationmark.triangle') %>危险区域</h2>
                 <p class="blora-text-faint u-text-sm u-mt-1">不可逆操作，请谨慎确认</p>
               </div>
             </header>
@@ -185,7 +185,7 @@
                 data-org-slug="<%= orgSlug %>"
                 data-project-slug="<%= projectSlug %>"
                 data-name="<%= project.name %>"
-              >删除项目</button>
+              ><%- sfIcon('trash') %>删除项目</button>
             </div>
           </section>
         </div>

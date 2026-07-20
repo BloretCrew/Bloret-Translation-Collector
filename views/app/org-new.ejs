@@ -6,7 +6,7 @@
       <%- include('../partials/breadcrumbs', { crumbs: [{ label: '组织', href: '/app' }, { label: '新建' }] }) %>
       <header class="app-page-header">
         <div class="app-page-header__copy">
-          <h1 class="blora-h2">新建组织</h1>
+          <h1 class="blora-h2 sf-inline"><%- sfIcon('building.2') %>新建组织</h1>
           <p class="blora-text-muted u-mt-2">组织用于管理项目与成员协作。</p>
         </div>
       </header>
@@ -38,8 +38,8 @@
             <span class="blora-field__hint">可在创建后于组织设置中修改。公开后访客仍只能访问标记为公开的项目。</span>
           </label>
           <div class="blora-row">
-            <button class="blora-btn blora-btn--primary" type="submit">创建组织</button>
-            <a class="blora-btn blora-btn--ghost" href="/app">取消</a>
+            <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %>创建组织</button>
+            <a class="blora-btn blora-btn--ghost" href="/app"><%- sfIcon('xmark') %>取消</a>
           </div>
         </form>
       </div>

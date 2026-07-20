@@ -14,7 +14,7 @@
       <section class="app-section">
         <div class="app-section-head">
           <div>
-            <h2 class="blora-h3">导入源文件</h2>
+            <h2 class="blora-h3"><%- sfIcon('square.and.arrow.up') %>导入源文件</h2>
             <p class="blora-text-muted u-text-sm u-mt-1">
               上传或更新源语言文件。相同路径会合并键并保留已有译文；内容未变则跳过。
             </p>
@@ -46,8 +46,8 @@
               导出会尽量按上传原文的缩进、键序与格式写出。
             </p>
             <div class="blora-row">
-              <button class="blora-btn blora-btn--primary" type="submit">上传 / 更新</button>
-              <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/sources">查看源文件</a>
+              <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('icloud.and.arrow.up') %>上传 / 更新</button>
+              <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/sources"><%- sfIcon('document') %>查看源文件</a>
             </div>
           </form>
         </div>

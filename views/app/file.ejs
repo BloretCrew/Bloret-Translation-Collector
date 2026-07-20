@@ -12,26 +12,26 @@
 
       <header class="app-page-header">
         <div class="app-page-header__copy">
-          <h1 class="blora-h2 blora-text-mono" style="font-size:1.5rem"><%= file.path %></h1>
+          <h1 class="blora-h2 blora-text-mono sf-inline" style="font-size:1.5rem"><%- sfIcon('document') %><%= file.path %></h1>
           <p class="blora-text-muted u-mt-2">
             版本 r<%= file.sourceRevision %> ·
             <%= localeProgress[0] ? localeProgress[0].total : 0 %> 条字符串 · 更新于 <%= updatedAtLabel %>
           </p>
         </div>
         <div class="app-page-header__actions">
-          <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/sources">← 源文件</a>
+          <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/sources"><%- sfIcon('arrow.left') %>源文件</a>
           <% if (defaultLocale && canEdit) { %>
-            <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= file.id %>&locale=<%= defaultLocale %>">开始翻译</a>
+            <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= file.id %>&locale=<%= defaultLocale %>"><%- sfIcon('translate') %>开始翻译</a>
           <% } %>
           <% if (canUpload) { %>
             <button type="button" id="delete-file-btn" class="blora-btn blora-btn--danger blora-btn--sm"
-              data-org-slug="<%= orgSlug %>" data-project-slug="<%= projectSlug %>" data-file-id="<%= file.id %>" data-path="<%= file.path %>">删除文件</button>
+              data-org-slug="<%= orgSlug %>" data-project-slug="<%= projectSlug %>" data-file-id="<%= file.id %>" data-path="<%= file.path %>"><%- sfIcon('trash') %>删除文件</button>
           <% } %>
         </div>
       </header>
 
       <section class="app-section">
-        <h2 class="blora-h3">按语言进度</h2>
+        <h2 class="blora-h3"><%- sfIcon('globe') %>按语言进度</h2>
         <% if (!localeProgress.length) { %>
           <p class="blora-text-muted">项目尚未配置目标语言</p>
         <% } else { %>
@@ -66,10 +66,10 @@
                     <td>
                       <div class="blora-row u-gap-1">
                         <% if (canEdit) { %>
-                          <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= file.id %>&locale=<%= p.locale %>">翻译</a>
+                          <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= file.id %>&locale=<%= p.locale %>"><%- sfIcon('translate') %>翻译</a>
                         <% } %>
                         <% if (canExport) { %>
-                          <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/export">导出页</a>
+                          <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/export"><%- sfIcon('square.and.arrow.down') %>导出页</a>
                         <% } %>
                       </div>
                     </td>

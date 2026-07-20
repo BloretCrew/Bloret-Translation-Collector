@@ -21,18 +21,19 @@
 
       <section class="app-section">
         <div class="app-section-head">
-          <h2 class="blora-h3">语言进度</h2>
+          <h2 class="blora-h3"><%- sfIcon('globe') %>语言进度</h2>
           <% if (_canExport && targetLocales.length) { %>
-            <a class="blora-btn blora-btn--ghost blora-btn--sm" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/export">前往导出 →</a>
+            <a class="blora-btn blora-btn--ghost blora-btn--sm" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/export"><%- sfIcon('square.and.arrow.down') %>前往导出</a>
           <% } %>
         </div>
         <% if (!targetLocales.length) { %>
           <div class="blora-empty">
+            <div class="blora-empty__icon"><%- sfIcon('globe') %></div>
             <div class="blora-empty__title">尚未配置目标语言</div>
             <div class="blora-empty__desc">在设置中添加目标语言后即可开始翻译</div>
             <% if (_canManageSettings) { %>
               <div class="app-empty-actions">
-                <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/settings">项目设置</a>
+                <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/settings"><%- sfIcon('gearshape') %>项目设置</a>
               </div>
             <% } %>
           </div>
@@ -71,9 +72,9 @@
                     <td>
                       <div class="blora-row u-gap-1">
                         <% if (defaultFile && _canEdit) { %>
-                          <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= defaultFile %>&locale=<%= p.locale %>">进入工作台</a>
+                          <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= defaultFile %>&locale=<%= p.locale %>"><%- sfIcon('translate') %>进入工作台</a>
                         <% } else if (!defaultFile && _canUpload) { %>
-                          <a class="blora-btn blora-btn--secondary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/import">先导入文件</a>
+                          <a class="blora-btn blora-btn--secondary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/import"><%- sfIcon('square.and.arrow.up') %>先导入文件</a>
                         <% } %>
                       </div>
                     </td>

@@ -11,6 +11,7 @@ import {
   localeLabel,
   localeShortLabel,
 } from "@/lib/locales";
+import { sfIcon, sfIconUrl } from "@/lib/sf-icon";
 import { authRouter } from "@/routes/auth";
 import { apiRouter } from "@/routes/api";
 import { pagesRouter } from "@/routes/pages";
@@ -60,6 +61,9 @@ export function createApp() {
     res.locals.localeShortLabel = localeShortLabel;
     res.locals.languageLabel = languageLabel;
     res.locals.languageShortLabel = languageShortLabel;
+    /** SF Symbols via https://img.bloret.net/SF/{name} — use <%- sfIcon('name') %> */
+    res.locals.sfIcon = sfIcon;
+    res.locals.sfIconUrl = sfIconUrl;
     res.locals.isDev =
       process.env.NODE_ENV !== "production" || process.env.BTC_SHOW_DEV_LOGIN === "1";
     next();

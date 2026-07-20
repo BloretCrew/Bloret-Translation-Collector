@@ -130,3 +130,44 @@ function syncColorScheme() {
 }
 document.documentElement.addEventListener("blora:appearancechange", syncColorScheme);
 syncColorScheme();
+
+/**
+ * Theme toggle with SF icons (https://img.bloret.net/SF/…).
+ * Uses data-blora-theme-toggle so we don't fight blora's data-blora-color-mode SVGs.
+ */
+function syncThemeToggleButtons() {
+  const dark = document.documentElement.classList.contains("blora-dark");
+  const iconHtml =
+    typeof window.SfIcon !== "undefined"
+      ? window.SfIcon.html(dark ? "sun.max" : "moon", { label: dark ? "切换至浅色" : "切换至暗色" })
+      : "";
+  document.querySelectorAll("[data-blora-theme-toggle]").forEach((btn) => {
+    if (iconHtml) btn.innerHTML = iconHtml;
+    btn.setAttribute("aria-label", dark ? "切换至浅色" : "切换至暗色");
+    btn.setAttribute("title", dark ? "切换至浅色" : "切换至暗色");
+  });
+}
+
+document.querySelectorAll("[data-blora-theme-toggle]").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const dark = document.documentElement.classList.toggle("blora-dark");
+    try {
+      localStorage.setItem(
+        (window.BloraConfig && window.BloraConfig.colorModeStorageKey) || "btc-theme",
+        dark ? "dark" : "light",
+      );
+    } catch {
+      /* ignore */
+    }
+    document.documentElement.style.colorScheme = dark ? "dark" : "light";
+    document.documentElement.dispatchEvent(
+      new CustomEvent("blora:appearancechange", {
+        bubbles: true,
+        detail: { dark },
+      }),
+    );
+    syncThemeToggleButtons();
+  });
+});
+document.documentElement.addEventListener("blora:appearancechange", syncThemeToggleButtons);
+syncThemeToggleButtons();
