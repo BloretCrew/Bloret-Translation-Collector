@@ -1,8 +1,11 @@
 <%- include('../partials/head') %>
 <%- include('../partials/navbar') %>
+<%
+  const settingsTab = typeof activeTab !== 'undefined' && activeTab ? activeTab : 'general';
+%>
 <main class="app-main">
   <div class="blora-container blora-container--wide">
-    <div class="app-narrow blora-stack blora-stack--lg">
+    <div class="blora-stack blora-stack--lg">
       <%- include('../partials/breadcrumbs', { crumbs: [
         { label: '组织', href: '/app' },
         { label: org.name, href: '/app/o/' + orgSlug },
@@ -10,51 +13,81 @@
         { label: '设置' }
       ] }) %>
       <header class="app-page-header">
-        <div class="app-page-header__copy"><h1 class="blora-h2">项目设置</h1></div>
+        <div class="app-page-header__copy">
+          <h1 class="blora-h2">项目设置</h1>
+          <p class="blora-text-muted u-mt-2"><%= project.name %></p>
+        </div>
         <div class="app-page-header__actions">
           <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>">返回项目</a>
         </div>
       </header>
-      <div class="blora-panel">
-        <div class="blora-stack blora-stack--lg">
-          <form id="project-settings-form" class="blora-stack" data-org-slug="<%= orgSlug %>" data-project-slug="<%= projectSlug %>">
-            <div id="form-error" class="blora-alert blora-alert--danger" hidden></div>
-            <label class="blora-field">
-              <span class="blora-field__label">项目名称</span>
-              <input class="blora-input" name="name" required value="<%= project.name %>" />
-            </label>
-            <label class="blora-field">
-              <span class="blora-field__label">简介</span>
-              <textarea class="blora-textarea" name="description" rows="2"><%= project.description || '' %></textarea>
-            </label>
-            <%- include('../partials/locale-source-select', { value: project.sourceLocale }) %>
-            <label class="blora-field">
-              <span class="blora-field__label">可见性</span>
-              <select class="blora-select" name="visibility">
-                <option value="org" <%= project.visibility === 'org' ? 'selected' : '' %>>组织内</option>
-                <option value="private" <%= project.visibility === 'private' ? 'selected' : '' %>>私有</option>
-              </select>
-            </label>
-            <%- include('../partials/locale-target-picker', { selected: targetLocales }) %>
-            <p class="blora-text-faint" style="font-size:13px">
-              Slug <code class="blora-code"><%= projectSlug %></code> 创建后不可修改。
-            </p>
-            <button class="blora-btn blora-btn--primary" type="submit">保存设置</button>
-          </form>
 
-          <hr class="blora-divider" />
+      <div
+        class="settings-layout"
+        data-settings-tabs
+        data-default-tab="general"
+      >
+        <nav class="settings-nav" aria-label="设置分区">
+          <a class="settings-nav__link<%= settingsTab === 'general' ? ' is-active' : '' %>" href="?tab=general" data-tab="general">基本信息</a>
+          <a class="settings-nav__link<%= settingsTab === 'glossary' ? ' is-active' : '' %>" href="?tab=glossary" data-tab="glossary">术语表</a>
+          <a class="settings-nav__link<%= settingsTab === 'assignees' ? ' is-active' : '' %>" href="?tab=assignees" data-tab="assignees">语言负责人</a>
+          <a class="settings-nav__link settings-nav__link--danger<%= settingsTab === 'danger' ? ' is-active' : '' %>" href="?tab=danger" data-tab="danger">危险区域</a>
+        </nav>
+
+        <div class="settings-main">
+          <section class="settings-panel blora-panel" data-tab-panel="general" <%= settingsTab === 'general' ? '' : 'hidden' %>>
+            <header class="settings-panel__head">
+              <div>
+                <h2 class="blora-h3">基本信息</h2>
+                <p class="blora-text-faint u-text-sm u-mt-1">名称、语言与可见性</p>
+              </div>
+            </header>
+            <form id="project-settings-form" class="blora-stack u-mt-4" data-org-slug="<%= orgSlug %>" data-project-slug="<%= projectSlug %>">
+              <div id="form-error" class="blora-alert blora-alert--danger" hidden></div>
+              <label class="blora-field">
+                <span class="blora-field__label">项目名称</span>
+                <input class="blora-input" name="name" required value="<%= project.name %>" />
+              </label>
+              <label class="blora-field">
+                <span class="blora-field__label">简介</span>
+                <textarea class="blora-textarea" name="description" rows="2"><%= project.description || '' %></textarea>
+              </label>
+              <%- include('../partials/locale-source-select', { value: project.sourceLocale }) %>
+              <label class="blora-field">
+                <span class="blora-field__label">可见性</span>
+                <select class="blora-select" name="visibility">
+                  <option value="org" <%= project.visibility === 'org' ? 'selected' : '' %>>组织内</option>
+                  <option value="private" <%= project.visibility === 'private' ? 'selected' : '' %>>私有</option>
+                </select>
+              </label>
+              <%- include('../partials/locale-target-picker', { selected: targetLocales }) %>
+              <p class="blora-text-faint u-text-xs">
+                Slug <code class="blora-code"><%= projectSlug %></code> 创建后不可修改。
+              </p>
+              <div class="settings-panel__footer">
+                <button class="blora-btn blora-btn--primary" type="submit">保存设置</button>
+              </div>
+            </form>
+          </section>
 
           <section
-            class="blora-stack"
+            class="settings-panel blora-panel"
+            data-tab-panel="glossary"
             id="glossary-panel"
             data-org-slug="<%= orgSlug %>"
             data-project-slug="<%= projectSlug %>"
             data-locales="<%= targetLocales.join(',') %>"
+            <%= settingsTab === 'glossary' ? '' : 'hidden' %>
           >
-            <h3 class="blora-h4">术语表</h3>
-            <p class="blora-text-muted">源文出现术语时，工作台会提示推荐译法（类似 Crowdin Glossary）。</p>
-            <div id="glossary-list" class="glossary-list"></div>
-            <form id="glossary-add-form" class="blora-stack">
+            <header class="settings-panel__head">
+              <div>
+                <h2 class="blora-h3">术语表</h2>
+                <p class="blora-text-faint u-text-sm u-mt-1">源文命中术语时，工作台会提示推荐译法</p>
+              </div>
+            </header>
+            <div id="glossary-list" class="glossary-list u-mt-4"></div>
+            <form id="glossary-add-form" class="blora-stack u-mt-4 settings-subform">
+              <h3 class="blora-h4">添加术语</h3>
               <div class="blora-grid blora-grid--2">
                 <label class="blora-field">
                   <span class="blora-field__label">源术语</span>
@@ -66,55 +99,79 @@
                 </label>
               </div>
               <label class="blora-field">
-                <span class="blora-field__label">目标语言译法（可选，可稍后在列表中补全）</span>
+                <span class="blora-field__label">目标语言译法（可选，可稍后补全）</span>
                 <div class="blora-row" style="flex-wrap:wrap;gap:8px" id="glossary-tr-fields"></div>
               </label>
-              <button type="submit" class="blora-btn blora-btn--secondary">添加术语</button>
+              <div class="settings-panel__footer">
+                <button type="submit" class="blora-btn blora-btn--secondary">添加术语</button>
+              </div>
             </form>
           </section>
 
-          <hr class="blora-divider" />
-
           <section
-            class="blora-stack"
+            class="settings-panel blora-panel"
+            data-tab-panel="assignees"
             id="assignees-panel"
             data-org-slug="<%= orgSlug %>"
             data-project-slug="<%= projectSlug %>"
             data-locales="<%= targetLocales.join(',') %>"
+            <%= settingsTab === 'assignees' ? '' : 'hidden' %>
           >
-            <h3 class="blora-h4">语言负责人</h3>
-            <p class="blora-text-muted">为某语言指派审核员（可批准该语言译文，无需全局审核员角色）。</p>
-            <div id="assignees-list" class="assignees-list"></div>
-            <form id="assignee-add-form" class="blora-row" style="align-items:flex-end;flex-wrap:wrap;gap:8px">
-              <label class="blora-field">
-                <span class="blora-field__label">语言</span>
-                <select class="blora-select" name="locale" id="assignee-locale"></select>
-              </label>
-              <label class="blora-field">
-                <span class="blora-field__label">用户名</span>
-                <input class="blora-input" name="username" required placeholder="PassPort 用户名" />
-              </label>
-              <label class="blora-field">
-                <span class="blora-field__label">职责</span>
-                <select class="blora-select" name="kind">
-                  <option value="proofreader">审核员</option>
-                  <option value="translator">译者</option>
-                </select>
-              </label>
-              <button type="submit" class="blora-btn blora-btn--secondary">添加指派</button>
+            <header class="settings-panel__head">
+              <div>
+                <h2 class="blora-h3">语言负责人</h2>
+                <p class="blora-text-faint u-text-sm u-mt-1">为某语言指派审核员或译者（审核员可批准该语言译文）</p>
+              </div>
+            </header>
+            <div id="assignees-list" class="assignees-list u-mt-4"></div>
+            <form id="assignee-add-form" class="settings-subform u-mt-4">
+              <h3 class="blora-h4">添加指派</h3>
+              <div class="blora-row" style="align-items:flex-end;flex-wrap:wrap;gap:8px">
+                <label class="blora-field">
+                  <span class="blora-field__label">语言</span>
+                  <select class="blora-select" name="locale" id="assignee-locale"></select>
+                </label>
+                <label class="blora-field">
+                  <span class="blora-field__label">用户名</span>
+                  <input class="blora-input" name="username" required placeholder="PassPort 用户名" />
+                </label>
+                <label class="blora-field">
+                  <span class="blora-field__label">职责</span>
+                  <select class="blora-select" name="kind">
+                    <option value="proofreader">审核员</option>
+                    <option value="translator">译者</option>
+                  </select>
+                </label>
+                <button type="submit" class="blora-btn blora-btn--secondary">添加指派</button>
+              </div>
             </form>
           </section>
 
-          <hr class="blora-divider" />
-
-          <div class="blora-stack">
-            <h3 class="blora-h4">危险区域</h3>
-            <p class="blora-text-muted">删除项目将清除所有源文件与译文，且无法恢复。</p>
-            <button type="button" id="delete-project-btn" class="blora-btn blora-btn--danger" data-org-slug="<%= orgSlug %>" data-project-slug="<%= projectSlug %>" data-name="<%= project.name %>">删除项目</button>
-          </div>
+          <section class="settings-panel blora-panel settings-panel--danger" data-tab-panel="danger" <%= settingsTab === 'danger' ? '' : 'hidden' %>>
+            <header class="settings-panel__head">
+              <div>
+                <h2 class="blora-h3">危险区域</h2>
+                <p class="blora-text-faint u-text-sm u-mt-1">不可逆操作，请谨慎确认</p>
+              </div>
+            </header>
+            <div class="settings-danger-card u-mt-4">
+              <div>
+                <strong>删除项目</strong>
+                <p class="blora-text-muted u-mt-1">将清除所有源文件与译文，且无法恢复。</p>
+              </div>
+              <button
+                type="button"
+                id="delete-project-btn"
+                class="blora-btn blora-btn--danger"
+                data-org-slug="<%= orgSlug %>"
+                data-project-slug="<%= projectSlug %>"
+                data-name="<%= project.name %>"
+              >删除项目</button>
+            </div>
+          </section>
         </div>
       </div>
     </div>
   </div>
 </main>
-<%- include('../partials/foot', { scripts: ['/js/forms.js', '/js/project-settings.js'] }) %>
+<%- include('../partials/foot', { scripts: ['/js/forms.js', '/js/project-settings.js', '/js/settings-tabs.js'] }) %>

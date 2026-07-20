@@ -24,6 +24,9 @@
       <nav class="app-tabs" aria-label="组织分区">
         <a class="app-tabs__link is-active" href="/app/o/<%= orgSlug %>">项目</a>
         <a class="app-tabs__link" href="/app/o/<%= orgSlug %>/members">成员</a>
+        <% if (canManage) { %>
+          <a class="app-tabs__link" href="/app/o/<%= orgSlug %>/settings">设置</a>
+        <% } %>
       </nav>
 
       <section class="app-section">

@@ -1,33 +1,61 @@
 <%- include('../partials/head') %>
 <%- include('../partials/navbar') %>
+<%
+  const settingsTab = typeof activeTab !== 'undefined' && activeTab ? activeTab : 'general';
+%>
 <main class="app-main">
   <div class="blora-container blora-container--wide">
-    <div class="app-narrow blora-stack blora-stack--lg">
-      <%- include('../partials/breadcrumbs', { crumbs: [{ label: '组织', href: '/app' }, { label: org.name, href: '/app/o/' + orgSlug }, { label: '设置' }] }) %>
+    <div class="blora-stack blora-stack--lg">
+      <%- include('../partials/breadcrumbs', { crumbs: [
+        { label: '组织', href: '/app' },
+        { label: org.name, href: '/app/o/' + orgSlug },
+        { label: '设置' }
+      ] }) %>
       <header class="app-page-header">
-        <div class="app-page-header__copy"><h1 class="blora-h2">组织设置</h1></div>
+        <div class="app-page-header__copy">
+          <h1 class="blora-h2">组织设置</h1>
+          <p class="blora-text-muted u-mt-2"><%= org.name %></p>
+        </div>
         <div class="app-page-header__actions">
           <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>">返回组织</a>
         </div>
       </header>
-      <div class="blora-panel">
-        <form id="org-settings-form" class="blora-stack" data-org-slug="<%= orgSlug %>">
-          <div id="form-error" class="blora-alert blora-alert--danger" hidden></div>
-          <label class="blora-field">
-            <span class="blora-field__label">组织名称</span>
-            <input class="blora-input" name="name" required maxlength="80" value="<%= org.name %>" />
-          </label>
-          <label class="blora-field">
-            <span class="blora-field__label">简介</span>
-            <textarea class="blora-textarea" name="description" rows="3" maxlength="500"><%= org.description || '' %></textarea>
-          </label>
-          <p class="blora-text-faint" style="font-size:13px">
-            slug <code class="blora-code"><%= orgSlug %></code> 创建后不可修改。
-          </p>
-          <button class="blora-btn blora-btn--primary" type="submit">保存</button>
-        </form>
+
+      <div class="settings-layout" data-settings-tabs data-default-tab="general">
+        <nav class="settings-nav" aria-label="设置分区">
+          <a class="settings-nav__link<%= settingsTab === 'general' ? ' is-active' : '' %>" href="?tab=general" data-tab="general">基本信息</a>
+          <a class="settings-nav__link" href="/app/o/<%= orgSlug %>/members">成员管理</a>
+        </nav>
+
+        <div class="settings-main">
+          <section class="settings-panel blora-panel" data-tab-panel="general" <%= settingsTab === 'general' ? '' : 'hidden' %>>
+            <header class="settings-panel__head">
+              <div>
+                <h2 class="blora-h3">基本信息</h2>
+                <p class="blora-text-faint u-text-sm u-mt-1">组织名称与简介</p>
+              </div>
+            </header>
+            <form id="org-settings-form" class="blora-stack u-mt-4" data-org-slug="<%= orgSlug %>">
+              <div id="form-error" class="blora-alert blora-alert--danger" hidden></div>
+              <label class="blora-field">
+                <span class="blora-field__label">组织名称</span>
+                <input class="blora-input" name="name" required maxlength="80" value="<%= org.name %>" />
+              </label>
+              <label class="blora-field">
+                <span class="blora-field__label">简介</span>
+                <textarea class="blora-textarea" name="description" rows="3" maxlength="500"><%= org.description || '' %></textarea>
+              </label>
+              <p class="blora-text-faint u-text-xs">
+                slug <code class="blora-code"><%= orgSlug %></code> 创建后不可修改。
+              </p>
+              <div class="settings-panel__footer">
+                <button class="blora-btn blora-btn--primary" type="submit">保存</button>
+              </div>
+            </form>
+          </section>
+        </div>
       </div>
     </div>
   </div>
 </main>
-<%- include('../partials/foot', { scripts: ['/js/forms.js'] }) %>
+<%- include('../partials/foot', { scripts: ['/js/forms.js', '/js/settings-tabs.js'] }) %>

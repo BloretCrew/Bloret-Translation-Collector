@@ -76,7 +76,9 @@ pagesRouter.get("/app/tasks", async (req, res, next) => {
 
 pagesRouter.get("/app/settings", async (req, res, next) => {
   try {
-    return res.render("app/settings", { title: "用户设置" });
+    const tabParam = typeof req.query.tab === "string" ? req.query.tab : "shortcuts";
+    const activeTab = ["shortcuts"].includes(tabParam) ? tabParam : "shortcuts";
+    return res.render("app/settings", { title: "用户设置", activeTab });
   } catch (e) {
     next(e);
   }
@@ -215,10 +217,14 @@ pagesRouter.get("/app/o/:org/settings", async (req, res, next) => {
     }
     if (!canManageOrg(access.role)) return res.redirect(`/app/o/${orgSlug}`);
 
+    const tabParam = typeof req.query.tab === "string" ? req.query.tab : "general";
+    const activeTab = ["general"].includes(tabParam) ? tabParam : "general";
+
     return res.render("app/org-settings", {
       title: "组织设置",
       orgSlug,
       org: access.org,
+      activeTab,
     });
   } catch (e) {
     next(e);
@@ -332,6 +338,12 @@ pagesRouter.get("/app/o/:org/p/:project/settings", async (req, res, next) => {
       .from(projectLanguages)
       .where(eq(projectLanguages.projectId, access.project.id));
 
+    const tabParam = typeof req.query.tab === "string" ? req.query.tab : "general";
+    const allowedTabs = ["general", "glossary", "assignees", "danger"] as const;
+    const activeTab = (allowedTabs as readonly string[]).includes(tabParam)
+      ? tabParam
+      : "general";
+
     return res.render("app/project-settings", {
       title: "项目设置",
       orgSlug,
@@ -339,6 +351,7 @@ pagesRouter.get("/app/o/:org/p/:project/settings", async (req, res, next) => {
       org: access.org,
       project: access.project,
       targetLocales: langs.filter((l) => l.enabled).map((l) => l.locale),
+      activeTab,
     });
   } catch (e) {
     next(e);
