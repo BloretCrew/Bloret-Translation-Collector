@@ -1203,7 +1203,7 @@
         toast?.("error", data.error || "批准失败");
         return;
       }
-      toast?.("success", "已批准");
+
       await loadList({ quiet: true });
       if (activeId) await loadDetail(activeId);
     } catch {
