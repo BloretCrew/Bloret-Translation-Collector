@@ -17,6 +17,7 @@ import {
 } from "../db/schema";
 import {
   addComment,
+  addSuggestionComment,
   approveSuggestion,
   listComments,
   listStringsWithWorkflow,
@@ -180,6 +181,32 @@ describe("collaboration workflow", () => {
     expect(comments[0]!.parentId).toBeNull();
     expect(comments[1]!.body).toBe("已按你的建议修改");
     expect(comments[1]!.parentId).toBe(root.row.id);
+
+    // Comments under a translation suggestion (not string discussion)
+    const listedForComments = await listSuggestionsForString(unit!.id, "en", userA!.id);
+    const target = listedForComments.suggestions.find((s) => s.authorId === userB!.id);
+    expect(target).toBeTruthy();
+    const scRoot = await addSuggestionComment({
+      suggestionId: target!.id,
+      userId: userA!.id,
+      body: "这句语气可以更口语一点",
+    });
+    expect(scRoot.ok).toBe(true);
+    if (!scRoot.ok) throw new Error("suggestion comment failed");
+    const scReply = await addSuggestionComment({
+      suggestionId: target!.id,
+      userId: userB!.id,
+      body: "好的，我改一下",
+      parentId: scRoot.row.id,
+    });
+    expect(scReply.ok).toBe(true);
+    if (!scReply.ok) throw new Error("suggestion reply failed");
+
+    const withComments = await listSuggestionsForString(unit!.id, "en", userA!.id);
+    const again = withComments.suggestions.find((s) => s.id === target!.id);
+    expect(again?.comments.length).toBe(2);
+    expect(again?.comments[0]!.body).toBe("这句语气可以更口语一点");
+    expect(again?.comments[1]!.parentId).toBe(scRoot.row.id);
   });
 
   it("filters todo as untranslated + suggested (not approved)", async () => {

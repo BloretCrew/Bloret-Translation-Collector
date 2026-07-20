@@ -11,11 +11,17 @@ import {
   unauthorized,
 } from "@/lib/api";
 import { db } from "@/lib/db";
-import { sourceFiles, stringUnits, translationSuggestions } from "@/lib/db/schema";
+import {
+  sourceFiles,
+  stringUnits,
+  suggestionComments,
+  translationSuggestions,
+} from "@/lib/db/schema";
 import {
   localeSchema,
   saveSuggestionSchema,
   stringCommentSchema,
+  suggestionCommentSchema,
 } from "@/lib/validators/common";
 import {
   canApproveTranslations,
@@ -33,11 +39,14 @@ import { listContexts } from "@/lib/services/contexts";
 import { isMtEnabled } from "@/lib/services/mt";
 import {
   addComment,
+  addSuggestionComment,
   approveSuggestion,
   deleteComment,
   deleteMySuggestion,
+  deleteSuggestionComment,
   listComments,
   listStringsWithWorkflow,
+  listSuggestionComments,
   listSuggestionsForString,
   toggleVote,
   unapproveLocale,
@@ -341,6 +350,161 @@ collaborationRouter.delete(
       }
 
       const result = await deleteComment(
+        req.params.commentId,
+        session.userId!,
+        canManageProjects(access.role) || canApproveTranslations(access.role),
+      );
+      if (!result.ok) {
+        if (result.error === "forbidden") return forbidden(res, "只能删除自己的评论");
+        return notFound(res);
+      }
+      return jsonOk(res, { ok: true });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+// Comments under a translation suggestion
+collaborationRouter.get(
+  "/v1/orgs/:orgSlug/projects/:projectSlug/suggestions/:suggestionId/comments",
+  async (req, res, next) => {
+    try {
+      const session = requireSession(req);
+      if (!session) return unauthorized(res);
+
+      const access = await requireProjectAccess(
+        req.params.orgSlug,
+        req.params.projectSlug,
+        session.userId!,
+      );
+      if ("error" in access) {
+        if (access.error === "not_found") return notFound(res);
+        return forbidden(res);
+      }
+
+      const [s] = await db
+        .select({
+          id: translationSuggestions.id,
+          projectId: stringUnits.fileId,
+        })
+        .from(translationSuggestions)
+        .innerJoin(stringUnits, eq(translationSuggestions.stringId, stringUnits.id))
+        .innerJoin(sourceFiles, eq(stringUnits.fileId, sourceFiles.id))
+        .where(
+          and(
+            eq(translationSuggestions.id, req.params.suggestionId),
+            eq(sourceFiles.projectId, access.project.id),
+          ),
+        )
+        .limit(1);
+      if (!s) return notFound(res, "建议不存在");
+
+      const comments = await listSuggestionComments(s.id);
+      return jsonOk(res, { comments });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+collaborationRouter.post(
+  "/v1/orgs/:orgSlug/projects/:projectSlug/suggestions/:suggestionId/comments",
+  async (req, res, next) => {
+    try {
+      const session = requireSession(req);
+      if (!session) return unauthorized(res);
+
+      const access = await requireProjectAccess(
+        req.params.orgSlug,
+        req.params.projectSlug,
+        session.userId!,
+      );
+      if ("error" in access) {
+        if (access.error === "not_found") return notFound(res);
+        return forbidden(res);
+      }
+      if (access.role === undefined) return forbidden(res);
+
+      const [s] = await db
+        .select({ id: translationSuggestions.id })
+        .from(translationSuggestions)
+        .innerJoin(stringUnits, eq(translationSuggestions.stringId, stringUnits.id))
+        .innerJoin(sourceFiles, eq(stringUnits.fileId, sourceFiles.id))
+        .where(
+          and(
+            eq(translationSuggestions.id, req.params.suggestionId),
+            eq(sourceFiles.projectId, access.project.id),
+          ),
+        )
+        .limit(1);
+      if (!s) return notFound(res, "建议不存在");
+
+      const parsed = suggestionCommentSchema.safeParse(req.body);
+      if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
+
+      const result = await addSuggestionComment({
+        suggestionId: s.id,
+        userId: session.userId!,
+        body: parsed.data.body,
+        parentId: parsed.data.parentId ?? null,
+      });
+      if (!result.ok) {
+        if (result.error === "parent_not_found") return notFound(res, "回复的评论不存在");
+        return jsonError(res, "只能回复同一建议下的评论");
+      }
+      const row = result.row;
+      return jsonCreated(res, {
+        id: row.id,
+        body: row.body,
+        parentId: row.parentId,
+        suggestionId: row.suggestionId,
+        authorId: row.authorId,
+        createdAt: row.createdAt,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+collaborationRouter.delete(
+  "/v1/orgs/:orgSlug/projects/:projectSlug/suggestion-comments/:commentId",
+  async (req, res, next) => {
+    try {
+      const session = requireSession(req);
+      if (!session) return unauthorized(res);
+
+      const access = await requireProjectAccess(
+        req.params.orgSlug,
+        req.params.projectSlug,
+        session.userId!,
+      );
+      if ("error" in access) {
+        if (access.error === "not_found") return notFound(res);
+        return forbidden(res);
+      }
+
+      // Ensure comment belongs to this project
+      const [owned] = await db
+        .select({ id: suggestionComments.id })
+        .from(suggestionComments)
+        .innerJoin(
+          translationSuggestions,
+          eq(suggestionComments.suggestionId, translationSuggestions.id),
+        )
+        .innerJoin(stringUnits, eq(translationSuggestions.stringId, stringUnits.id))
+        .innerJoin(sourceFiles, eq(stringUnits.fileId, sourceFiles.id))
+        .where(
+          and(
+            eq(suggestionComments.id, req.params.commentId),
+            eq(sourceFiles.projectId, access.project.id),
+          ),
+        )
+        .limit(1);
+      if (!owned) return notFound(res);
+
+      const result = await deleteSuggestionComment(
         req.params.commentId,
         session.userId!,
         canManageProjects(access.role) || canApproveTranslations(access.role),

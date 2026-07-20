@@ -254,6 +254,30 @@ export const suggestionVotes = pgTable(
   ],
 );
 
+/** Comments / replies under a translation suggestion (not string-level discussion). */
+export const suggestionComments = pgTable(
+  "suggestion_comments",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    suggestionId: uuid("suggestion_id")
+      .notNull()
+      .references(() => translationSuggestions.id, { onDelete: "cascade" }),
+    authorId: uuid("author_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    /** Optional reply under another comment on the same suggestion (one-level). */
+    parentId: uuid("parent_id"),
+    body: text("body").notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index("suggestion_comments_suggestion_idx").on(t.suggestionId),
+    index("suggestion_comments_author_idx").on(t.authorId),
+    index("suggestion_comments_parent_idx").on(t.parentId),
+  ],
+);
+
 /** Workflow state for string × locale (approved suggestion pointer). */
 export const stringLocaleStates = pgTable(
   "string_locale_states",
@@ -514,6 +538,7 @@ export const translationSuggestionsRelations = relations(
       references: [users.id],
     }),
     votes: many(suggestionVotes),
+    comments: many(suggestionComments),
   }),
 );
 
@@ -526,6 +551,23 @@ export const suggestionVotesRelations = relations(suggestionVotes, ({ one }) => 
     fields: [suggestionVotes.userId],
     references: [users.id],
   }),
+}));
+
+export const suggestionCommentsRelations = relations(suggestionComments, ({ one, many }) => ({
+  suggestion: one(translationSuggestions, {
+    fields: [suggestionComments.suggestionId],
+    references: [translationSuggestions.id],
+  }),
+  author: one(users, {
+    fields: [suggestionComments.authorId],
+    references: [users.id],
+  }),
+  parent: one(suggestionComments, {
+    fields: [suggestionComments.parentId],
+    references: [suggestionComments.id],
+    relationName: "suggestion_comment_replies",
+  }),
+  replies: many(suggestionComments, { relationName: "suggestion_comment_replies" }),
 }));
 
 export const stringLocaleStatesRelations = relations(stringLocaleStates, ({ one }) => ({

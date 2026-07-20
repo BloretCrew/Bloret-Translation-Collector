@@ -153,3 +153,9 @@ export const stringCommentSchema = z.object({
   /** Reply under an existing top-level comment (same string × locale). */
   parentId: z.string().uuid().optional().nullable(),
 });
+
+/** Comment under a translation suggestion (optional reply to another comment). */
+export const suggestionCommentSchema = z.object({
+  body: z.string().min(1).max(5_000),
+  parentId: z.string().uuid().optional().nullable(),
+});

@@ -1043,6 +1043,7 @@
         "collab-card" +
         (s.isApproved ? " is-approved" : "") +
         (s.isMine ? " is-mine" : "");
+      card.dataset.suggestionId = s.id;
       card.innerHTML = `
         <div class="collab-card__text"></div>
         <div class="collab-card__meta">
@@ -1052,6 +1053,7 @@
           <span class="collab-card__badges"></span>
         </div>
         <div class="collab-card__actions blora-row u-gap-1"></div>
+        <div class="collab-card__comments"></div>
       `;
       card.querySelector(".collab-card__text").textContent = s.text;
       card.querySelector(".collab-card__author").textContent = s.authorUsername;
@@ -1111,8 +1113,251 @@
         actions.appendChild(un);
       }
 
+      const commentCount = (s.comments || []).length;
+      const toggleComments = document.createElement("button");
+      toggleComments.type = "button";
+      toggleComments.className = "blora-btn blora-btn--ghost blora-btn--xs";
+      toggleComments.textContent =
+        commentCount > 0 ? `评论 (${commentCount})` : "评论";
+      actions.appendChild(toggleComments);
+
+      const commentsMount = card.querySelector(".collab-card__comments");
+      let commentsOpen = commentCount > 0;
+      const renderSuggestionCommentsPanel = () => {
+        commentsMount.innerHTML = "";
+        if (!commentsOpen) {
+          commentsMount.hidden = true;
+          return;
+        }
+        commentsMount.hidden = false;
+        commentsMount.appendChild(
+          buildSuggestionCommentsPanel(s, data, () => {
+            if (activeId) loadDetail(activeId);
+          }),
+        );
+      };
+      toggleComments.addEventListener("click", () => {
+        commentsOpen = !commentsOpen;
+        renderSuggestionCommentsPanel();
+      });
+      renderSuggestionCommentsPanel();
+
       els.suggestions.appendChild(card);
     });
+  }
+
+  /**
+   * Threaded comments under one suggestion.
+   * @param {object} suggestion
+   * @param {object} data detail payload (canComment etc.)
+   * @param {() => void} onChanged
+   */
+  function buildSuggestionCommentsPanel(suggestion, data, onChanged) {
+    const panel = document.createElement("div");
+    panel.className = "suggestion-comments";
+
+    const listEl = document.createElement("div");
+    listEl.className = "suggestion-comments__list";
+    const comments = suggestion.comments || [];
+
+    const roots = [];
+    const byParent = new Map();
+    comments.forEach((c) => {
+      if (c.parentId) {
+        if (!byParent.has(c.parentId)) byParent.set(c.parentId, []);
+        byParent.get(c.parentId).push(c);
+      } else {
+        roots.push(c);
+      }
+    });
+    const rootIds = new Set(roots.map((r) => r.id));
+    for (const [pid, list] of byParent) {
+      if (!rootIds.has(pid)) list.forEach((c) => roots.push(c));
+    }
+
+    if (!roots.length) {
+      listEl.innerHTML = `<div class="blora-text-faint u-text-xs">暂无评论</div>`;
+    } else {
+      roots.forEach((c) => {
+        const node = buildSuggestionCommentNode(c, suggestion, {
+          isReply: false,
+          onChanged,
+          canModerate: Boolean(data.canManage || data.canApprove),
+        });
+        const replies = byParent.get(c.id) || [];
+        if (replies.length) {
+          const wrap = document.createElement("div");
+          wrap.className = "suggestion-comments__replies";
+          replies.forEach((r) =>
+            wrap.appendChild(
+              buildSuggestionCommentNode(r, suggestion, {
+                isReply: true,
+                onChanged,
+                canModerate: Boolean(data.canManage || data.canApprove),
+              }),
+            ),
+          );
+          node.appendChild(wrap);
+        }
+        listEl.appendChild(node);
+      });
+    }
+    panel.appendChild(listEl);
+
+    if (data.canComment !== false) {
+      const compose = document.createElement("div");
+      compose.className = "suggestion-comments__compose";
+      compose.innerHTML = `
+        <textarea class="blora-textarea suggestion-comments__body" rows="2" placeholder="针对这条建议回复…"></textarea>
+        <button type="button" class="blora-btn blora-btn--secondary blora-btn--xs suggestion-comments__send">发送</button>
+      `;
+      const ta = compose.querySelector(".suggestion-comments__body");
+      const send = () =>
+        sendSuggestionComment({
+          suggestionId: suggestion.id,
+          bodyEl: ta,
+          onDone: onChanged,
+        });
+      compose.querySelector(".suggestion-comments__send").addEventListener("click", send);
+      ta.addEventListener("keydown", (e) => {
+        if (matchAction(e, "sendComment")) {
+          e.preventDefault();
+          send();
+        }
+      });
+      panel.appendChild(compose);
+    }
+
+    return panel;
+  }
+
+  function buildSuggestionCommentNode(c, suggestion, opts) {
+    const item = document.createElement("div");
+    item.className =
+      "suggestion-comment" + (opts.isReply ? " suggestion-comment--reply" : "");
+    item.innerHTML = `
+      <div class="suggestion-comment__meta">
+        <strong class="suggestion-comment__author"></strong>
+        <span class="suggestion-comment__time"></span>
+      </div>
+      <div class="suggestion-comment__body"></div>
+      <div class="suggestion-comment__actions"></div>
+    `;
+    item.querySelector(".suggestion-comment__author").textContent = c.authorUsername;
+    item.querySelector(".suggestion-comment__time").textContent = formatTime(c.createdAt);
+    item.querySelector(".suggestion-comment__body").textContent = c.body;
+    const actions = item.querySelector(".suggestion-comment__actions");
+
+    if (!opts.isReply) {
+      const replyBtn = document.createElement("button");
+      replyBtn.type = "button";
+      replyBtn.className = "blora-btn blora-btn--ghost blora-btn--xs";
+      replyBtn.textContent = "回复";
+      replyBtn.addEventListener("click", () => {
+        const existing = item.querySelector(".suggestion-comment__reply-form");
+        if (existing) {
+          existing.remove();
+          return;
+        }
+        item
+          .querySelectorAll(".suggestion-comment__reply-form")
+          .forEach((el) => el.remove());
+        const form = document.createElement("div");
+        form.className = "suggestion-comment__reply-form";
+        form.innerHTML = `
+          <textarea class="blora-textarea suggestion-comment__reply-body" rows="2" placeholder="回复 ${escapeAttr(c.authorUsername)}…"></textarea>
+          <div class="suggestion-comment__reply-actions">
+            <button type="button" class="blora-btn blora-btn--secondary blora-btn--xs suggestion-comment__reply-send">发送</button>
+            <button type="button" class="blora-btn blora-btn--ghost blora-btn--xs suggestion-comment__reply-cancel">取消</button>
+          </div>
+        `;
+        const ta = form.querySelector(".suggestion-comment__reply-body");
+        form
+          .querySelector(".suggestion-comment__reply-cancel")
+          .addEventListener("click", () => form.remove());
+        const doSend = () =>
+          sendSuggestionComment({
+            suggestionId: suggestion.id,
+            parentId: c.id,
+            bodyEl: ta,
+            onDone: () => {
+              form.remove();
+              opts.onChanged?.();
+            },
+          });
+        form
+          .querySelector(".suggestion-comment__reply-send")
+          .addEventListener("click", doSend);
+        ta.addEventListener("keydown", (e) => {
+          if (matchAction(e, "sendComment")) {
+            e.preventDefault();
+            doSend();
+          }
+        });
+        const replies = item.querySelector(".suggestion-comments__replies");
+        if (replies) item.insertBefore(form, replies);
+        else item.appendChild(form);
+        ta.focus();
+      });
+      actions.appendChild(replyBtn);
+    }
+
+    const del = document.createElement("button");
+    del.type = "button";
+    del.className = "blora-btn blora-btn--ghost blora-btn--xs";
+    del.textContent = "删除";
+    del.addEventListener("click", () =>
+      deleteSuggestionComment(c.id, opts.onChanged),
+    );
+    actions.appendChild(del);
+    return item;
+  }
+
+  async function sendSuggestionComment(opts) {
+    const bodyEl = opts.bodyEl;
+    if (!bodyEl) return;
+    const body = bodyEl.value.trim();
+    if (!body) {
+      toast?.("error", "请输入评论内容");
+      return;
+    }
+    const payload = { body };
+    if (opts.parentId) payload.parentId = opts.parentId;
+    try {
+      const { res, data } = await json(
+        `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/suggestions/${opts.suggestionId}/comments`,
+        {
+          method: "POST",
+          body: JSON.stringify(payload),
+        },
+      );
+      if (!res.ok) {
+        toast?.("error", data.error || "发送失败");
+        return;
+      }
+      bodyEl.value = "";
+      toast?.("success", opts.parentId ? "回复已发送" : "评论已发送");
+      opts.onDone?.();
+    } catch {
+      toast?.("error", "网络错误");
+    }
+  }
+
+  async function deleteSuggestionComment(id, onDone) {
+    if (!confirm("删除这条评论？")) return;
+    try {
+      const { res, data } = await json(
+        `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/suggestion-comments/${id}`,
+        { method: "DELETE" },
+      );
+      if (!res.ok) {
+        toast?.("error", data.error || "删除失败");
+        return;
+      }
+      onDone?.();
+    } catch {
+      toast?.("error", "网络错误");
+    }
   }
 
   /**

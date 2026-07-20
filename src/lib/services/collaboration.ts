@@ -4,11 +4,23 @@ import {
   stringComments,
   stringLocaleStates,
   stringUnits,
+  suggestionComments,
   suggestionVotes,
   translationSuggestions,
   translations,
   users,
 } from "@/lib/db/schema";
+
+export type SuggestionCommentView = {
+  id: string;
+  suggestionId: string;
+  parentId: string | null;
+  body: string;
+  authorId: string;
+  authorUsername: string;
+  authorAvatarUrl: string | null;
+  createdAt: Date;
+};
 
 export type SuggestionView = {
   id: string;
@@ -22,6 +34,7 @@ export type SuggestionView = {
   isApproved: boolean;
   createdAt: Date;
   updatedAt: Date;
+  comments: SuggestionCommentView[];
 };
 
 export async function listSuggestionsForString(
@@ -78,6 +91,35 @@ export async function listSuggestionsForString(
 
   const approvedId = state?.approvedSuggestionId ?? null;
 
+  const commentsBySuggestion = new Map<string, SuggestionCommentView[]>();
+  if (rows.length) {
+    const commentRows = await db
+      .select({
+        id: suggestionComments.id,
+        suggestionId: suggestionComments.suggestionId,
+        parentId: suggestionComments.parentId,
+        body: suggestionComments.body,
+        authorId: suggestionComments.authorId,
+        authorUsername: users.username,
+        authorAvatarUrl: users.avatarUrl,
+        createdAt: suggestionComments.createdAt,
+      })
+      .from(suggestionComments)
+      .innerJoin(users, eq(suggestionComments.authorId, users.id))
+      .where(
+        inArray(
+          suggestionComments.suggestionId,
+          rows.map((r) => r.id),
+        ),
+      )
+      .orderBy(asc(suggestionComments.createdAt));
+    for (const c of commentRows) {
+      const list = commentsBySuggestion.get(c.suggestionId) ?? [];
+      list.push(c);
+      commentsBySuggestion.set(c.suggestionId, list);
+    }
+  }
+
   return {
     workflowStatus: state?.status ?? (rows.length ? "suggested" : "untranslated"),
     approvedSuggestionId: approvedId,
@@ -94,9 +136,82 @@ export async function listSuggestionsForString(
         isApproved: approvedId === r.id,
         createdAt: r.createdAt,
         updatedAt: r.updatedAt,
+        comments: commentsBySuggestion.get(r.id) ?? [],
       }),
     ),
   };
+}
+
+export async function listSuggestionComments(suggestionId: string) {
+  return db
+    .select({
+      id: suggestionComments.id,
+      suggestionId: suggestionComments.suggestionId,
+      parentId: suggestionComments.parentId,
+      body: suggestionComments.body,
+      authorId: suggestionComments.authorId,
+      authorUsername: users.username,
+      authorAvatarUrl: users.avatarUrl,
+      createdAt: suggestionComments.createdAt,
+    })
+    .from(suggestionComments)
+    .innerJoin(users, eq(suggestionComments.authorId, users.id))
+    .where(eq(suggestionComments.suggestionId, suggestionId))
+    .orderBy(asc(suggestionComments.createdAt));
+}
+
+export async function addSuggestionComment(params: {
+  suggestionId: string;
+  userId: string;
+  body: string;
+  parentId?: string | null;
+}) {
+  let parentId: string | null = params.parentId ?? null;
+  if (parentId) {
+    const [parent] = await db
+      .select()
+      .from(suggestionComments)
+      .where(eq(suggestionComments.id, parentId))
+      .limit(1);
+    if (!parent) {
+      return { ok: false as const, error: "parent_not_found" as const };
+    }
+    if (parent.suggestionId !== params.suggestionId) {
+      return { ok: false as const, error: "parent_mismatch" as const };
+    }
+    if (parent.parentId) {
+      parentId = parent.parentId;
+    }
+  }
+
+  const [row] = await db
+    .insert(suggestionComments)
+    .values({
+      suggestionId: params.suggestionId,
+      authorId: params.userId,
+      parentId,
+      body: params.body.trim(),
+    })
+    .returning();
+  return { ok: true as const, row: row! };
+}
+
+export async function deleteSuggestionComment(
+  commentId: string,
+  userId: string,
+  canModerate: boolean,
+) {
+  const [row] = await db
+    .select()
+    .from(suggestionComments)
+    .where(eq(suggestionComments.id, commentId))
+    .limit(1);
+  if (!row) return { ok: false as const, error: "not_found" as const };
+  if (row.authorId !== userId && !canModerate) {
+    return { ok: false as const, error: "forbidden" as const };
+  }
+  await db.delete(suggestionComments).where(eq(suggestionComments.id, commentId));
+  return { ok: true as const };
 }
 
 /** Upsert my suggestion for string×locale */

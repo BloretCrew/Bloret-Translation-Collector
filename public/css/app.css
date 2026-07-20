@@ -1210,6 +1210,97 @@ html.is-translation-editor .app-main--editor {
   font-family: var(--blora-font-mono);
 }
 
+.collab-card__comments {
+  margin-top: var(--blora-space-2);
+}
+
+.suggestion-comments {
+  display: flex;
+  flex-direction: column;
+  gap: var(--blora-space-2);
+  padding-top: var(--blora-space-2);
+  border-top: var(--blora-border);
+}
+
+.suggestion-comments__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--blora-space-2);
+}
+
+.suggestion-comment {
+  border: var(--blora-border);
+  border-radius: var(--blora-radius-md);
+  padding: var(--blora-space-2) var(--blora-space-3);
+  background: var(--blora-surface-1);
+  font-size: var(--blora-text-sm);
+}
+
+.suggestion-comment--reply {
+  background: var(--blora-surface-2, var(--blora-surface-1));
+}
+
+.suggestion-comment__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--blora-space-2);
+  align-items: baseline;
+  margin-bottom: 0.2rem;
+  color: var(--blora-ink-mist);
+  font-size: var(--blora-text-xs);
+}
+
+.suggestion-comment__body {
+  white-space: pre-wrap;
+  word-break: break-word;
+  color: var(--blora-ink);
+}
+
+.suggestion-comment__actions {
+  margin-top: var(--blora-space-1);
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--blora-space-1);
+}
+
+.suggestion-comments__replies {
+  display: flex;
+  flex-direction: column;
+  gap: var(--blora-space-2);
+  margin-top: var(--blora-space-2);
+  padding-left: var(--blora-space-3);
+  border-left: 2px solid var(--blora-border-color, rgba(0, 0, 0, 0.12));
+}
+
+.suggestion-comments__compose {
+  display: flex;
+  flex-direction: column;
+  gap: var(--blora-space-2);
+}
+
+.suggestion-comments__body {
+  width: 100%;
+  font-size: var(--blora-text-sm);
+}
+
+.suggestion-comment__reply-form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--blora-space-2);
+  margin-top: var(--blora-space-2);
+}
+
+.suggestion-comment__reply-body {
+  width: 100%;
+  font-size: var(--blora-text-sm);
+}
+
+.suggestion-comment__reply-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--blora-space-1);
+}
+
 .editor-list__meta {
   margin-top: 2px;
 }
