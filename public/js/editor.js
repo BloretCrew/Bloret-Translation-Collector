@@ -152,8 +152,8 @@
   }
 
   /**
-   * Three-segment bar for current file × locale:
-   * gray empty · green approved · yellow has suggestion (not approved)
+   * Three-segment bar for current file × locale (L→R):
+   * green approved · yellow has suggestion · gray empty
    */
   function renderProgress(stats) {
     const total = Math.max(0, Number(stats?.total) || 0);
@@ -167,13 +167,13 @@
       if (!el) return;
       el.style.flex = total === 0 ? (el === els.progressEmpty ? "1" : "0") : String(n);
     };
-    setFlex(els.progressEmpty, empty);
     setFlex(els.progressApproved, approved);
     setFlex(els.progressSuggested, suggestedOnly);
+    setFlex(els.progressEmpty, empty);
 
     const pct = (n) => (total === 0 ? 0 : Math.round((n / total) * 100));
     const title = total
-      ? `未翻译 ${empty}（${pct(empty)}%）· 已批准 ${approved}（${pct(approved)}%）· 有译文 ${suggestedOnly}（${pct(suggestedOnly)}%）· 共 ${total}`
+      ? `已批准 ${approved}（${pct(approved)}%）· 有译文 ${suggestedOnly}（${pct(suggestedOnly)}%）· 未翻译 ${empty}（${pct(empty)}%）· 共 ${total}`
       : "暂无字符串";
     if (els.progress) {
       els.progress.title = title;
