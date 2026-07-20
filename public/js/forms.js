@@ -234,7 +234,10 @@
           return;
         }
         toast("success", "项目已更新");
-        location.reload();
+        // Brief delay so the success toast is visible before full reload.
+        setTimeout(() => {
+          location.reload();
+        }, 450);
       } catch {
         showError(err, "网络错误");
       } finally {

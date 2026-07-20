@@ -94,7 +94,10 @@ window.BTC = {
     return (prefix + "-" + suffix).slice(0, 48);
   },
   showError(el, message) {
-    if (!el) return;
+    if (!el) {
+      if (message) this.toast("error", message);
+      return;
+    }
     if (!message) {
       el.hidden = true;
       el.textContent = "";
@@ -102,6 +105,13 @@ window.BTC = {
     }
     el.hidden = false;
     el.textContent = message;
+    try {
+      el.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    } catch {
+      /* ignore */
+    }
+    // Toast so feedback is visible even when the alert is off-screen (long settings forms).
+    this.toast("error", message);
   },
 };
 

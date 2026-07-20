@@ -30,6 +30,12 @@
     const modal = document.getElementById(modalId);
     if (!modal) return;
 
+    // Modal markup is included next to the field (often inside a <form>). Detach it so
+    // empty inputs never trigger native form validation on the host Save button.
+    if (modal.parentElement !== document.body) {
+      document.body.appendChild(modal);
+    }
+
     let catalog = [];
     let selected = [];
     const jsonEl = jsonId ? document.getElementById(jsonId) : null;
