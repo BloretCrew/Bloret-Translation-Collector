@@ -1,7 +1,5 @@
 import { Router } from "express";
 import { and, eq, inArray } from "drizzle-orm";
-import { mkdirSync, writeFileSync } from "fs";
-import { join } from "path";
 import { randomBytes } from "crypto";
 import { z } from "zod";
 import { requireSession } from "@/lib/auth/session";
@@ -38,6 +36,7 @@ import {
 } from "@/lib/services/tasks";
 import { addContext, deleteContext, listContexts } from "@/lib/services/contexts";
 import { upsertMySuggestion } from "@/lib/services/collaboration";
+import { parseImageDataUrl, uploadImageToHost } from "@/lib/image-host";
 
 export const extrasRouter = Router();
 
@@ -367,26 +366,30 @@ extrasRouter.post(
 
       const dataUrl = typeof req.body?.imageBase64 === "string" ? req.body.imageBase64 : "";
       const caption = typeof req.body?.caption === "string" ? req.body.caption : null;
-      const m = /^data:image\/(png|jpe?g|gif|webp);base64,([A-Za-z0-9+/=]+)$/i.exec(dataUrl);
-      if (!m) return jsonError(res, "请上传 data URL 格式的图片 (png/jpg/gif/webp)");
+      const parsed = parseImageDataUrl(dataUrl);
+      if (!parsed) return jsonError(res, "请上传 data URL 格式的图片 (png/jpg/gif/webp)");
+      if (parsed.buffer.length > 3 * 1024 * 1024) return jsonError(res, "图片不能超过 3MB");
 
-      const ext = m[1]!.toLowerCase().replace("jpeg", "jpg");
-      const buf = Buffer.from(m[2]!, "base64");
-      if (buf.length > 3 * 1024 * 1024) return jsonError(res, "图片不能超过 3MB");
-
-      const dir = join(process.cwd(), "public", "uploads", "contexts");
-      mkdirSync(dir, { recursive: true });
-      const name = `${randomBytes(12).toString("hex")}.${ext}`;
-      writeFileSync(join(dir, name), buf);
-      const imageUrl = `/uploads/contexts/${name}`;
+      // All binary image uploads go to Bloret Image Host (https://img.bloret.net/api/doc)
+      let uploaded;
+      try {
+        uploaded = await uploadImageToHost({
+          buffer: parsed.buffer,
+          filename: `context-${randomBytes(8).toString("hex")}.${parsed.ext}`,
+          contentType: parsed.contentType,
+        });
+      } catch (e) {
+        const msg = e instanceof Error ? e.message : "图床上传失败";
+        return jsonError(res, msg, 502);
+      }
 
       const row = await addContext({
         stringId: unit.id,
-        imageUrl,
+        imageUrl: uploaded.url,
         caption,
         userId: session.userId!,
       });
-      return jsonCreated(res, row);
+      return jsonCreated(res, { ...row, webpUrl: uploaded.webpUrl });
     } catch (err) {
       next(err);
     }

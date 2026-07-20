@@ -360,7 +360,7 @@ export const stringContexts = pgTable(
     stringId: uuid("string_id")
       .notNull()
       .references(() => stringUnits.id, { onDelete: "cascade" }),
-    /** Public URL path e.g. /uploads/contexts/xxx.png */
+    /** Absolute image URL (Bloret Image Host, e.g. https://img.bloret.net/img/…) */
     imageUrl: text("image_url").notNull(),
     caption: text("caption"),
     uploadedBy: uuid("uploaded_by").references(() => users.id),

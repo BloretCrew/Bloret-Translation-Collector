@@ -29,7 +29,7 @@ export function createApp() {
   app.set("views", path.join(root, "views"));
   app.set("trust proxy", 1);
 
-  // 5mb: context screenshot uploads arrive as base64 data URLs
+  // 5mb: context screenshots still arrive as base64 before proxy upload to img.bloret.net
   app.use(express.json({ limit: "5mb" }));
   app.use(express.urlencoded({ extended: false }));
   app.use(sessionMiddleware);

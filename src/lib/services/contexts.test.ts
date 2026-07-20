@@ -75,11 +75,11 @@ describe("string contexts", () => {
 
     const row = await addContext({
       stringId: unit!.id,
-      imageUrl: "/uploads/contexts/test.png",
+      imageUrl: "https://img.bloret.net/img/1700000000000/abcdef0123456789",
       caption: "login button",
       userId: user!.id,
     });
-    expect(row.imageUrl).toContain("/uploads/contexts/");
+    expect(row.imageUrl).toContain("img.bloret.net");
 
     const list = await listContexts(unit!.id);
     expect(list.length).toBe(1);

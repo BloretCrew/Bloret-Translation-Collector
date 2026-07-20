@@ -701,7 +701,7 @@
       card.className = "context-shot";
       card.innerHTML = `
         <a class="context-shot__link" target="_blank" rel="noopener">
-          <img class="context-shot__img" alt="" />
+          <img class="context-shot__img" alt="" loading="lazy" />
         </a>
         <div class="context-shot__meta">
           <div class="context-shot__caption"></div>
@@ -711,9 +711,16 @@
       `;
       const img = card.querySelector(".context-shot__img");
       const link = card.querySelector(".context-shot__link");
-      img.src = c.imageUrl;
+      // Prefer WebP preview from img.bloret.net for list display; open original on click.
+      const original = c.imageUrl || "";
+      const preview =
+        c.webpUrl ||
+        (original.includes("img.bloret.net") && !/\.webp($|\?)/i.test(original)
+          ? original.replace(/(\/img\/\d+\/[a-f0-9]+)(\?.*)?$/i, "$1.webp$2")
+          : original);
+      img.src = preview;
       img.alt = c.caption || "截图语境";
-      link.href = c.imageUrl;
+      link.href = original;
       card.querySelector(".context-shot__caption").textContent = c.caption || "";
       card.querySelector(".context-shot__by").textContent = c.username
         ? `by ${c.username}`

@@ -56,6 +56,18 @@ const configSchema = z.object({
       apiKey: "",
       defaultSource: "auto",
     }),
+  /**
+   * Bloret Image Host for all binary image uploads (context screenshots, …).
+   * @see https://img.bloret.net/api/doc
+   */
+  imageHost: z
+    .object({
+      /** e.g. https://img.bloret.net */
+      baseUrl: z.string().url().default("https://img.bloret.net"),
+    })
+    .default({
+      baseUrl: "https://img.bloret.net",
+    }),
 });
 
 export type DatabaseConfig = z.infer<typeof databaseSchema>;
