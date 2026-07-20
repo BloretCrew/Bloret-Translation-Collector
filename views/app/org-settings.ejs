@@ -11,15 +11,7 @@
         { label: org.name, href: '/app/o/' + orgSlug },
         { label: '设置' }
       ] }) %>
-      <header class="app-page-header">
-        <div class="app-page-header__copy">
-          <h1 class="blora-h2">组织设置</h1>
-          <p class="blora-text-muted u-mt-2"><%= org.name %></p>
-        </div>
-        <div class="app-page-header__actions">
-          <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>">返回组织</a>
-        </div>
-      </header>
+      <%- include('../partials/org-nav', { activeNav: 'settings' }) %>
 
       <div class="settings-layout" data-settings-tabs data-default-tab="general">
         <nav class="settings-nav" aria-label="设置分区">

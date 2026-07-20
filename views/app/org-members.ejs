@@ -8,26 +8,7 @@
         { label: org.name, href: '/app/o/' + orgSlug },
         { label: '成员' }
       ] }) %>
-
-      <header class="app-page-header">
-        <div class="app-page-header__copy">
-          <h1 class="blora-h2">成员</h1>
-          <p class="blora-text-muted u-mt-2"><%= org.name %></p>
-        </div>
-        <div class="app-page-header__actions">
-          <% if (canManage) { %>
-            <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>/settings">组织设置</a>
-          <% } %>
-        </div>
-      </header>
-
-      <nav class="app-tabs" aria-label="组织分区">
-        <a class="app-tabs__link" href="/app/o/<%= orgSlug %>">项目</a>
-        <a class="app-tabs__link is-active" href="/app/o/<%= orgSlug %>/members">成员</a>
-        <% if (canManage) { %>
-          <a class="app-tabs__link" href="/app/o/<%= orgSlug %>/settings">设置</a>
-        <% } %>
-      </nav>
+      <%- include('../partials/org-nav', { activeNav: 'members' }) %>
 
       <section class="app-section">
         <div id="member-list" data-org-slug="<%= orgSlug %>" data-can-manage="<%= canManage ? '1' : '0' %>" data-current-user="<%= currentUserId %>">
@@ -84,7 +65,7 @@
         </div>
 
         <% if (canManage) { %>
-          <div class="blora-panel">
+          <div class="blora-panel u-mt-4">
             <div class="blora-panel__header"><h3 class="blora-h4">添加成员</h3></div>
             <form id="add-member-form" class="blora-row" style="align-items:flex-end;flex-wrap:wrap" data-org-slug="<%= orgSlug %>">
               <div id="add-member-error" class="blora-alert blora-alert--danger" style="width:100%" hidden></div>

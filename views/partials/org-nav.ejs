@@ -1,0 +1,31 @@
+<%
+  /* Expects: org, orgSlug, roleLabel?, canManage?, canManageProjects?, activeNav: 'projects'|'members'|'settings', actionsHtml optional via slots not available — pass showNewProject */
+  var nav = typeof activeNav !== 'undefined' ? activeNav : 'projects';
+  var showManage = typeof canManage !== 'undefined' && canManage;
+  var showNew = typeof canManageProjects !== 'undefined' && canManageProjects;
+%>
+<header class="app-page-header">
+  <div class="app-page-header__copy">
+    <h1 class="blora-h2"><%= org.name %></h1>
+    <p class="blora-text-muted u-mt-2">
+      <% if (typeof roleLabel !== 'undefined' && roleLabel) { %>
+        <span class="blora-badge blora-badge--pill"><%= roleLabel %></span>
+        <span class="u-ml-1">·</span>
+      <% } %>
+      <%= org.description || '暂无简介' %>
+    </p>
+  </div>
+  <div class="app-page-header__actions">
+    <% if (showNew && nav === 'projects') { %>
+      <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/projects/new">新建项目</a>
+    <% } %>
+  </div>
+</header>
+
+<nav class="app-tabs app-tabs--sticky" aria-label="组织分区">
+  <a class="app-tabs__link<%= nav === 'projects' ? ' is-active' : '' %>" href="/app/o/<%= orgSlug %>">项目</a>
+  <a class="app-tabs__link<%= nav === 'members' ? ' is-active' : '' %>" href="/app/o/<%= orgSlug %>/members">成员</a>
+  <% if (showManage) { %>
+    <a class="app-tabs__link<%= nav === 'settings' ? ' is-active' : '' %>" href="/app/o/<%= orgSlug %>/settings">设置</a>
+  <% } %>
+</nav>

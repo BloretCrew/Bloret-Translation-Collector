@@ -103,7 +103,11 @@ bash start.sh
 | `/` | 落地页 |
 | `/app` | 组织列表 |
 | `/app/o/[org]` | 组织：项目与成员 |
-| `/app/o/[org]/p/[project]` | 项目：进度、源文件、上传 |
+| `/app/o/[org]/p/[project]` | 项目总览（语言进度） |
+| `/app/o/[org]/p/[project]/sources` | 源文件列表 |
+| `/app/o/[org]/p/[project]/import` | 导入源文件 |
+| `/app/o/[org]/p/[project]/export` | 导出翻译 |
+| `/app/o/[org]/p/[project]/settings` | 项目设置 |
 | `/app/o/[org]/p/[project]/translate` | 翻译工作台 |
 | `/app/settings` | 用户设置（翻译快捷键等） |
 | `/api/health` | 健康检查 |

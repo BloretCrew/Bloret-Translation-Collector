@@ -1,0 +1,72 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+<main class="app-main">
+  <div class="blora-container blora-container--wide">
+    <div class="blora-stack blora-stack--lg">
+      <%- include('../partials/breadcrumbs', { crumbs: [
+        { label: '组织', href: '/app' },
+        { label: org.name, href: '/app/o/' + orgSlug },
+        { label: project.name, href: '/app/o/' + orgSlug + '/p/' + projectSlug },
+        { label: '导入' }
+      ] }) %>
+      <%- include('../partials/project-nav', { activeNav: 'import' }) %>
+
+      <section class="app-section">
+        <div class="app-section-head">
+          <div>
+            <h2 class="blora-h3">导入源文件</h2>
+            <p class="blora-text-muted u-text-sm u-mt-1">
+              上传或更新源语言文件。相同路径会合并键并保留已有译文；内容未变则跳过。
+            </p>
+          </div>
+        </div>
+
+        <div class="blora-panel upload-panel" id="upload-panel">
+          <form id="upload-file-form" class="blora-stack" data-org-slug="<%= orgSlug %>" data-project-slug="<%= projectSlug %>">
+            <div id="form-error" class="blora-alert blora-alert--danger" hidden></div>
+            <div id="form-warnings" class="blora-alert blora-alert--warning" hidden></div>
+            <label class="blora-field">
+              <span class="blora-field__label">选择文件（可多选）</span>
+              <input class="blora-input" type="file" id="file-pick" accept=".json,.properties,application/json,text/plain" multiple />
+            </label>
+            <div id="upload-file-list" class="upload-file-list" hidden></div>
+            <label class="blora-field" id="single-path-field">
+              <span class="blora-field__label">项目内路径（单文件时）</span>
+              <input class="blora-input" name="path" id="file-path" pattern="[a-zA-Z0-9_./-]+\.(json|properties)" value="locales/common.json" placeholder="locales/common.json" />
+            </label>
+            <details class="app-advanced">
+              <summary>高级：直接粘贴内容（单文件）</summary>
+              <label class="blora-field u-mt-3">
+                <span class="blora-field__label">文件内容</span>
+                <textarea class="blora-textarea blora-text-mono" name="content" id="file-content" rows="12" style="font-size:13px"></textarea>
+              </label>
+            </details>
+            <p class="blora-text-muted u-text-xs">
+              支持 <code>.json</code>（嵌套 / 扁平 i18n）与 <code>.properties</code>。
+              导出会尽量按上传原文的缩进、键序与格式写出。
+            </p>
+            <div class="blora-row">
+              <button class="blora-btn blora-btn--primary" type="submit">上传 / 更新</button>
+              <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/sources">查看源文件</a>
+            </div>
+          </form>
+        </div>
+
+        <% if (files.length) { %>
+          <div class="u-mt-6">
+            <h3 class="blora-h4">已有文件（<%= files.length %>）</h3>
+            <ul class="import-existing-list u-mt-3">
+              <% files.forEach(function (f) { %>
+                <li class="blora-text-mono u-text-sm">
+                  <%= f.path %>
+                  <span class="blora-text-faint">· r<%= f.sourceRevision %> · <%= f.stringCount %> 条</span>
+                </li>
+              <% }) %>
+            </ul>
+          </div>
+        <% } %>
+      </section>
+    </div>
+  </div>
+</main>
+<%- include('../partials/foot', { scripts: ['/js/forms.js'] }) %>

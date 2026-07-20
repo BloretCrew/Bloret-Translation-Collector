@@ -198,7 +198,10 @@ pagesRouter.get("/app/o/:org/members", async (req, res, next) => {
       title: `成员 · ${access.org.name}`,
       orgSlug,
       org: access.org,
+      role: access.role,
+      roleLabel: ROLE_LABELS[access.role],
       canManage: canManageOrg(access.role),
+      canManageProjects: canManageProjects(access.role),
       members,
       roleLabels: ROLE_LABELS,
       currentUserId: session.userId!,
@@ -224,9 +227,13 @@ pagesRouter.get("/app/o/:org/settings", async (req, res, next) => {
     const activeTab = ["general"].includes(tabParam) ? tabParam : "general";
 
     return res.render("app/org-settings", {
-      title: "组织设置",
+      title: `设置 · ${access.org.name}`,
       orgSlug,
       org: access.org,
+      role: access.role,
+      roleLabel: ROLE_LABELS[access.role],
+      canManage: true,
+      canManageProjects: canManageProjects(access.role),
       activeTab,
     });
   } catch (e) {
@@ -256,78 +263,207 @@ pagesRouter.get("/app/o/:org/projects/new", async (req, res, next) => {
   }
 });
 
+type ProjectPageCtx = {
+  orgSlug: string;
+  projectSlug: string;
+  org: { id: string; slug: string; name: string; description: string | null };
+  project: {
+    id: string;
+    orgId: string;
+    slug: string;
+    name: string;
+    description: string | null;
+    sourceLocale: string;
+    visibility: string;
+  };
+  role: string;
+  targetLocales: string[];
+  targetLanguages: { locale: string; displayName: string | null }[];
+  files: {
+    id: string;
+    path: string;
+    format: string;
+    sourceRevision: number;
+    updatedAt: Date;
+    stringCount: number;
+  }[];
+  localeProgress: {
+    locale: string;
+    displayName: string | null;
+    translated: number;
+    suggested: number;
+    total: number;
+    percent: number;
+  }[];
+  totalStrings: number;
+  defaultLocale: string | null;
+  defaultFile: string | null;
+  canUpload: boolean;
+  canEdit: boolean;
+  canExport: boolean;
+  canManageSettings: boolean;
+};
+
+/** Shared project page payload (dashboard / sources / import / export / settings shell). */
+async function loadProjectPageContext(
+  orgSlug: string,
+  projectSlug: string,
+  userId: string,
+  minRole?: "manager",
+): Promise<{ error: "not_found" | "forbidden" } | ProjectPageCtx> {
+  const access = await requireProjectAccess(orgSlug, projectSlug, userId, minRole);
+  if ("error" in access && access.error) {
+    return { error: access.error === "forbidden" ? "forbidden" : "not_found" };
+  }
+  if ("error" in access) {
+    return { error: "not_found" };
+  }
+
+  const langs = await db
+    .select()
+    .from(projectLanguages)
+    .where(eq(projectLanguages.projectId, access.project.id));
+  const targetLanguages = langs
+    .filter((l) => l.enabled)
+    .map((l) => ({ locale: l.locale, displayName: l.displayName }));
+  const targetLocales = targetLanguages.map((l) => l.locale);
+
+  const files = await db
+    .select({
+      id: sourceFiles.id,
+      path: sourceFiles.path,
+      format: sourceFiles.format,
+      sourceRevision: sourceFiles.sourceRevision,
+      updatedAt: sourceFiles.updatedAt,
+      stringCount: sql<number>`(
+          select count(*)::int from ${stringUnits} s
+          where s.file_id = ${sourceFiles.id} and s.orphaned = false
+        )`,
+    })
+    .from(sourceFiles)
+    .where(eq(sourceFiles.projectId, access.project.id))
+    .orderBy(desc(sourceFiles.updatedAt));
+
+  const progress = await getProjectProgress(access.project.id);
+  const progressMap = new Map(progress.byLocale.map((p) => [p.locale, p]));
+
+  const localeProgress = targetLocales.map((locale) => {
+    const p = progressMap.get(locale);
+    const translated = p?.translated ?? 0;
+    const suggested = p?.suggested ?? 0;
+    const total = progress.totalStrings;
+    const percent = total === 0 ? 0 : Math.round((translated / total) * 100);
+    const language = targetLanguages.find((l) => l.locale === locale);
+    return {
+      locale,
+      displayName: language?.displayName ?? null,
+      translated,
+      suggested,
+      total,
+      percent,
+    };
+  });
+
+  return {
+    orgSlug,
+    projectSlug,
+    org: access.org,
+    project: access.project,
+    role: access.role,
+    targetLocales,
+    targetLanguages,
+    files,
+    localeProgress,
+    totalStrings: progress.totalStrings,
+    defaultLocale: targetLocales[0] ?? null,
+    defaultFile: files[0]?.id ?? null,
+    canUpload: canUploadFiles(access.role),
+    canEdit: canEditTranslations(access.role),
+    canExport: canExport(access.role),
+    canManageSettings: canManageProjects(access.role),
+  };
+}
+
 pagesRouter.get("/app/o/:org/p/:project", async (req, res, next) => {
   try {
     const session = requireSession(req)!;
     const { org: orgSlug, project: projectSlug } = req.params;
 
-    const access = await requireProjectAccess(orgSlug, projectSlug, session.userId!);
-    if ("error" in access) {
-      if (access.error === "not_found") return res.status(404).render("404", { title: "未找到" });
+    const ctx = await loadProjectPageContext(orgSlug, projectSlug, session.userId!);
+    if ("error" in ctx) {
+      if (ctx.error === "not_found") return res.status(404).render("404", { title: "未找到" });
       return res.redirect("/app");
     }
 
-    const langs = await db
-      .select()
-      .from(projectLanguages)
-      .where(eq(projectLanguages.projectId, access.project.id));
-    const targetLanguages = langs
-      .filter((l) => l.enabled)
-      .map((l) => ({ locale: l.locale, displayName: l.displayName }));
-    const targetLocales = targetLanguages.map((l) => l.locale);
-
-    const files = await db
-      .select({
-        id: sourceFiles.id,
-        path: sourceFiles.path,
-        sourceRevision: sourceFiles.sourceRevision,
-        updatedAt: sourceFiles.updatedAt,
-        stringCount: sql<number>`(
-          select count(*)::int from ${stringUnits} s
-          where s.file_id = ${sourceFiles.id} and s.orphaned = false
-        )`,
-      })
-      .from(sourceFiles)
-      .where(eq(sourceFiles.projectId, access.project.id))
-      .orderBy(desc(sourceFiles.updatedAt));
-
-    const progress = await getProjectProgress(access.project.id);
-    const progressMap = new Map(progress.byLocale.map((p) => [p.locale, p]));
-
-    const localeProgress = targetLocales.map((locale) => {
-      const p = progressMap.get(locale);
-      const translated = p?.translated ?? 0;
-      const suggested = p?.suggested ?? 0;
-      const total = progress.totalStrings;
-      const percent = total === 0 ? 0 : Math.round((translated / total) * 100);
-      const language = targetLanguages.find((l) => l.locale === locale);
-      return {
-        locale,
-        displayName: language?.displayName ?? null,
-        translated,
-        suggested,
-        total,
-        percent,
-      };
-    });
-
     return res.render("app/project", {
-      title: access.project.name,
-      orgSlug,
-      projectSlug,
-      org: access.org,
-      project: access.project,
-      role: access.role,
-      targetLocales,
-      targetLanguages,
-      files,
-      localeProgress,
-      totalStrings: progress.totalStrings,
-      defaultLocale: targetLocales[0] ?? null,
-      defaultFile: files[0]?.id ?? null,
-      canUpload: canUploadFiles(access.role),
-      canEdit: canEditTranslations(access.role),
-      canExport: canExport(access.role),
+      title: ctx.project.name,
+      ...ctx,
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+pagesRouter.get("/app/o/:org/p/:project/sources", async (req, res, next) => {
+  try {
+    const session = requireSession(req)!;
+    const { org: orgSlug, project: projectSlug } = req.params;
+
+    const ctx = await loadProjectPageContext(orgSlug, projectSlug, session.userId!);
+    if ("error" in ctx) {
+      if (ctx.error === "not_found") return res.status(404).render("404", { title: "未找到" });
+      return res.redirect("/app");
+    }
+
+    return res.render("app/project-sources", {
+      title: `源文件 · ${ctx.project.name}`,
+      ...ctx,
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+pagesRouter.get("/app/o/:org/p/:project/import", async (req, res, next) => {
+  try {
+    const session = requireSession(req)!;
+    const { org: orgSlug, project: projectSlug } = req.params;
+
+    const ctx = await loadProjectPageContext(orgSlug, projectSlug, session.userId!);
+    if ("error" in ctx) {
+      if (ctx.error === "not_found") return res.status(404).render("404", { title: "未找到" });
+      return res.redirect("/app");
+    }
+    if (!ctx.canUpload) {
+      return res.redirect(`/app/o/${orgSlug}/p/${projectSlug}`);
+    }
+
+    return res.render("app/project-import", {
+      title: `导入 · ${ctx.project.name}`,
+      ...ctx,
+    });
+  } catch (e) {
+    next(e);
+  }
+});
+
+pagesRouter.get("/app/o/:org/p/:project/export", async (req, res, next) => {
+  try {
+    const session = requireSession(req)!;
+    const { org: orgSlug, project: projectSlug } = req.params;
+
+    const ctx = await loadProjectPageContext(orgSlug, projectSlug, session.userId!);
+    if ("error" in ctx) {
+      if (ctx.error === "not_found") return res.status(404).render("404", { title: "未找到" });
+      return res.redirect("/app");
+    }
+    if (!ctx.canExport) {
+      return res.redirect(`/app/o/${orgSlug}/p/${projectSlug}`);
+    }
+
+    return res.render("app/project-export", {
+      title: `导出 · ${ctx.project.name}`,
+      ...ctx,
     });
   } catch (e) {
     next(e);
@@ -339,19 +475,14 @@ pagesRouter.get("/app/o/:org/p/:project/settings", async (req, res, next) => {
     const session = requireSession(req)!;
     const { org: orgSlug, project: projectSlug } = req.params;
 
-    const access = await requireProjectAccess(orgSlug, projectSlug, session.userId!, "manager");
-    if ("error" in access) {
-      if (access.error === "not_found") return res.status(404).render("404", { title: "未找到" });
+    const ctx = await loadProjectPageContext(orgSlug, projectSlug, session.userId!, "manager");
+    if ("error" in ctx) {
+      if (ctx.error === "not_found") return res.status(404).render("404", { title: "未找到" });
       return res.redirect(`/app/o/${orgSlug}`);
     }
-    if (!canManageProjects(access.role)) {
+    if (!ctx.canManageSettings) {
       return res.redirect(`/app/o/${orgSlug}/p/${projectSlug}`);
     }
-
-    const langs = await db
-      .select()
-      .from(projectLanguages)
-      .where(eq(projectLanguages.projectId, access.project.id));
 
     const tabParam = typeof req.query.tab === "string" ? req.query.tab : "general";
     const allowedTabs = ["general", "glossary", "assignees", "danger"] as const;
@@ -360,15 +491,8 @@ pagesRouter.get("/app/o/:org/p/:project/settings", async (req, res, next) => {
       : "general";
 
     return res.render("app/project-settings", {
-      title: "项目设置",
-      orgSlug,
-      projectSlug,
-      org: access.org,
-      project: access.project,
-      targetLocales: langs.filter((l) => l.enabled).map((l) => l.locale),
-      targetLanguages: langs
-        .filter((l) => l.enabled)
-        .map((l) => ({ locale: l.locale, displayName: l.displayName })),
+      title: `设置 · ${ctx.project.name}`,
+      ...ctx,
       activeTab,
     });
   } catch (e) {

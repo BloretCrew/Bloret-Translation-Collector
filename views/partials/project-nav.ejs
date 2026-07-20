@@ -1,0 +1,52 @@
+<%
+  /* Expects: org, orgSlug, project, projectSlug, activeNav,
+     canUpload?, canExport?, canManageSettings?, totalStrings?,
+     headerActions (optional HTML not used — primary CTA via vars) */
+  var nav = typeof activeNav !== 'undefined' ? activeNav : 'dashboard';
+  var base = '/app/o/' + orgSlug + '/p/' + projectSlug;
+  var upload = typeof canUpload !== 'undefined' && canUpload;
+  var exp = typeof canExport !== 'undefined' && canExport;
+  var manage = typeof canManageSettings !== 'undefined' ? canManageSettings : upload;
+  var strings = typeof totalStrings !== 'undefined' ? totalStrings : null;
+%>
+<header class="app-page-header">
+  <div class="app-page-header__copy">
+    <h1 class="blora-h2"><%= project.name %></h1>
+    <p class="blora-text-muted u-mt-2">
+      源语言 <span class="blora-badge"><%= localeLabel(project.sourceLocale) %></span>
+      <% if (strings != null) { %>
+        · <%= strings %> 条字符串
+      <% } %>
+      <% if (project.description) { %>
+        · <%= project.description %>
+      <% } %>
+    </p>
+  </div>
+  <div class="app-page-header__actions">
+    <% if (typeof defaultFile !== 'undefined' && defaultFile && typeof defaultLocale !== 'undefined' && defaultLocale && typeof canEdit !== 'undefined' && canEdit && nav === 'dashboard') { %>
+      <a class="blora-btn blora-btn--primary" href="<%= base %>/translate?file=<%= defaultFile %>&locale=<%= defaultLocale %>">开始翻译</a>
+    <% } else if (upload && nav === 'sources' && typeof files !== 'undefined' && !files.length) { %>
+      <a class="blora-btn blora-btn--primary" href="<%= base %>/import">上传源文件</a>
+    <% } else if (upload && nav === 'import') { %>
+      <% /* form is primary action on page */ %>
+    <% } else if (exp && nav === 'export') { %>
+      <% /* export form on page */ %>
+    <% } else if (upload && (!files || (typeof fileCount !== 'undefined' && fileCount === 0))) { %>
+      <a class="blora-btn blora-btn--secondary" href="<%= base %>/import">上传源文件</a>
+    <% } %>
+  </div>
+</header>
+
+<nav class="app-tabs app-tabs--sticky" aria-label="项目分区">
+  <a class="app-tabs__link<%= nav === 'dashboard' ? ' is-active' : '' %>" href="<%= base %>">总览</a>
+  <a class="app-tabs__link<%= nav === 'sources' ? ' is-active' : '' %>" href="<%= base %>/sources">源文件</a>
+  <% if (upload) { %>
+    <a class="app-tabs__link<%= nav === 'import' ? ' is-active' : '' %>" href="<%= base %>/import">导入</a>
+  <% } %>
+  <% if (exp) { %>
+    <a class="app-tabs__link<%= nav === 'export' ? ' is-active' : '' %>" href="<%= base %>/export">导出</a>
+  <% } %>
+  <% if (manage) { %>
+    <a class="app-tabs__link<%= nav === 'settings' ? ' is-active' : '' %>" href="<%= base %>/settings">设置</a>
+  <% } %>
+</nav>

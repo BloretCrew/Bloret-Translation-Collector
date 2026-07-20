@@ -12,15 +12,7 @@
         { label: project.name, href: '/app/o/' + orgSlug + '/p/' + projectSlug },
         { label: '设置' }
       ] }) %>
-      <header class="app-page-header">
-        <div class="app-page-header__copy">
-          <h1 class="blora-h2">项目设置</h1>
-          <p class="blora-text-muted u-mt-2"><%= project.name %></p>
-        </div>
-        <div class="app-page-header__actions">
-          <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>">返回项目</a>
-        </div>
-      </header>
+      <%- include('../partials/project-nav', { activeNav: 'settings' }) %>
 
       <div
         class="settings-layout"

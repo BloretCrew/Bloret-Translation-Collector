@@ -19,7 +19,7 @@
           </p>
         </div>
         <div class="app-page-header__actions">
-          <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>">← 返回项目</a>
+          <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/sources">← 源文件</a>
           <% if (defaultLocale && canEdit) { %>
             <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= file.id %>&locale=<%= defaultLocale %>">开始翻译</a>
           <% } %>
@@ -69,7 +69,7 @@
                           <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= file.id %>&locale=<%= p.locale %>">翻译</a>
                         <% } %>
                         <% if (canExport) { %>
-                          <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export?locale=<%= p.locale %>&fileId=<%= file.id %>&mode=approved">导出</a>
+                          <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/export">导出页</a>
                         <% } %>
                       </div>
                     </td>

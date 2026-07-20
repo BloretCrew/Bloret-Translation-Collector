@@ -1,0 +1,132 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+<main class="app-main">
+  <div class="blora-container blora-container--wide">
+    <div class="blora-stack blora-stack--lg">
+      <%- include('../partials/breadcrumbs', { crumbs: [
+        { label: '组织', href: '/app' },
+        { label: org.name, href: '/app/o/' + orgSlug },
+        { label: project.name, href: '/app/o/' + orgSlug + '/p/' + projectSlug },
+        { label: '导出' }
+      ] }) %>
+      <%- include('../partials/project-nav', { activeNav: 'export' }) %>
+
+      <section class="app-section">
+        <div class="app-section-head">
+          <div>
+            <h2 class="blora-h3">导出翻译</h2>
+            <p class="blora-text-muted u-text-sm u-mt-1">
+              按原文件格式写出译文。多文件默认打包为 ZIP；也可导出 Bundle JSON。
+            </p>
+          </div>
+        </div>
+
+        <% if (!targetLocales.length) { %>
+          <div class="blora-empty">
+            <div class="blora-empty__title">没有目标语言</div>
+            <div class="blora-empty__desc">请先在项目设置中添加目标语言</div>
+            <% if (canManageSettings) { %>
+              <div class="app-empty-actions">
+                <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/settings">项目设置</a>
+              </div>
+            <% } %>
+          </div>
+        <% } else if (!files.length) { %>
+          <div class="blora-empty">
+            <div class="blora-empty__title">没有源文件</div>
+            <div class="blora-empty__desc">请先导入源文件再导出</div>
+            <% if (canUpload) { %>
+              <div class="app-empty-actions">
+                <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/import">导入源文件</a>
+              </div>
+            <% } %>
+          </div>
+        <% } else { %>
+          <div class="blora-panel">
+            <form id="export-form" class="blora-stack export-form"
+              data-org-slug="<%= orgSlug %>"
+              data-project-slug="<%= projectSlug %>"
+              data-base="/api/v1/orgs/<%= orgSlug %>/projects/<%= projectSlug %>/export">
+              <div class="export-form__grid">
+                <label class="blora-field">
+                  <span class="blora-field__label">目标语言</span>
+                  <select class="blora-select" name="locale" id="export-locale" required>
+                    <% (targetLanguages || targetLocales.map(function (l) { return { locale: l, displayName: null }; })).forEach(function (lang) { %>
+                      <option value="<%= lang.locale %>"><%= languageLabel(lang.locale, lang.displayName) %> (<%= lang.locale %>)</option>
+                    <% }) %>
+                  </select>
+                </label>
+
+                <label class="blora-field">
+                  <span class="blora-field__label">导出模式</span>
+                  <select class="blora-select" name="mode" id="export-mode">
+                    <option value="approved">仅已批准</option>
+                    <option value="top_voted">已批准 + 最高票建议</option>
+                    <option value="source">缺省用源文</option>
+                    <option value="empty">缺省留空</option>
+                  </select>
+                </label>
+
+                <label class="blora-field">
+                  <span class="blora-field__label">打包方式</span>
+                  <select class="blora-select" name="pack" id="export-pack">
+                    <option value="zip">ZIP（按原路径，推荐）</option>
+                    <option value="bundle">Bundle JSON（单文件汇总）</option>
+                    <% if (files.length === 1) { %>
+                      <option value="file">单文件原文格式</option>
+                    <% } %>
+                  </select>
+                </label>
+
+                <label class="blora-field">
+                  <span class="blora-field__label">文件名</span>
+                  <select class="blora-select" name="filename" id="export-filename">
+                    <option value="locale_suffix">插入语言代码（common.zh-CN.json）</option>
+                    <option value="original">保持原路径名</option>
+                  </select>
+                </label>
+
+                <label class="blora-field">
+                  <span class="blora-field__label">范围</span>
+                  <select class="blora-select" name="fileId" id="export-file">
+                    <option value="">全部源文件（<%= files.length %>）</option>
+                    <% files.forEach(function (f) { %>
+                      <option value="<%= f.id %>"><%= f.path %></option>
+                    <% }) %>
+                  </select>
+                </label>
+              </div>
+
+              <p class="blora-text-muted u-text-xs" id="export-hint">
+                导出会尽量保留上传时的缩进、键序与格式（新上传的文件为 exact 保真）。
+              </p>
+
+              <div class="blora-row">
+                <button type="submit" class="blora-btn blora-btn--primary">下载导出</button>
+              </div>
+            </form>
+          </div>
+
+          <section class="u-mt-6">
+            <h3 class="blora-h4">快捷导出</h3>
+            <div class="export-quick-grid u-mt-3">
+              <% (targetLanguages || targetLocales.map(function (l) { return { locale: l, displayName: null }; })).forEach(function (lang) {
+                var locale = lang.locale;
+                var base = '/api/v1/orgs/' + orgSlug + '/projects/' + projectSlug + '/export?locale=' + encodeURIComponent(locale);
+              %>
+                <div class="export-quick-card">
+                  <div class="export-quick-card__title"><%= languageLabel(locale, lang.displayName) %></div>
+                  <div class="blora-row u-gap-1 u-mt-2">
+                    <a class="blora-btn blora-btn--secondary blora-btn--xs" href="<%= base %>&mode=approved&pack=zip">ZIP · 已批准</a>
+                    <a class="blora-btn blora-btn--ghost blora-btn--xs" href="<%= base %>&mode=source&pack=zip">ZIP · 含源文</a>
+                  </div>
+                </div>
+              <% }) %>
+            </div>
+          </section>
+        <% } %>
+      </section>
+    </div>
+  </div>
+</main>
+<%- include('../partials/foot', { scripts: ['/js/export-page.js'] }) %>
