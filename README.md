@@ -105,6 +105,7 @@ bash start.sh
 | `/app/o/[org]` | 组织：项目与成员 |
 | `/app/o/[org]/p/[project]` | 项目：进度、源文件、上传 |
 | `/app/o/[org]/p/[project]/translate` | 翻译工作台 |
+| `/app/settings` | 用户设置（翻译快捷键等） |
 | `/api/health` | 健康检查 |
 | `/api/v1/*` | JSON API |
 

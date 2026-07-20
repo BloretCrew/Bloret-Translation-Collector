@@ -31,6 +31,7 @@
       </div>
       <div class="editor-chrome__meta">
         <span class="editor-chrome__count blora-text-mono u-text-xs" id="editor-count" title="当前列表 / 总数">0/0</span>
+        <a class="blora-btn blora-btn--ghost blora-btn--sm" href="/app/settings" title="用户设置 · 快捷键">设置</a>
         <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm editor-chrome__toggle" id="editor-toggle-list" aria-label="切换字符串列表">列表</button>
         <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm editor-chrome__toggle" id="editor-toggle-side" aria-label="切换辅助面板">辅助</button>
       </div>
@@ -170,4 +171,4 @@
     </div>
   </div>
 </main>
-<%- include('../partials/foot', { scripts: ['/js/editor.js'] }) %>
+<%- include('../partials/foot', { scripts: ['/js/editor-shortcuts.js', '/js/editor.js'] }) %>

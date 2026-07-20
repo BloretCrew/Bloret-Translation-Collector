@@ -10,6 +10,8 @@
   document.body.classList.add("is-translation-editor");
 
   const { json, toast } = window.BTC;
+  const shortcutsApi = window.BTC.editorShortcuts;
+  let shortcuts = shortcutsApi ? shortcutsApi.load() : null;
   const orgSlug = root.dataset.orgSlug;
   const projectSlug = root.dataset.projectSlug;
   let fileId = root.dataset.fileId;
@@ -21,6 +23,43 @@
     new URLSearchParams(location.search).get("string") ||
     "";
   let pendingFocus = urlFocus || null;
+
+  function reloadShortcuts() {
+    if (!shortcutsApi) return;
+    shortcuts = shortcutsApi.load();
+    applyShortcutHints();
+  }
+
+  function matchAction(e, actionId) {
+    if (shortcutsApi && shortcuts) {
+      return shortcutsApi.matches(e, shortcuts[actionId]);
+    }
+    // Fallback if shortcuts module failed to load
+    const fallback = {
+      saveAndNext: () => e.key === "Enter" && (e.ctrlKey || e.metaKey),
+      saveOnly: () =>
+        (e.key === "s" || e.key === "S") && (e.ctrlKey || e.metaKey),
+      prevString: () => e.key === "ArrowUp" && !e.metaKey && !e.ctrlKey,
+      nextString: () => e.key === "ArrowDown" && !e.metaKey && !e.ctrlKey,
+      sendComment: () => e.key === "Enter" && (e.ctrlKey || e.metaKey),
+    };
+    return Boolean(fallback[actionId]?.());
+  }
+
+  function applyShortcutHints() {
+    if (!shortcutsApi || !shortcuts) return;
+    const f = (id) => shortcutsApi.format(shortcuts[id]);
+    if (els.saveBtn) els.saveBtn.title = f("saveAndNext");
+    if (els.saveOnlyBtn) els.saveOnlyBtn.title = f("saveOnly");
+    if (els.prev) els.prev.title = `上一条 (${f("prevString")})`;
+    if (els.next) els.next.title = `下一条 (${f("nextString")})`;
+    if (els.saveHint && canEdit) {
+      els.saveHint.title = `${f("saveAndNext")} 保存并下一条 · ${f("saveOnly")} 仅保存`;
+    }
+    if (els.commentBody) {
+      els.commentBody.placeholder = `讨论语境、术语… (${f("sendComment")} 发送)`;
+    }
+  }
 
   const els = {
     file: document.getElementById("editor-file"),
@@ -944,17 +983,18 @@
     els.body?.classList.remove("is-list-open");
   });
   els.commentBody?.addEventListener("keydown", (e) => {
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+    if (matchAction(e, "sendComment")) {
       e.preventDefault();
       sendComment();
     }
   });
   els.draft?.addEventListener("keydown", (e) => {
-    if ((e.key === "s" || e.key === "S") && (e.ctrlKey || e.metaKey)) {
+    if (matchAction(e, "saveOnly")) {
       e.preventDefault();
       saveSuggestion({ advance: false });
+      return;
     }
-    if (e.key === "Enter" && (e.ctrlKey || e.metaKey)) {
+    if (matchAction(e, "saveAndNext")) {
       e.preventDefault();
       saveSuggestion({ advance: true });
     }
@@ -968,15 +1008,25 @@
     ) {
       return;
     }
-    if (e.key === "ArrowUp" && !e.metaKey && !e.ctrlKey) {
+    if (matchAction(e, "prevString")) {
       e.preventDefault();
       navigate(-1);
+      return;
     }
-    if (e.key === "ArrowDown" && !e.metaKey && !e.ctrlKey) {
+    if (matchAction(e, "nextString")) {
       e.preventDefault();
       navigate(1);
     }
   });
 
+  // Pick up shortcut changes from settings page in another tab
+  window.addEventListener("storage", (e) => {
+    if (e.key === shortcutsApi?.STORAGE_KEY) reloadShortcuts();
+  });
+  document.addEventListener("visibilitychange", () => {
+    if (document.visibilityState === "visible") reloadShortcuts();
+  });
+
+  applyShortcutHints();
   loadList();
 })();

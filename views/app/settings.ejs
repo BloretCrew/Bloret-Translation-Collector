@@ -1,0 +1,48 @@
+<%- include('../partials/head') %>
+<%- include('../partials/navbar') %>
+<main class="app-main">
+  <div class="blora-container app-narrow">
+    <div class="blora-stack blora-stack--lg">
+      <header class="app-page-header">
+        <div class="app-page-header__copy">
+          <h1 class="blora-h2">用户设置</h1>
+          <p class="blora-text-muted u-mt-2">偏好保存在本浏览器，翻译工作台会立即生效。</p>
+        </div>
+      </header>
+
+      <section class="blora-panel settings-panel" aria-labelledby="settings-shortcuts-title">
+        <div class="settings-panel__head">
+          <div>
+            <h2 class="blora-h3" id="settings-shortcuts-title">翻译工作台快捷键</h2>
+            <p class="blora-text-faint u-text-sm u-mt-1">点击「录制」后按下想要的组合键。Esc 取消录制。</p>
+          </div>
+          <div class="settings-panel__actions">
+            <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm" id="settings-shortcuts-reset">恢复默认</button>
+            <button type="button" class="blora-btn blora-btn--primary blora-btn--sm" id="settings-shortcuts-save">保存</button>
+          </div>
+        </div>
+
+        <div id="settings-shortcuts-alert" class="blora-alert blora-alert--danger u-mt-3" hidden></div>
+        <div id="settings-shortcuts-ok" class="blora-alert blora-alert--success u-mt-3" hidden></div>
+
+        <div class="blora-table-wrap u-mt-4">
+          <table class="blora-table settings-shortcuts-table">
+            <thead>
+              <tr>
+                <th>操作</th>
+                <th>快捷键</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody id="settings-shortcuts-body"></tbody>
+          </table>
+        </div>
+
+        <p class="blora-text-faint u-text-xs u-mt-3">
+          带 ⌘/Ctrl 的「主修饰键」在 Windows/Linux 为 Ctrl、在 macOS 为 ⌘，跨平台可共用同一配置。
+        </p>
+      </section>
+    </div>
+  </div>
+</main>
+<%- include('../partials/foot', { scripts: ['/js/editor-shortcuts.js', '/js/user-settings.js'] }) %>

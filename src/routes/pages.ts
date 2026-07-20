@@ -74,6 +74,14 @@ pagesRouter.get("/app/tasks", async (req, res, next) => {
   }
 });
 
+pagesRouter.get("/app/settings", async (req, res, next) => {
+  try {
+    return res.render("app/settings", { title: "用户设置" });
+  } catch (e) {
+    next(e);
+  }
+});
+
 pagesRouter.get("/app", async (req, res, next) => {
   try {
     const session = requireSession(req)!;
