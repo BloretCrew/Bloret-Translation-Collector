@@ -106,7 +106,9 @@ extrasRouter.post(
         return jsonError(res, result.error, result.code === "DISABLED" ? 503 : 502, result.code);
       }
 
+      const skipRules = req.body?.skipRules === true;
       let suggestionId: string | undefined;
+      let savedText = result.text;
       if (asSuggestion && stringId) {
         const unit = await assertStringInProject(access.project.id, stringId);
         if (unit) {
@@ -115,13 +117,16 @@ extrasRouter.post(
             locale: localeParsed.data,
             userId: session.userId!,
             text: result.text,
+            skipRules,
+            translationRules: access.project.translationRules,
           });
           suggestionId = row.id;
+          savedText = row.text;
         }
       }
 
       return jsonOk(res, {
-        text: result.text,
+        text: asSuggestion && suggestionId ? savedText : result.text,
         provider: result.provider,
         suggestionId,
       });

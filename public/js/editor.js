@@ -1505,14 +1505,23 @@
     const atEnd = advance && text && idx >= 0 && idx === strings.length - 1;
 
     try {
+      const skipRules =
+        window.BTC?.translationPrefs?.load()?.skipProjectRules === true;
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/strings/${activeId}/suggestions/${encodeURIComponent(locale)}`,
-        { method: "PUT", body: JSON.stringify({ text: els.draft.value }) },
+        {
+          method: "PUT",
+          body: JSON.stringify({ text: els.draft.value, skipRules }),
+        },
       );
       if (!res.ok) {
         setSaveHint("error");
         toast?.("error", data.error || "保存失败");
         return;
+      }
+      // Reflect server-side rule application in the draft box
+      if (typeof data.text === "string" && els.draft && els.draft.value !== data.text) {
+        els.draft.value = data.text;
       }
       setSaveHint("saved");
       if (advance && text) {

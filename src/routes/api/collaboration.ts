@@ -554,6 +554,8 @@ async function putSuggestion(req: import("express").Request, res: import("expres
     locale: localeParsed.data,
     userId: session.userId!,
     text: parsed.data.text,
+    skipRules: parsed.data.skipRules === true,
+    translationRules: access.project.translationRules,
   });
 
   return jsonOk(res, {

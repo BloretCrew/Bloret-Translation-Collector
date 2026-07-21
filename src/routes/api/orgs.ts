@@ -698,6 +698,9 @@ orgsRouter.patch("/v1/orgs/:orgSlug/projects/:projectSlug", async (req, res, nex
           ? { sourceLocale: parsed.data.sourceLocale }
           : {}),
         ...(parsed.data.visibility !== undefined ? { visibility: parsed.data.visibility } : {}),
+        ...(parsed.data.translationRules !== undefined
+          ? { translationRules: parsed.data.translationRules }
+          : {}),
         updatedAt: new Date(),
       })
       .where(eq(projects.id, access.project.id))

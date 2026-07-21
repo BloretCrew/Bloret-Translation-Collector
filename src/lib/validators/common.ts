@@ -101,6 +101,12 @@ export const createProjectSchema = z.object({
   visibility: z.enum(["private", "org", "public"]).default("org"),
 });
 
+export const translationRulesSchema = z.object({
+  spaceCjkLatin: z.boolean().optional(),
+  spaceCjkDigit: z.boolean().optional(),
+  spaceLatinDigit: z.boolean().optional(),
+});
+
 export const updateProjectSchema = z.object({
   name: z.string().min(1).max(80).optional(),
   description: z.string().max(500).optional().nullable(),
@@ -109,6 +115,7 @@ export const updateProjectSchema = z.object({
   iconUrl: iconUrlField,
   sourceLocale: localeSchema.optional(),
   visibility: z.enum(["private", "org", "public"]).optional(),
+  translationRules: translationRulesSchema.optional(),
 });
 
 export const setLanguagesSchema = z.object({
@@ -146,6 +153,8 @@ export const saveTranslationSchema = z.object({
 /** Crowdin-style: submit/update my suggestion */
 export const saveSuggestionSchema = z.object({
   text: z.string().max(50_000),
+  /** When true, do not apply project translation formatting rules. */
+  skipRules: z.boolean().optional(),
 });
 
 export const stringCommentSchema = z.object({

@@ -26,6 +26,16 @@ export const projectVisibilityEnum = pgEnum("project_visibility", [
   "public",
 ]);
 
+/** Project-level auto-formatting rules applied when saving suggestions. */
+export type ProjectTranslationRules = {
+  /** Insert space between CJK and Latin letters. */
+  spaceCjkLatin?: boolean;
+  /** Insert space between CJK and digits. */
+  spaceCjkDigit?: boolean;
+  /** Insert space between Latin letters and digits. */
+  spaceLatinDigit?: boolean;
+};
+
 /** Organization listing / dashboard visibility for non-members. */
 export const orgVisibilityEnum = pgEnum("org_visibility", ["private", "public"]);
 
@@ -105,6 +115,11 @@ export const projects = pgTable(
     readmeUrl: text("readme_url"),
     /** Optional project icon (absolute URL on Bloret Image Host). */
     iconUrl: text("icon_url"),
+    /** Auto-formatting rules applied when saving translation suggestions. */
+    translationRules: jsonb("translation_rules")
+      .$type<ProjectTranslationRules>()
+      .notNull()
+      .default({}),
     sourceLocale: text("source_locale").notNull().default("en"),
     visibility: projectVisibilityEnum("visibility").notNull().default("org"),
     createdBy: uuid("created_by")

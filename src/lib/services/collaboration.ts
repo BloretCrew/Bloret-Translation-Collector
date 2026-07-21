@@ -9,7 +9,9 @@ import {
   translationSuggestions,
   translations,
   users,
+  type ProjectTranslationRules,
 } from "@/lib/db/schema";
+import { applyTranslationRules } from "@/lib/services/translation-rules";
 
 export type SuggestionCommentView = {
   id: string;
@@ -220,8 +222,14 @@ export async function upsertMySuggestion(params: {
   locale: string;
   userId: string;
   text: string;
+  /** When true, skip project translation formatting rules. */
+  skipRules?: boolean;
+  /** Project rules to apply (ignored when skipRules). */
+  translationRules?: ProjectTranslationRules | null;
 }) {
-  const text = params.text;
+  const text = params.skipRules
+    ? params.text
+    : applyTranslationRules(params.text, params.translationRules);
   const [existing] = await db
     .select()
     .from(translationSuggestions)

@@ -92,6 +92,13 @@
       "when": 1784605000000,
       "tag": "0012_suggestion_comments",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1784606000000,
+      "tag": "0013_translation_rules",
+      "breakpoints": true
     }
   ]
 }

@@ -24,6 +24,7 @@
           <a class="settings-nav__link<%= settingsTab === 'readme' ? ' is-active' : '' %>" href="?tab=readme" data-tab="readme"><%- sfIcon('text.book.closed') %>README</a>
           <a class="settings-nav__link<%= settingsTab === 'glossary' ? ' is-active' : '' %>" href="?tab=glossary" data-tab="glossary"><%- sfIcon('character.book.closed') %>术语表</a>
           <a class="settings-nav__link<%= settingsTab === 'assignees' ? ' is-active' : '' %>" href="?tab=assignees" data-tab="assignees"><%- sfIcon('person.2') %>语言负责人</a>
+          <a class="settings-nav__link<%= settingsTab === 'rules' ? ' is-active' : '' %>" href="?tab=rules" data-tab="rules"><%- sfIcon('textformat') %>翻译规则</a>
           <a class="settings-nav__link settings-nav__link--danger<%= settingsTab === 'danger' ? ' is-active' : '' %>" href="?tab=danger" data-tab="danger"><%- sfIcon('exclamationmark.triangle') %>危险区域</a>
         </nav>
 
@@ -167,6 +168,65 @@
                   </select>
                 </label>
                 <button type="submit" class="blora-btn blora-btn--secondary"><%- sfIcon('person.badge.plus') %>添加指派</button>
+              </div>
+            </form>
+          </section>
+
+          <%
+            const tr = project.translationRules || {};
+            const ruleSpaceCjkLatin = tr.spaceCjkLatin === true;
+            const ruleSpaceCjkDigit = tr.spaceCjkDigit === true;
+            const ruleSpaceLatinDigit = tr.spaceLatinDigit === true;
+          %>
+          <section class="settings-panel blora-panel" data-tab-panel="rules" <%= settingsTab === 'rules' ? '' : 'hidden' %>>
+            <header class="settings-panel__head">
+              <div>
+                <h2 class="blora-h3 sf-inline"><%- sfIcon('textformat') %>翻译规则</h2>
+                <p class="blora-text-faint u-text-sm u-mt-1">保存建议时自动整理译文排版。译员可在用户设置中选择不遵循。</p>
+              </div>
+            </header>
+            <form
+              id="project-rules-form"
+              class="blora-stack u-mt-4"
+              data-org-slug="<%= orgSlug %>"
+              data-project-slug="<%= projectSlug %>"
+            >
+              <div id="rules-form-error" class="blora-alert blora-alert--danger" hidden></div>
+              <div id="rules-form-ok" class="blora-alert blora-alert--success" hidden></div>
+
+              <label class="blora-switch">
+                <input type="checkbox" name="spaceCjkLatin" value="1" <%= ruleSpaceCjkLatin ? 'checked' : '' %> />
+                <span class="blora-switch__track" aria-hidden="true"></span>
+                <span>
+                  <span class="blora-field__label">中文与英文之间加空格</span>
+                  <span class="blora-field__hint blora-text-faint u-text-xs" style="display:block">例如：你好 world</span>
+                </span>
+              </label>
+
+              <label class="blora-switch">
+                <input type="checkbox" name="spaceCjkDigit" value="1" <%= ruleSpaceCjkDigit ? 'checked' : '' %> />
+                <span class="blora-switch__track" aria-hidden="true"></span>
+                <span>
+                  <span class="blora-field__label">中文与数字之间加空格</span>
+                  <span class="blora-field__hint blora-text-faint u-text-xs" style="display:block">例如：版本 2</span>
+                </span>
+              </label>
+
+              <label class="blora-switch">
+                <input type="checkbox" name="spaceLatinDigit" value="1" <%= ruleSpaceLatinDigit ? 'checked' : '' %> />
+                <span class="blora-switch__track" aria-hidden="true"></span>
+                <span>
+                  <span class="blora-field__label">英文与数字之间加空格</span>
+                  <span class="blora-field__hint blora-text-faint u-text-xs" style="display:block">例如：iOS 15</span>
+                </span>
+              </label>
+
+              <p class="blora-text-faint u-text-xs">
+                规则仅在保存建议时应用，不会批量改写已有译文。常见占位符（如 <code class="blora-code">{name}</code>、<code class="blora-code">%s</code>）会被保护。
+              </p>
+
+              <div class="settings-panel__footer">
+                <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %>保存规则</button>
               </div>
             </form>
           </section>

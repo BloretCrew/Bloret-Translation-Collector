@@ -109,6 +109,32 @@ describe("collaboration workflow", () => {
 
     expect(sa.id).not.toBe(sb.id);
 
+    // Project rules applied unless skipRules
+    const ruled = await upsertMySuggestion({
+      stringId: unit!.id,
+      locale: "en",
+      userId: userA!.id,
+      text: "你好world",
+      translationRules: { spaceCjkLatin: true },
+    });
+    expect(ruled.text).toBe("你好 world");
+    const skipped = await upsertMySuggestion({
+      stringId: unit!.id,
+      locale: "en",
+      userId: userA!.id,
+      text: "你好world",
+      skipRules: true,
+      translationRules: { spaceCjkLatin: true },
+    });
+    expect(skipped.text).toBe("你好world");
+    // restore text used later in the flow
+    await upsertMySuggestion({
+      stringId: unit!.id,
+      locale: "en",
+      userId: userA!.id,
+      text: "Hello from A",
+    });
+
     // A votes for B
     const vote = await toggleVote(sb.id, userA!.id);
     expect(vote.ok && vote.voted).toBe(true);

@@ -275,4 +275,68 @@
 
     loadAssignees();
   }
+
+  // —— Translation rules ——
+  const rulesForm = document.getElementById("project-rules-form");
+  if (rulesForm) {
+    const org = rulesForm.dataset.orgSlug;
+    const project = rulesForm.dataset.projectSlug;
+    const errEl = document.getElementById("rules-form-error");
+    const okEl = document.getElementById("rules-form-ok");
+
+    rulesForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const btn = rulesForm.querySelector('button[type="submit"]');
+      if (errEl) {
+        errEl.hidden = true;
+        errEl.textContent = "";
+      }
+      if (okEl) {
+        okEl.hidden = true;
+        okEl.textContent = "";
+      }
+      const translationRules = {
+        spaceCjkLatin: Boolean(
+          rulesForm.querySelector('input[name="spaceCjkLatin"]')?.checked,
+        ),
+        spaceCjkDigit: Boolean(
+          rulesForm.querySelector('input[name="spaceCjkDigit"]')?.checked,
+        ),
+        spaceLatinDigit: Boolean(
+          rulesForm.querySelector('input[name="spaceLatinDigit"]')?.checked,
+        ),
+      };
+
+      window.BTC?.setButtonBusy?.(btn, true, { busyLabel: "保存中..." });
+      try {
+        const { res, data } = await json(
+          `/api/v1/orgs/${org}/projects/${project}`,
+          {
+            method: "PATCH",
+            body: JSON.stringify({ translationRules }),
+          },
+        );
+        if (!res.ok) {
+          if (errEl) {
+            errEl.hidden = false;
+            errEl.textContent = data.error || "保存失败";
+          }
+          toast?.("error", data.error || "保存失败");
+          return;
+        }
+        if (okEl) {
+          okEl.hidden = false;
+          okEl.textContent = "翻译规则已保存。";
+        }
+        toast?.("success", "翻译规则已保存");
+      } catch {
+        if (errEl) {
+          errEl.hidden = false;
+          errEl.textContent = "网络错误";
+        }
+      } finally {
+        window.BTC?.setButtonBusy?.(btn, false, { idleLabel: "保存规则" });
+      }
+    });
+  }
 })();

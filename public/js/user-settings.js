@@ -1,7 +1,54 @@
 /**
- * User settings page — editor shortcut preferences.
+ * User settings page — editor shortcut + translation rule preferences.
  */
 (function () {
+  // —— Translation rules prefs ——
+  const skipRulesEl = document.getElementById("settings-skip-project-rules");
+  const rulesSaveBtn = document.getElementById("settings-rules-save");
+  const rulesAlertEl = document.getElementById("settings-rules-alert");
+  const rulesOkEl = document.getElementById("settings-rules-ok");
+  const prefsApi = window.BTC?.translationPrefs;
+
+  if (skipRulesEl && prefsApi) {
+    const prefs = prefsApi.load();
+    skipRulesEl.checked = prefs.skipProjectRules === true;
+
+    function showRulesAlert(msg) {
+      if (!rulesAlertEl) return;
+      if (!msg) {
+        rulesAlertEl.hidden = true;
+        rulesAlertEl.textContent = "";
+        return;
+      }
+      rulesAlertEl.hidden = false;
+      rulesAlertEl.textContent = msg;
+      if (rulesOkEl) rulesOkEl.hidden = true;
+    }
+
+    function showRulesOk(msg) {
+      if (!rulesOkEl) return;
+      if (!msg) {
+        rulesOkEl.hidden = true;
+        rulesOkEl.textContent = "";
+        return;
+      }
+      rulesOkEl.hidden = false;
+      rulesOkEl.textContent = msg;
+      if (rulesAlertEl) rulesAlertEl.hidden = true;
+    }
+
+    rulesSaveBtn?.addEventListener("click", () => {
+      prefsApi.save({ skipProjectRules: skipRulesEl.checked === true });
+      showRulesOk(
+        skipRulesEl.checked
+          ? "已保存：保存译文时将跳过项目翻译规则。"
+          : "已保存：保存译文时将应用项目翻译规则。",
+      );
+      window.BTC?.toast?.("success", "翻译规则偏好已保存");
+    });
+  }
+
+  // —— Shortcuts ——
   const body = document.getElementById("settings-shortcuts-body");
   if (!body || !window.BTC?.editorShortcuts) return;
 

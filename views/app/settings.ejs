@@ -16,6 +16,7 @@
       <div class="settings-layout" data-settings-tabs data-default-tab="shortcuts">
         <nav class="settings-nav" aria-label="设置分区">
           <a class="settings-nav__link<%= settingsTab === 'shortcuts' ? ' is-active' : '' %>" href="?tab=shortcuts" data-tab="shortcuts"><%- sfIcon('keyboard') %>翻译快捷键</a>
+          <a class="settings-nav__link<%= settingsTab === 'rules' ? ' is-active' : '' %>" href="?tab=rules" data-tab="rules"><%- sfIcon('textformat') %>翻译规则</a>
         </nav>
 
         <div class="settings-main">
@@ -51,9 +52,37 @@
               带 ⌘/Ctrl 的「主修饰键」在 Windows/Linux 为 Ctrl、在 macOS 为 ⌘，跨平台可共用同一配置。
             </p>
           </section>
+
+          <section class="settings-panel blora-panel" data-tab-panel="rules" <%= settingsTab === 'rules' ? '' : 'hidden' %> aria-labelledby="settings-rules-title">
+            <header class="settings-panel__head">
+              <div>
+                <h2 class="blora-h3 sf-inline" id="settings-rules-title"><%- sfIcon('textformat') %>翻译规则偏好</h2>
+                <p class="blora-text-faint u-text-sm u-mt-1">控制保存译文时是否自动应用各项目配置的排版规则。偏好保存在本浏览器。</p>
+              </div>
+              <div class="settings-panel__actions">
+                <button type="button" class="blora-btn blora-btn--primary blora-btn--sm" id="settings-rules-save"><%- sfIcon('checkmark.circle') %>保存</button>
+              </div>
+            </header>
+
+            <div id="settings-rules-alert" class="blora-alert blora-alert--danger u-mt-3" hidden></div>
+            <div id="settings-rules-ok" class="blora-alert blora-alert--success u-mt-3" hidden></div>
+
+            <div class="blora-stack u-mt-4">
+              <label class="blora-switch">
+                <input type="checkbox" id="settings-skip-project-rules" />
+                <span class="blora-switch__track" aria-hidden="true"></span>
+                <span>
+                  <span class="blora-field__label">不遵循项目翻译规则</span>
+                  <span class="blora-field__hint blora-text-faint u-text-xs" style="display:block">
+                    开启后，保存建议时不会自动加入中英文空格等项目规则（默认关闭）。
+                  </span>
+                </span>
+              </label>
+            </div>
+          </section>
         </div>
       </div>
     </div>
   </div>
 </main>
-<%- include('../partials/foot', { scripts: ['/js/editor-shortcuts.js', '/js/user-settings.js', '/js/settings-tabs.js'] }) %>
+<%- include('../partials/foot', { scripts: ['/js/editor-shortcuts.js', '/js/translation-prefs.js', '/js/user-settings.js', '/js/settings-tabs.js'] }) %>

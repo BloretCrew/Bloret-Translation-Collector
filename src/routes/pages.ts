@@ -80,7 +80,7 @@ pagesRouter.get("/app/tasks", async (req, res, next) => {
 pagesRouter.get("/app/settings", async (req, res, next) => {
   try {
     const tabParam = typeof req.query.tab === "string" ? req.query.tab : "shortcuts";
-    const activeTab = ["shortcuts"].includes(tabParam) ? tabParam : "shortcuts";
+    const activeTab = ["shortcuts", "rules"].includes(tabParam) ? tabParam : "shortcuts";
     return res.render("app/settings", { title: "用户设置", activeTab });
   } catch (e) {
     next(e);
@@ -513,7 +513,7 @@ pagesRouter.get("/app/o/:org/p/:project/settings", async (req, res, next) => {
     }
 
     const tabParam = typeof req.query.tab === "string" ? req.query.tab : "general";
-    const allowedTabs = ["general", "readme", "glossary", "assignees", "danger"] as const;
+    const allowedTabs = ["general", "readme", "glossary", "assignees", "rules", "danger"] as const;
     const activeTab = (allowedTabs as readonly string[]).includes(tabParam)
       ? tabParam
       : "general";
