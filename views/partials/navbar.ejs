@@ -9,12 +9,17 @@
       <div class="blora-dropdown app-navbar__lang" data-btc-lang-switch>
         <button class="blora-btn blora-btn--ghost blora-btn--sm" data-blora-dropdown-trigger type="button" title="<%= t('界面语言') %>" aria-label="<%= t('界面语言') %>">
           <%- sfIcon('globe', { className: 'sf-icon--sm' }) %>
-          <span class="app-navbar__lang-label"><%= (typeof lang !== 'undefined' && lang === 'en') ? 'EN' : '中文' %></span>
+          <span class="app-navbar__lang-label"><%
+            if (typeof lang !== 'undefined' && lang === 'en') { %>EN<% }
+            else if (typeof lang !== 'undefined' && lang === 'ru') { %>RU<% }
+            else { %>中文<% }
+          %></span>
           <%- sfIcon('chevron.down', { className: 'sf-icon--sm' }) %>
         </button>
         <div class="blora-dropdown-menu">
           <a class="blora-dropdown-menu__item" href="?lang=zh">中文</a>
           <a class="blora-dropdown-menu__item" href="?lang=en">English</a>
+          <a class="blora-dropdown-menu__item" href="?lang=ru">Русский</a>
         </div>
       </div>
     <% if (session && session.isLoggedIn) { %>

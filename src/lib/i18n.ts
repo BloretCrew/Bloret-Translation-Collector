@@ -1,6 +1,6 @@
 /**
  * Bloret Translation Collector UI i18n
- * 语言文件：lang/zh.json、lang/en.json（source-as-key，中文原文为 key）
+ * 语言文件：lang/zh.json、lang/en.json、lang/ru.json（source-as-key，中文原文为 key）
  *
  * 用法：
  *   import { t, i18nMiddleware, htmlLang } from '@/lib/i18n';
@@ -31,7 +31,7 @@ function resolveLangDir(): string {
 
 export const LANG_DIR = resolveLangDir();
 
-export const SUPPORTED = ["zh", "en"] as const;
+export const SUPPORTED = ["zh", "en", "ru"] as const;
 export type LangCode = (typeof SUPPORTED)[number];
 export const DEFAULT_LANG: LangCode = "zh";
 export const LANG_COOKIE = "btc_lang";
@@ -134,6 +134,7 @@ export function htmlLang(lang?: string): string {
   const L = (lang as LangCode) || currentLang();
   if (L === "zh") return "zh-CN";
   if (L === "en") return "en";
+  if (L === "ru") return "ru";
   return L;
 }
 

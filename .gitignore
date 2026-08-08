@@ -57,3 +57,4 @@ drizzle/meta
 # i18n extract/debug artifacts
 lang/.keys-sources.json
 lang/.en-cache.json
+lang/.ru-cache.json

@@ -120,12 +120,13 @@ bash start.sh
 - 服务端：`src/lib/i18n.ts`（`t()` / `i18nMiddleware` / `?lang=` → cookie `btc_lang`）
 - 模板：EJS 用 `<%= t('…') %>`；`res.locals.t` / `htmlLang` / `i18nCatalog`
 - 浏览器：`public/js/app.js` 的 `BTC.t()`，由 `views/partials/foot.ejs` 注入当前语言目录
-- 顶栏地球图标可切换 **中文 / English**（`?lang=zh|en`）
+- 顶栏地球图标可切换 **中文 / English / Русский**（`?lang=zh|en|ru`）
 
 ```
 lang/
   zh.json
   en.json
+  ru.json
 src/lib/i18n.ts
 ```
 
