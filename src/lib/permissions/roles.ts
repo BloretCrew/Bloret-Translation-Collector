@@ -1,4 +1,5 @@
 import type { MemberRole } from "@/lib/db/schema";
+import { t } from "@/lib/i18n";
 
 const ROLE_RANK: Record<MemberRole, number> = {
   viewer: 1,
@@ -6,6 +7,15 @@ const ROLE_RANK: Record<MemberRole, number> = {
   proofreader: 3,
   manager: 4,
   owner: 5,
+};
+
+/** Chinese source-as-key labels */
+const ROLE_LABEL_KEYS: Record<MemberRole, string> = {
+  owner: "所有者",
+  manager: "管理员",
+  proofreader: "审核员",
+  translator: "译者",
+  viewer: "访客",
 };
 
 export function roleAtLeast(role: MemberRole, min: MemberRole): boolean {
@@ -48,10 +58,28 @@ export function canExport(role: MemberRole): boolean {
   return roleAtLeast(role, "viewer");
 }
 
-export const ROLE_LABELS: Record<MemberRole, string> = {
-  owner: "所有者",
-  manager: "管理员",
-  proofreader: "审核员",
-  translator: "译者",
-  viewer: "访客",
-};
+/** Request-time translated role label */
+export function roleLabel(role: MemberRole): string {
+  return t(ROLE_LABEL_KEYS[role] ?? role);
+}
+
+/**
+ * Proxy so existing `ROLE_LABELS[role]` call sites get current-lang labels.
+ * Keys remain stable MemberRole values.
+ */
+export const ROLE_LABELS: Record<MemberRole, string> = new Proxy({} as Record<MemberRole, string>, {
+  get(_target, prop: string | symbol) {
+    if (typeof prop !== "string") return undefined;
+    if (prop in ROLE_LABEL_KEYS) return roleLabel(prop as MemberRole);
+    return undefined;
+  },
+  ownKeys() {
+    return Object.keys(ROLE_LABEL_KEYS);
+  },
+  getOwnPropertyDescriptor(_t, prop) {
+    if (typeof prop === "string" && prop in ROLE_LABEL_KEYS) {
+      return { configurable: true, enumerable: true, value: roleLabel(prop as MemberRole) };
+    }
+    return undefined;
+  },
+});

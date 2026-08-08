@@ -5,26 +5,26 @@
     <div class="blora-stack blora-stack--lg">
       <header class="app-page-header">
         <div class="app-page-header__copy">
-          <h1 class="blora-h2 sf-inline"><%- sfIcon('checklist') %>我的任务</h1>
-          <p class="blora-text-muted u-mt-2">分配给你的翻译 / 审核工作项</p>
+          <h1 class="blora-h2 sf-inline"><%- sfIcon('checklist') %><%= t('我的任务') %></h1>
+          <p class="blora-text-muted u-mt-2"><%= t('分配给你的翻译 / 审核工作项') %></p>
         </div>
       </header>
 
       <% if (!tasks || !tasks.length) { %>
         <div class="blora-empty">
           <div class="blora-empty__icon"><%- sfIcon('checklist') %></div>
-          <div class="blora-empty__title">暂无进行中的任务</div>
-          <div class="blora-empty__desc">管理员可在项目语言或字符串上指派任务</div>
+          <div class="blora-empty__title"><%= t('暂无进行中的任务') %></div>
+          <div class="blora-empty__desc"><%= t('管理员可在项目语言或字符串上指派任务') %></div>
         </div>
       <% } else { %>
         <div class="blora-table-wrap">
           <table class="blora-table blora-table--striped">
             <thead>
               <tr>
-                <th>项目</th>
-                <th>语言</th>
-                <th>内容</th>
-                <th>状态</th>
+                <th><%= t('项目') %></th>
+                <th><%= t('语言') %></th>
+                <th><%= t('内容') %></th>
+                <th><%= t('状态') %></th>
                 <th></th>
               </tr>
             </thead>
@@ -38,30 +38,30 @@
                       <code class="blora-code"><%= t.keyPath %></code>
                       <div class="blora-text-faint u-text-xs"><%= t.sourceText %></div>
                     <% } else if (t.filePath) { %>
-                      文件 <code class="blora-code"><%= t.filePath %></code>
+                      <%= t('文件') %> <code class="blora-code"><%= t.filePath %></code>
                     <% } else { %>
-                      <span class="blora-text-faint">语言整包任务</span>
+                      <span class="blora-text-faint"><%= t('语言整包任务') %></span>
                     <% } %>
                     <% if (t.note) { %>
                       <div class="blora-text-muted u-text-xs u-mt-2"><%= t.note %></div>
                     <% } %>
                   </td>
                   <td>
-                    <% if (t.status === 'done') { %><span class="sf-inline"><%- sfIcon('checkmark.circle', { className: 'sf-icon--sm' }) %>已完成</span>
-                    <% } else if (t.status === 'doing') { %><span class="sf-inline"><%- sfIcon('clock', { className: 'sf-icon--sm' }) %>进行中</span>
-                    <% } else { %><span class="sf-inline"><%- sfIcon('circle', { className: 'sf-icon--sm' }) %>待办</span><% } %>
+                    <% if (t.status === 'done') { %><span class="sf-inline"><%- sfIcon('checkmark.circle', { className: 'sf-icon--sm' }) %><%= t('已完成') %></span>
+                    <% } else if (t.status === 'doing') { %><span class="sf-inline"><%- sfIcon('clock', { className: 'sf-icon--sm' }) %><%= t('进行中') %></span>
+                    <% } else { %><span class="sf-inline"><%- sfIcon('circle', { className: 'sf-icon--sm' }) %><%= t('待办') %></span><% } %>
                   </td>
                   <td>
                     <% if (t.orgSlug && t.projectSlug) { %>
                       <% if (t.stringId && t.fileId) { %>
                         <a class="blora-btn blora-btn--primary blora-btn--xs"
                           href="/app/o/<%= t.orgSlug %>/p/<%= t.projectSlug %>/translate?file=<%= t.fileId %>&locale=<%= t.locale %>&string=<%= t.stringId %>">
-                          <%- sfIcon('arrow.right') %>打开
+                          <%- sfIcon('arrow.right') %><%= t('打开') %>
                         </a>
                       <% } else { %>
                         <a class="blora-btn blora-btn--primary blora-btn--xs"
                           href="/app/o/<%= t.orgSlug %>/p/<%= t.projectSlug %><%= t.fileId ? '/translate?file=' + t.fileId + '&locale=' + t.locale : '?lang=' + t.locale %>">
-                          <%- sfIcon('arrow.right') %>打开项目
+                          <%- sfIcon('arrow.right') %><%= t('打开项目') %>
                         </a>
                       <% } %>
                     <% } %>

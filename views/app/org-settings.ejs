@@ -7,25 +7,25 @@
   <div class="blora-container blora-container--wide">
     <div class="blora-stack blora-stack--lg">
       <%- include('../partials/breadcrumbs', { crumbs: [
-        { label: '组织', href: '/app' },
+        { label: t('组织'), href: '/app' },
         { label: org.name, href: '/app/o/' + orgSlug },
-        { label: '设置' }
+        { label: t('设置') }
       ] }) %>
       <%- include('../partials/org-nav', { activeNav: 'settings' }) %>
 
       <div class="settings-layout" data-settings-tabs data-default-tab="general">
-        <nav class="settings-nav" aria-label="设置分区">
-          <a class="settings-nav__link<%= settingsTab === 'general' ? ' is-active' : '' %>" href="?tab=general" data-tab="general"><%- sfIcon('info.circle') %>基本信息</a>
+        <nav class="settings-nav" aria-label="<%= t('设置分区') %>">
+          <a class="settings-nav__link<%= settingsTab === 'general' ? ' is-active' : '' %>" href="?tab=general" data-tab="general"><%- sfIcon('info.circle') %><%= t('基本信息') %></a>
           <a class="settings-nav__link<%= settingsTab === 'readme' ? ' is-active' : '' %>" href="?tab=readme" data-tab="readme"><%- sfIcon('text.book.closed') %>README</a>
-          <a class="settings-nav__link" href="/app/o/<%= orgSlug %>/members"><%- sfIcon('person.2') %>成员管理</a>
+          <a class="settings-nav__link" href="/app/o/<%= orgSlug %>/members"><%- sfIcon('person.2') %><%= t('成员管理') %></a>
         </nav>
 
         <div class="settings-main">
           <section class="settings-panel blora-panel" data-tab-panel="general" <%= settingsTab === 'general' ? '' : 'hidden' %>>
             <header class="settings-panel__head">
               <div>
-                <h2 class="blora-h3 sf-inline"><%- sfIcon('info.circle') %>基本信息</h2>
-                <p class="blora-text-faint u-text-sm u-mt-1">组织名称与简介</p>
+                <h2 class="blora-h3 sf-inline"><%- sfIcon('info.circle') %><%= t('基本信息') %></h2>
+                <p class="blora-text-faint u-text-sm u-mt-1"><%= t('组织名称与简介') %></p>
               </div>
             </header>
             <form id="org-settings-form" class="blora-stack u-mt-4" data-org-slug="<%= orgSlug %>" data-settings-section="general">
@@ -36,26 +36,26 @@
                 fallbackSf: 'building.2.fill'
               }) %>
               <label class="blora-field">
-                <span class="blora-field__label">组织名称</span>
+                <span class="blora-field__label"><%= t('组织名称') %></span>
                 <input class="blora-input" name="name" required maxlength="80" value="<%= org.name %>" />
               </label>
               <label class="blora-field">
-                <span class="blora-field__label">简介</span>
+                <span class="blora-field__label"><%= t('简介') %></span>
                 <textarea class="blora-textarea" name="description" rows="3" maxlength="500"><%= org.description || '' %></textarea>
               </label>
               <label class="blora-field">
-                <span class="blora-field__label">可见性</span>
+                <span class="blora-field__label"><%= t('可见性') %></span>
                 <select class="blora-select" name="visibility">
-                  <option value="private" <%= (org.visibility || 'private') === 'private' ? 'selected' : '' %>>私有（仅成员可见）</option>
-                  <option value="public" <%= org.visibility === 'public' ? 'selected' : '' %>>公开（登录用户可查看）</option>
+                  <option value="private" <%= (org.visibility || 'private') === 'private' ? 'selected' : '' %>><%= t('私有（仅成员可见）') %></option>
+                  <option value="public" <%= org.visibility === 'public' ? 'selected' : '' %>><%= t('公开（登录用户可查看）') %></option>
                 </select>
-                <span class="blora-field__hint">公开组织允许任何已登录用户浏览组织首页、README 与公开项目；管理权限仍仅限成员。</span>
+                <span class="blora-field__hint"><%= t('公开组织允许任何已登录用户浏览组织首页、README 与公开项目；管理权限仍仅限成员。') %></span>
               </label>
               <p class="blora-text-faint u-text-xs">
-                slug <code class="blora-code"><%= orgSlug %></code> 创建后不可修改。
+                slug <code class="blora-code"><%= orgSlug %></code> <%= t('创建后不可修改。') %>
               </p>
               <div class="settings-panel__footer">
-                <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %>保存</button>
+                <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %><%= t('保存') %></button>
               </div>
             </form>
           </section>
@@ -64,23 +64,23 @@
             <header class="settings-panel__head">
               <div>
                 <h2 class="blora-h3 sf-inline"><%- sfIcon('text.book.closed') %>README</h2>
-                <p class="blora-text-faint u-text-sm u-mt-1">展示在组织首页。若填写 URL，将优先从远程加载 Markdown。</p>
+                <p class="blora-text-faint u-text-sm u-mt-1"><%= t('展示在组织首页。若填写 URL，将优先从远程加载 Markdown。') %></p>
               </div>
             </header>
             <form id="org-readme-form" class="blora-stack u-mt-4" data-org-slug="<%= orgSlug %>">
               <div id="readme-form-error" class="blora-alert blora-alert--danger" hidden></div>
               <label class="blora-field">
-                <span class="blora-field__label">README URL（可选）</span>
+                <span class="blora-field__label"><%= t('README URL（可选）') %></span>
                 <input class="blora-input blora-text-mono" name="readmeUrl" type="url" placeholder="https://raw.githubusercontent.com/org/repo/refs/heads/main/README.md" value="<%= org.readmeUrl || '' %>" />
-                <span class="blora-field__hint">仅支持 HTTPS。示例：GitHub raw 链接。</span>
+                <span class="blora-field__hint"><%= t('仅支持 HTTPS。示例：GitHub raw 链接。') %></span>
               </label>
               <label class="blora-field">
-                <span class="blora-field__label">本地 Markdown（URL 不可用时的后备）</span>
-                <textarea class="blora-textarea blora-text-mono" name="readme" rows="14" placeholder="# 关于本组织&#10;&#10;欢迎参与翻译……"><%= org.readme || '' %></textarea>
+                <span class="blora-field__label"><%= t('本地 Markdown（URL 不可用时的后备）') %></span>
+                <textarea class="blora-textarea blora-text-mono" name="readme" rows="14" placeholder="<%= t('# 关于本组织&#10;&#10;欢迎参与翻译……') %>"><%= org.readme || '' %></textarea>
               </label>
               <div class="settings-panel__footer">
-                <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %>保存 README</button>
-                <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>"><%- sfIcon('eye') %>查看组织首页</a>
+                <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %><%= t('保存 README') %></button>
+                <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>"><%- sfIcon('eye') %><%= t('查看组织首页') %></a>
               </div>
             </form>
           </section>

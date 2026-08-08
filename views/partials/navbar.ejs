@@ -1,4 +1,4 @@
-<nav class="blora-navbar app-navbar" aria-label="主导航">
+<nav class="blora-navbar app-navbar" aria-label="<%= t('主导航') %>">
   <div class="blora-navbar__brand">
     <a href="<%= session && session.isLoggedIn ? '/app' : '/' %>" class="app-navbar__brand-link">
       <img src="https://img.bloret.net/img/1769871391490/98a7056e04cb259c73f38b3f44591575" alt="" width="28" height="28" />
@@ -6,16 +6,27 @@
     </a>
   </div>
   <div class="blora-navbar__menu">
+      <div class="blora-dropdown app-navbar__lang" data-btc-lang-switch>
+        <button class="blora-btn blora-btn--ghost blora-btn--sm" data-blora-dropdown-trigger type="button" title="<%= t('界面语言') %>" aria-label="<%= t('界面语言') %>">
+          <%- sfIcon('globe', { className: 'sf-icon--sm' }) %>
+          <span class="app-navbar__lang-label"><%= (typeof lang !== 'undefined' && lang === 'en') ? 'EN' : '中文' %></span>
+          <%- sfIcon('chevron.down', { className: 'sf-icon--sm' }) %>
+        </button>
+        <div class="blora-dropdown-menu">
+          <a class="blora-dropdown-menu__item" href="?lang=zh">中文</a>
+          <a class="blora-dropdown-menu__item" href="?lang=en">English</a>
+        </div>
+      </div>
     <% if (session && session.isLoggedIn) { %>
-      <a class="blora-navbar__link app-navbar__nav-link" href="/app"><%- sfIcon('building.2') %>我的组织</a>
-      <a class="blora-navbar__link app-navbar__nav-link" href="/app/tasks"><%- sfIcon('checklist') %>我的任务</a>
+      <a class="blora-navbar__link app-navbar__nav-link" href="/app"><%- sfIcon('building.2') %><%= t('我的组织') %></a>
+      <a class="blora-navbar__link app-navbar__nav-link" href="/app/tasks"><%- sfIcon('checklist') %><%= t('我的任务') %></a>
       <button
         type="button"
         class="blora-btn blora-btn--ghost blora-btn--sm blora-btn--icon app-navbar__theme"
         data-blora-theme-toggle
-        aria-label="切换深浅色"
-        title="切换深浅色"
-      ><%- sfIcon('circle.lefthalf.filled', { label: '切换深浅色' }) %></button>
+        aria-label="<%= t('切换深浅色') %>"
+        title="<%= t('切换深浅色') %>"
+      ><%- sfIcon('circle.lefthalf.filled', { label: t('切换深浅色') }) %></button>
       <div class="blora-dropdown app-navbar__user">
         <button class="blora-btn blora-btn--ghost blora-btn--sm" data-blora-dropdown-trigger type="button">
           <% if (session.avatarUrl) { %>
@@ -29,11 +40,11 @@
           <%- sfIcon('chevron.down', { className: 'sf-icon--sm app-navbar__user-chevron' }) %>
         </button>
         <div class="blora-dropdown-menu">
-          <a class="blora-dropdown-menu__item" href="/app"><%- sfIcon('house') %>工作台</a>
-          <a class="blora-dropdown-menu__item" href="/app/tasks"><%- sfIcon('checklist') %>我的任务</a>
-          <a class="blora-dropdown-menu__item" href="/app/settings"><%- sfIcon('gearshape') %>用户设置</a>
+          <a class="blora-dropdown-menu__item" href="/app"><%- sfIcon('house') %><%= t('工作台') %></a>
+          <a class="blora-dropdown-menu__item" href="/app/tasks"><%- sfIcon('checklist') %><%= t('我的任务') %></a>
+          <a class="blora-dropdown-menu__item" href="/app/settings"><%- sfIcon('gearshape') %><%= t('用户设置') %></a>
           <div class="blora-dropdown-menu__sep"></div>
-          <a class="blora-dropdown-menu__item" href="/auth/logout"><%- sfIcon('rectangle.portrait.and.arrow.right') %>退出登录</a>
+          <a class="blora-dropdown-menu__item" href="/auth/logout"><%- sfIcon('rectangle.portrait.and.arrow.right') %><%= t('退出登录') %></a>
         </div>
       </div>
     <% } else { %>
@@ -41,10 +52,10 @@
         type="button"
         class="blora-btn blora-btn--ghost blora-btn--sm blora-btn--icon app-navbar__theme"
         data-blora-theme-toggle
-        aria-label="切换深浅色"
-        title="切换深浅色"
-      ><%- sfIcon('circle.lefthalf.filled', { label: '切换深浅色' }) %></button>
-      <a class="blora-btn blora-btn--primary blora-btn--sm" href="/auth/login"><%- sfIcon('person.crop.circle') %><span class="app-navbar__login-label">PassPort 登录</span></a>
+        aria-label="<%= t('切换深浅色') %>"
+        title="<%= t('切换深浅色') %>"
+      ><%- sfIcon('circle.lefthalf.filled', { label: t('切换深浅色') }) %></button>
+      <a class="blora-btn blora-btn--primary blora-btn--sm" href="/auth/login"><%- sfIcon('person.crop.circle') %><span class="app-navbar__login-label"><%= t('PassPort 登录') %></span></a>
     <% } %>
   </div>
 </nav>

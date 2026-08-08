@@ -3,7 +3,7 @@
 <main class="app-main">
   <div class="blora-container blora-container--wide">
     <div class="blora-stack blora-stack--lg">
-      <%- include('../partials/breadcrumbs', { crumbs: [{ label: '组织', href: '/app' }, { label: org.name }] }) %>
+      <%- include('../partials/breadcrumbs', { crumbs: [{ label: t('组织'), href: '/app' }, { label: org.name }] }) %>
       <%- include('../partials/org-nav', { activeNav: 'projects' }) %>
 
       <%- include('../partials/readme-panel', {
@@ -16,11 +16,11 @@
         <% if (!projects.length) { %>
           <div class="blora-empty">
             <div class="blora-empty__icon"><%- sfIcon('folder') %></div>
-            <div class="blora-empty__title">尚无项目</div>
-            <div class="blora-empty__desc">创建项目后即可上传源文件并开始翻译</div>
+            <div class="blora-empty__title"><%= t('尚无项目') %></div>
+            <div class="blora-empty__desc"><%= t('创建项目后即可上传源文件并开始翻译') %></div>
             <% if (canManageProjects) { %>
               <div class="app-empty-actions">
-                <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/projects/new"><%- sfIcon('plus.circle') %>创建项目</a>
+                <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/projects/new"><%- sfIcon('plus.circle') %><%= t('创建项目') %></a>
               </div>
             <% } %>
           </div>
@@ -29,9 +29,9 @@
             <table class="blora-table blora-table--striped">
               <thead>
                 <tr>
-                  <th>名称</th>
-                  <th>源语言</th>
-                  <th>目标语言</th>
+                  <th><%= t('名称') %></th>
+                  <th><%= t('源语言') %></th>
+                  <th><%= t('目标语言') %></th>
                   <th></th>
                 </tr>
               </thead>
@@ -58,7 +58,7 @@
                       </div>
                     </td>
                     <td>
-                      <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= p.slug %>"><%- sfIcon('arrow.right') %>打开</a>
+                      <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= p.slug %>"><%- sfIcon('arrow.right') %><%= t('打开') %></a>
                     </td>
                   </tr>
                 <% }) %>

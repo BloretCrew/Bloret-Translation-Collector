@@ -33,13 +33,13 @@
   data-modal-id="<%= modalId %>"
   data-json-id="<%= instanceId %>"
 >
-  <span class="blora-field__label">目标语言</span>
-  <p class="blora-field__hint">点击「选择语言」打开对话框，将左侧语言添加到右侧即为选中</p>
+  <span class="blora-field__label"><%= t('目标语言') %></span>
+  <p class="blora-field__hint"><%= t('点击「选择语言」打开对话框，将左侧语言添加到右侧即为选中') %></p>
 
   <div class="locale-transfer__summary">
     <div class="locale-transfer__tags" data-locale-tags aria-live="polite">
       <% if (!selectedList.length) { %>
-        <span class="blora-text-faint" data-locale-empty>尚未选择语言</span>
+        <span class="blora-text-faint" data-locale-empty><%= t('尚未选择语言') %></span>
       <% } else { %>
         <% selectedList.forEach(function (item) {
           var code = item.code;
@@ -57,7 +57,7 @@
       class="blora-btn blora-btn--outline blora-btn--sm"
       data-blora-modal-open="<%= modalId %>"
     >
-      选择语言…
+      <%= t('选择语言…') %>
     </button>
   </div>
 
@@ -84,8 +84,8 @@
   <div class="blora-modal__mask" data-blora-close></div>
   <div class="blora-modal__dialog locale-picker-dialog" role="dialog" aria-modal="true" aria-labelledby="<%= modalId %>-title">
     <div class="blora-modal__head">
-      <h2 class="blora-modal__title" id="<%= modalId %>-title">选择目标语言</h2>
-      <button type="button" class="blora-modal__close" data-blora-close aria-label="关闭">
+      <h2 class="blora-modal__title" id="<%= modalId %>-title"><%= t('选择目标语言') %></h2>
+      <button type="button" class="blora-modal__close" data-blora-close aria-label="<%= t('关闭') %>">
         <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
       </button>
     </div>
@@ -93,41 +93,41 @@
       <div class="locale-picker-panes">
         <div class="locale-picker-pane">
           <div class="locale-picker-pane__head">
-            <strong>全部语言</strong>
+            <strong><%= t('全部语言') %></strong>
             <span class="blora-text-faint u-text-xs" data-avail-count></span>
           </div>
-          <input type="search" class="blora-input" data-locale-search placeholder="搜索语言名称或代码…" autocomplete="off" />
-          <ul class="locale-picker-list" data-locale-available role="listbox" aria-label="可选语言"></ul>
+          <input type="search" class="blora-input" data-locale-search placeholder="<%= t('搜索语言名称或代码…') %>" autocomplete="off" />
+          <ul class="locale-picker-list" data-locale-available role="listbox" aria-label="<%= t('可选语言') %>"></ul>
           <div class="locale-picker-custom">
-            <span class="blora-field__label">添加自定义语言</span>
+            <span class="blora-field__label"><%= t('添加自定义语言') %></span>
             <div class="locale-picker-custom__row">
-              <input type="text" class="blora-input" data-custom-code placeholder="代码，如 yue" maxlength="16" autocomplete="off" />
+              <input type="text" class="blora-input" data-custom-code placeholder="<%= t('代码，如 yue') %>" maxlength="16" autocomplete="off" />
               <!-- no HTML required: modal sits inside host form; browser would block Save silently -->
-              <input type="text" class="blora-input" data-custom-label placeholder="显示名，如 粤语" maxlength="40" autocomplete="off" />
-              <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" data-custom-add><%- sfIcon('plus') %>添加</button>
+              <input type="text" class="blora-input" data-custom-label placeholder="<%= t('显示名，如 粤语') %>" maxlength="40" autocomplete="off" />
+              <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" data-custom-add><%- sfIcon('plus') %><%= t('添加') %></button>
             </div>
-            <p class="blora-field__hint">代码是 locale 标识；显示名会出现在项目页与工作台（必填）</p>
+            <p class="blora-field__hint"><%= t('代码是 locale 标识；显示名会出现在项目页与工作台（必填）') %></p>
           </div>
         </div>
 
         <div class="locale-picker-actions">
-          <button type="button" class="blora-btn blora-btn--primary blora-btn--sm blora-btn--icon" data-move-right title="添加到已选" aria-label="添加到已选"><%- sfIcon('chevron.right') %></button>
-          <button type="button" class="blora-btn blora-btn--outline blora-btn--sm blora-btn--icon" data-move-left title="从已选移除" aria-label="从已选移除"><%- sfIcon('chevron.left') %></button>
+          <button type="button" class="blora-btn blora-btn--primary blora-btn--sm blora-btn--icon" data-move-right title="<%= t('添加到已选') %>" aria-label="<%= t('添加到已选') %>"><%- sfIcon('chevron.right') %></button>
+          <button type="button" class="blora-btn blora-btn--outline blora-btn--sm blora-btn--icon" data-move-left title="<%= t('从已选移除') %>" aria-label="<%= t('从已选移除') %>"><%- sfIcon('chevron.left') %></button>
         </div>
 
         <div class="locale-picker-pane">
           <div class="locale-picker-pane__head">
-            <strong>已选语言</strong>
+            <strong><%= t('已选语言') %></strong>
             <span class="blora-text-faint u-text-xs" data-sel-count></span>
           </div>
-          <ul class="locale-picker-list" data-locale-selected role="listbox" aria-label="已选语言"></ul>
-          <p class="blora-text-faint u-text-xs locale-picker-tip">双击或使用中间箭头在两侧移动</p>
+          <ul class="locale-picker-list" data-locale-selected role="listbox" aria-label="<%= t('已选语言') %>"></ul>
+          <p class="blora-text-faint u-text-xs locale-picker-tip"><%= t('双击或使用中间箭头在两侧移动') %></p>
         </div>
       </div>
     </div>
     <div class="blora-modal__foot">
-      <button type="button" class="blora-btn blora-btn--ghost" data-blora-close><%- sfIcon('xmark') %>取消</button>
-      <button type="button" class="blora-btn blora-btn--primary" data-locale-confirm><%- sfIcon('checkmark') %>确定</button>
+      <button type="button" class="blora-btn blora-btn--ghost" data-blora-close><%- sfIcon('xmark') %><%= t('取消') %></button>
+      <button type="button" class="blora-btn blora-btn--primary" data-locale-confirm><%- sfIcon('checkmark') %><%= t('确定') %></button>
     </div>
   </div>
 </div>

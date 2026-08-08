@@ -131,7 +131,7 @@ export function loadConfig(): AppConfig {
 
   const parsed = configSchema.safeParse(raw);
   if (!parsed.success) {
-    Logger.error("config.json 无效:", parsed.error.flatten().fieldErrors);
+    Logger.error('config.json 无效:', parsed.error.flatten().fieldErrors);
     throw new Error("Invalid config.json");
   }
 

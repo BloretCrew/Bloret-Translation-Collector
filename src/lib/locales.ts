@@ -1,9 +1,12 @@
 /**
- * Common locales for pickers and display labels (zh UI).
- * Codes stay BCP-47-ish; labels are for humans.
+ * Common locales for pickers and display labels.
+ * Labels are Chinese source-as-key strings; call sites / helpers run t() at request time.
  */
+import { t } from "@/lib/i18n";
+
 export type LocaleOption = {
   code: string;
+  /** Chinese source label (i18n key) */
   label: string;
 };
 
@@ -40,14 +43,14 @@ const byCode = new Map(COMMON_LOCALES.map((l) => [l.code.toLowerCase(), l]));
 export function localeLabel(code: string | null | undefined): string {
   if (!code) return "";
   const hit = byCode.get(code.toLowerCase());
-  if (hit) return `${hit.label} (${hit.code})`;
+  if (hit) return `${t(hit.label)} (${hit.code})`;
   return code;
 }
 
 export function localeShortLabel(code: string | null | undefined): string {
   if (!code) return "";
   const hit = byCode.get(code.toLowerCase());
-  if (hit) return hit.label;
+  if (hit) return t(hit.label);
   return code;
 }
 
@@ -70,7 +73,8 @@ export function languageLabel(
     return withCode ? `${custom} (${locale})` : custom;
   }
   if (known) {
-    return withCode ? `${known.label} (${known.code})` : known.label;
+    const label = t(known.label);
+    return withCode ? `${label} (${known.code})` : label;
   }
   // Custom locale without a usable display name — last resort is the code.
   return custom || locale;
@@ -102,5 +106,7 @@ export function localeOptionsWithExtras(
     const label = (fromMap || "").trim() || code;
     extras.push({ code, label });
   }
-  return extras.length ? [...COMMON_LOCALES, ...extras] : COMMON_LOCALES;
+  // Return copies with translated labels for current request
+  const base = COMMON_LOCALES.map((l) => ({ code: l.code, label: t(l.label) }));
+  return extras.length ? [...base, ...extras] : base;
 }

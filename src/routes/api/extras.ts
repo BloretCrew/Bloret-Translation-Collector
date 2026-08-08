@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { Router } from "express";
 import { and, eq, inArray } from "drizzle-orm";
 import { randomBytes } from "crypto";
@@ -95,7 +96,7 @@ extrasRouter.post(
       const asSuggestion = req.body?.asSuggestion === true;
 
       const localeParsed = localeSchema.safeParse(targetLocale);
-      if (!localeParsed.success) return jsonError(res, "无效目标语言");
+      if (!localeParsed.success) return jsonError(res, t('无效目标语言'));
 
       const result = await machineTranslate({
         text,
@@ -218,14 +219,14 @@ extrasRouter.post(
       if (!canManageProjects(access.role)) return forbidden(res);
 
       const parsed = createTaskSchema.safeParse(req.body);
-      if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
+      if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
 
       const [user] = await db
         .select()
         .from(users)
         .where(eq(users.username, parsed.data.username))
         .limit(1);
-      if (!user) return jsonError(res, "用户不存在", 404);
+      if (!user) return jsonError(res, t('用户不存在'), 404);
 
       const [mem] = await db
         .select()
@@ -237,11 +238,11 @@ extrasRouter.post(
           ),
         )
         .limit(1);
-      if (!mem) return jsonError(res, "用户不是本组织成员");
+      if (!mem) return jsonError(res, t('用户不是本组织成员'));
 
       if (parsed.data.stringId) {
         const unit = await assertStringInProject(access.project.id, parsed.data.stringId);
-        if (!unit) return notFound(res, "字符串不存在");
+        if (!unit) return notFound(res, t('字符串不存在'));
       }
 
       const task = await createTask({
@@ -277,7 +278,7 @@ extrasRouter.patch(
       }
       const status = req.body?.status;
       if (status !== "todo" && status !== "doing" && status !== "done") {
-        return jsonError(res, "无效状态");
+        return jsonError(res, t('无效状态'));
       }
       const result = await updateTaskStatus(
         req.params.taskId,
@@ -372,8 +373,8 @@ extrasRouter.post(
       const dataUrl = typeof req.body?.imageBase64 === "string" ? req.body.imageBase64 : "";
       const caption = typeof req.body?.caption === "string" ? req.body.caption : null;
       const parsed = parseImageDataUrl(dataUrl);
-      if (!parsed) return jsonError(res, "请上传 data URL 格式的图片 (png/jpg/gif/webp)");
-      if (parsed.buffer.length > 3 * 1024 * 1024) return jsonError(res, "图片不能超过 3MB");
+      if (!parsed) return jsonError(res, t('请上传 data URL 格式的图片 (png/jpg/gif/webp)'));
+      if (parsed.buffer.length > 3 * 1024 * 1024) return jsonError(res, t('图片不能超过 3MB'));
 
       // All binary image uploads go to Bloret Image Host (https://img.bloret.net/api/doc)
       let uploaded;
@@ -384,7 +385,7 @@ extrasRouter.post(
           contentType: parsed.contentType,
         });
       } catch (e) {
-        const msg = e instanceof Error ? e.message : "图床上传失败";
+        const msg = e instanceof Error ? e.message : t('图床上传失败');
         return jsonError(res, msg, 502);
       }
 

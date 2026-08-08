@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { Router } from "express";
 import { eq } from "drizzle-orm";
 import { requireSession } from "@/lib/auth/session";
@@ -13,7 +14,7 @@ meRouter.get("/v1/me", async (req, res, next) => {
     if (!session) return unauthorized(res);
 
     const [user] = await db.select().from(users).where(eq(users.id, session.userId!)).limit(1);
-    if (!user) return unauthorized(res, "用户不存在");
+    if (!user) return unauthorized(res, t('用户不存在'));
 
     return jsonOk(res, {
       id: user.id,

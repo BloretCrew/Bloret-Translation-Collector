@@ -4,13 +4,13 @@ export const slugSchema = z
   .string()
   .min(2)
   .max(48)
-  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, "Slug 只能包含小写字母、数字与连字符");
+  .regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Slug 只能包含小写字母、数字与连字符');
 
 export const localeSchema = z
   .string()
   .min(2)
   .max(16)
-  .regex(/^[a-zA-Z]{2,3}([_-][a-zA-Z0-9]+)*$/, "无效的语言代码");
+  .regex(/^[a-zA-Z]{2,3}([_-][a-zA-Z0-9]+)*$/, '无效的语言代码');
 
 export const memberRoleSchema = z.enum([
   "owner",
@@ -44,7 +44,7 @@ const readmeUrlField = z
         return false;
       }
     },
-    { message: "README URL 须为 https:// 开头的有效地址" },
+    { message: 'README URL 须为 https:// 开头的有效地址' },
   );
 
 const readmeField = z.string().max(100_000).optional().nullable();
@@ -65,7 +65,7 @@ export const iconUrlField = z
         return false;
       }
     },
-    { message: "图标 URL 须为 https:// 开头的有效地址" },
+    { message: '图标 URL 须为 https:// 开头的有效地址' },
   );
 
 export const updateOrgSchema = z.object({
@@ -123,7 +123,7 @@ export const setLanguagesSchema = z.object({
   languages: z.array(projectLanguageSchema).min(1).max(50).optional(),
 }).superRefine((value, ctx) => {
   if (!value.locales && !value.languages) {
-    ctx.addIssue({ code: z.ZodIssueCode.custom, message: "缺少目标语言" });
+    ctx.addIssue({ code: z.ZodIssueCode.custom, message: '缺少目标语言' });
   }
 });
 
@@ -135,15 +135,15 @@ export const uploadFileSchema = z.object({
     .string()
     .min(1)
     .max(256)
-    .regex(sourcePathRegex, "路径须为 .json / .properties 且仅含安全字符"),
+    .regex(sourcePathRegex, '路径须为 .json / .properties 且仅含安全字符'),
   content: z.string().min(1).max(2 * 1024 * 1024),
 });
 
 export const uploadBatchSchema = z.object({
   files: z
     .array(uploadFileSchema)
-    .min(1, "至少上传一个文件")
-    .max(50, "单次最多 50 个文件"),
+    .min(1, '至少上传一个文件')
+    .max(50, '单次最多 50 个文件'),
 });
 
 export const saveTranslationSchema = z.object({

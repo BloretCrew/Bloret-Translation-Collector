@@ -3,7 +3,7 @@
 <main class="app-main">
   <div class="blora-container blora-container--wide">
     <div class="blora-stack blora-stack--lg">
-      <%- include('../partials/breadcrumbs', { crumbs: [{ label: '组织', href: '/app' }, { label: org.name, href: '/app/o/' + orgSlug }, { label: project.name }] }) %>
+      <%- include('../partials/breadcrumbs', { crumbs: [{ label: t('组织'), href: '/app' }, { label: org.name, href: '/app/o/' + orgSlug }, { label: project.name }] }) %>
       <%- include('../partials/project-nav', { activeNav: 'dashboard' }) %>
 
       <%
@@ -21,19 +21,19 @@
 
       <section class="app-section">
         <div class="app-section-head">
-          <h2 class="blora-h3"><%- sfIcon('globe') %>语言进度</h2>
+          <h2 class="blora-h3"><%- sfIcon('globe') %><%= t('语言进度') %></h2>
           <% if (_canExport && targetLocales.length) { %>
-            <a class="blora-btn blora-btn--ghost blora-btn--sm" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/export"><%- sfIcon('square.and.arrow.down') %>前往导出</a>
+            <a class="blora-btn blora-btn--ghost blora-btn--sm" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/export"><%- sfIcon('square.and.arrow.down') %><%= t('前往导出') %></a>
           <% } %>
         </div>
         <% if (!targetLocales.length) { %>
           <div class="blora-empty">
             <div class="blora-empty__icon"><%- sfIcon('globe') %></div>
-            <div class="blora-empty__title">尚未配置目标语言</div>
-            <div class="blora-empty__desc">在设置中添加目标语言后即可开始翻译</div>
+            <div class="blora-empty__title"><%= t('尚未配置目标语言') %></div>
+            <div class="blora-empty__desc"><%= t('在设置中添加目标语言后即可开始翻译') %></div>
             <% if (_canManageSettings) { %>
               <div class="app-empty-actions">
-                <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/settings"><%- sfIcon('gearshape') %>项目设置</a>
+                <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/settings"><%- sfIcon('gearshape') %><%= t('项目设置') %></a>
               </div>
             <% } %>
           </div>
@@ -42,8 +42,8 @@
             <table class="blora-table progress-table">
               <thead>
                 <tr>
-                  <th>语言</th>
-                  <th>进度</th>
+                  <th><%= t('语言') %></th>
+                  <th><%= t('进度') %></th>
                   <th></th>
                 </tr>
               </thead>
@@ -64,7 +64,7 @@
                           </div>
                         </div>
                         <span class="blora-text-mono blora-text-faint u-text-xs">
-                          批准 <%= p.translated %>/<%= p.total %> (<%= p.percent %>%)
+                          <%= t('批准') %> <%= p.translated %>/<%= p.total %> (<%= p.percent %>%)
                           · 有建议 <%= p.suggested != null ? p.suggested : 0 %>
                         </span>
                       </div>
@@ -72,9 +72,9 @@
                     <td>
                       <div class="blora-row u-gap-1">
                         <% if (defaultFile && _canEdit) { %>
-                          <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= defaultFile %>&locale=<%= p.locale %>"><%- sfIcon('translate') %>进入工作台</a>
+                          <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= defaultFile %>&locale=<%= p.locale %>"><%- sfIcon('translate') %><%= t('进入工作台') %></a>
                         <% } else if (!defaultFile && _canUpload) { %>
-                          <a class="blora-btn blora-btn--secondary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/import"><%- sfIcon('square.and.arrow.up') %>先导入文件</a>
+                          <a class="blora-btn blora-btn--secondary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/import"><%- sfIcon('square.and.arrow.up') %><%= t('先导入文件') %></a>
                         <% } %>
                       </div>
                     </td>
@@ -88,16 +88,16 @@
 
       <section class="app-section">
         <div class="app-section-head">
-          <h2 class="blora-h3">源文件概览</h2>
-          <a class="blora-btn blora-btn--ghost blora-btn--sm" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/sources">全部源文件 →</a>
+          <h2 class="blora-h3"><%= t('源文件概览') %></h2>
+          <a class="blora-btn blora-btn--ghost blora-btn--sm" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/sources"><%= t('全部源文件 →') %></a>
         </div>
         <% if (!files.length) { %>
           <div class="blora-empty">
-            <div class="blora-empty__title">尚无源文件</div>
-            <div class="blora-empty__desc">导入 JSON 或 .properties 后即可翻译</div>
+            <div class="blora-empty__title"><%= t('尚无源文件') %></div>
+            <div class="blora-empty__desc"><%= t('导入 JSON 或 .properties 后即可翻译') %></div>
             <% if (_canUpload) { %>
               <div class="app-empty-actions">
-                <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/import">导入源文件</a>
+                <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/import"><%= t('导入源文件') %></a>
               </div>
             <% } %>
           </div>
@@ -106,9 +106,9 @@
             <table class="blora-table blora-table--striped">
               <thead>
                 <tr>
-                  <th>路径</th>
-                  <th>字符串</th>
-                  <th>版本</th>
+                  <th><%= t('路径') %></th>
+                  <th><%= t('字符串') %></th>
+                  <th><%= t('版本') %></th>
                   <th></th>
                 </tr>
               </thead>
@@ -122,7 +122,7 @@
                     <td>r<%= f.sourceRevision %></td>
                     <td>
                       <% if (defaultLocale && _canEdit) { %>
-                        <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= f.id %>&locale=<%= defaultLocale %>">翻译</a>
+                        <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= f.id %>&locale=<%= defaultLocale %>"><%= t('翻译') %></a>
                       <% } %>
                     </td>
                   </tr>
@@ -132,8 +132,8 @@
           </div>
           <% if (files.length > 5) { %>
             <p class="blora-text-muted u-text-sm u-mt-3">
-              另有 <%= files.length - 5 %> 个文件 ·
-              <a href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/sources">查看全部</a>
+              <%= t('另有') %> <%= files.length - 5 %> <%= t('个文件 ·') %>
+              <a href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/sources"><%= t('查看全部') %></a>
             </p>
           <% } %>
         <% } %>

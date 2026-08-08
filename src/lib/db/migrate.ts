@@ -8,9 +8,9 @@ async function main() {
   const config = applyConfigToProcessEnv();
   const client = postgres(config.databaseUrl, { max: 1 });
   const db = drizzle(client);
-  Logger.info("正在运行数据库迁移…");
+  Logger.info('正在运行数据库迁移…');
   await migrate(db, { migrationsFolder: "./drizzle" });
-  Logger.success("数据库迁移完成");
+  Logger.success('数据库迁移完成');
   await client.end();
 }
 

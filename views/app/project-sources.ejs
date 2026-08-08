@@ -4,29 +4,29 @@
   <div class="blora-container blora-container--wide">
     <div class="blora-stack blora-stack--lg">
       <%- include('../partials/breadcrumbs', { crumbs: [
-        { label: '组织', href: '/app' },
+        { label: t('组织'), href: '/app' },
         { label: org.name, href: '/app/o/' + orgSlug },
         { label: project.name, href: '/app/o/' + orgSlug + '/p/' + projectSlug },
-        { label: '源文件' }
+        { label: t('源文件') }
       ] }) %>
       <%- include('../partials/project-nav', { activeNav: 'sources' }) %>
 
       <section class="app-section">
         <div class="app-section-head">
-          <h2 class="blora-h3"><%- sfIcon('document') %>源文件</h2>
+          <h2 class="blora-h3"><%- sfIcon('document') %><%= t('源文件') %></h2>
           <% if (canUpload) { %>
-            <a class="blora-btn blora-btn--primary blora-btn--sm" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/import"><%- sfIcon('square.and.arrow.up') %>导入 / 更新</a>
+            <a class="blora-btn blora-btn--primary blora-btn--sm" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/import"><%- sfIcon('square.and.arrow.up') %><%= t('导入 / 更新') %></a>
           <% } %>
         </div>
 
         <% if (!files.length) { %>
           <div class="blora-empty">
             <div class="blora-empty__icon"><%- sfIcon('document') %></div>
-            <div class="blora-empty__title">尚无源文件</div>
-            <div class="blora-empty__desc">上传 JSON 或 .properties 以解析可翻译字符串</div>
+            <div class="blora-empty__title"><%= t('尚无源文件') %></div>
+            <div class="blora-empty__desc"><%= t('上传 JSON 或 .properties 以解析可翻译字符串') %></div>
             <% if (canUpload) { %>
               <div class="app-empty-actions">
-                <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/import"><%- sfIcon('square.and.arrow.up') %>导入源文件</a>
+                <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/import"><%- sfIcon('square.and.arrow.up') %><%= t('导入源文件') %></a>
               </div>
             <% } %>
           </div>
@@ -35,10 +35,10 @@
             <table class="blora-table blora-table--striped">
               <thead>
                 <tr>
-                  <th>路径</th>
-                  <th>格式</th>
-                  <th>字符串</th>
-                  <th>版本</th>
+                  <th><%= t('路径') %></th>
+                  <th><%= t('格式') %></th>
+                  <th><%= t('字符串') %></th>
+                  <th><%= t('版本') %></th>
                   <th></th>
                 </tr>
               </thead>
@@ -54,9 +54,9 @@
                     <td>
                       <div class="blora-row u-gap-1">
                         <% if (defaultLocale && canEdit) { %>
-                          <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= f.id %>&locale=<%= defaultLocale %>"><%- sfIcon('translate') %>翻译</a>
+                          <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= f.id %>&locale=<%= defaultLocale %>"><%- sfIcon('translate') %><%= t('翻译') %></a>
                         <% } %>
-                        <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/files/<%= f.id %>"><%- sfIcon('info.circle') %>详情</a>
+                        <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/files/<%= f.id %>"><%- sfIcon('info.circle') %><%= t('详情') %></a>
                       </div>
                     </td>
                   </tr>

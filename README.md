@@ -114,6 +114,21 @@ bash start.sh
 | `/api/health` | 健康检查 |
 | `/api/v1/*` | JSON API |
 
+## 界面国际化（UI i18n）
+
+- 语言文件：`lang/zh.json`、`lang/en.json`（**source-as-key**，中文原文为 key）
+- 服务端：`src/lib/i18n.ts`（`t()` / `i18nMiddleware` / `?lang=` → cookie `btc_lang`）
+- 模板：EJS 用 `<%= t('…') %>`；`res.locals.t` / `htmlLang` / `i18nCatalog`
+- 浏览器：`public/js/app.js` 的 `BTC.t()`，由 `views/partials/foot.ejs` 注入当前语言目录
+- 顶栏地球图标可切换 **中文 / English**（`?lang=zh|en`）
+
+```
+lang/
+  zh.json
+  en.json
+src/lib/i18n.ts
+```
+
 ## 目录结构
 
 ```
@@ -121,7 +136,8 @@ src/
   server.ts          # 入口
   app.ts             # Express 应用
   routes/            # 页面 + API + Auth
-  lib/               # 配置、DB、权限、业务
+  lib/               # 配置、DB、权限、业务、i18n
 views/               # EJS 模板
 public/              # 静态资源（Blora、CSS、JS）
+lang/                # UI 语言 JSON
 ```

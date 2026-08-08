@@ -53,3 +53,7 @@ drizzle/meta
 # user-uploaded context screenshots (keep directory)
 /public/uploads/**
 !/public/uploads/.gitkeep
+
+# i18n extract/debug artifacts
+lang/.keys-sources.json
+lang/.en-cache.json

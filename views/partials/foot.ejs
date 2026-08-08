@@ -6,7 +6,15 @@
       if (!src) return src;
       return src.indexOf('?') >= 0 ? src + '&v=' + _assetV : src + '?v=' + _assetV;
     }
+    const _i18nLang = typeof lang !== 'undefined' && lang ? lang : 'zh';
+    const _i18nCatalog = typeof i18nCatalog !== 'undefined' && i18nCatalog ? i18nCatalog : {};
   %>
+  <script>
+    window.__BTC_I18N__ = {
+      lang: <%- JSON.stringify(_i18nLang) %>,
+      catalog: <%- JSON.stringify(_i18nCatalog) %>
+    };
+  </script>
   <script defer src="<%= withAssetV('/blora/blora.js') %>"></script>
   <script defer src="<%= withAssetV('/js/sf-icon.js') %>"></script>
   <script defer src="<%= withAssetV('/js/app.js') %>"></script>

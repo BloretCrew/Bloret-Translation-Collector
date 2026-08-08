@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { loadConfig } from "@/lib/config";
 import { Logger } from "@/lib/logger";
 
@@ -74,13 +75,13 @@ export async function machineTranslate(params: {
 
     const data = (await res.json()) as { translatedText?: string; translation?: string };
     const out = (data.translatedText ?? data.translation ?? "").trim();
-    if (!out) return { ok: false, error: "MT 返回空结果", code: "EMPTY_RESULT" };
+    if (!out) return { ok: false, error: t('MT 返回空结果'), code: "EMPTY_RESULT" };
     return { ok: true, text: out, provider: "libretranslate" };
   } catch (e) {
-    Logger.error("MT 调用异常:", e);
+    Logger.error(t('MT 调用异常:'), e);
     return {
       ok: false,
-      error: e instanceof Error ? e.message : "MT 网络错误",
+      error: e instanceof Error ? e.message : t('MT 网络错误'),
       code: "NETWORK",
     };
   }

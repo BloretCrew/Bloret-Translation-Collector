@@ -1,5 +1,27 @@
 /* Shared client helpers for Bloret Translation Collector */
 window.BTC = {
+  /** UI language (zh|en); hydrated from foot.ejs */
+  lang: "zh",
+  /** source-as-key catalog for current language */
+  catalog: Object.create(null),
+  /**
+   * Client i18n. Falls back to Chinese source key.
+   * @param {string} key
+   * @param {Record<string, string|number>} [vars]
+   */
+  t(key, vars) {
+    if (key == null || key === "") return key;
+    const cat = this.catalog || Object.create(null);
+    let out = cat[key];
+    if (out == null || out === "") out = key;
+    if (typeof out === "string" && out.startsWith("[EN] ")) out = out.slice(5);
+    if (vars && typeof out === "string") {
+      out = out.replace(/\{(\w+)\}/g, (_, k) =>
+        vars[k] != null ? String(vars[k]) : `{${k}}`,
+      );
+    }
+    return out;
+  },
   async json(url, options = {}) {
     const res = await fetch(url, {
       headers: { "Content-Type": "application/json", ...(options.headers || {}) },
@@ -27,7 +49,7 @@ window.BTC = {
    */
   loadingHtml(opts = {}) {
     const size = opts.size || "";
-    const label = opts.label === false ? "" : opts.label != null ? opts.label : "加载中...";
+    const label = opts.label === false ? "" : opts.label != null ? opts.label : BTC.t("加载中...");
     const layout = opts.layout || "inline";
     const sizeClass = size ? ` ${size}` : "";
     const spinner = `<span class="loading-spinner${sizeClass}" aria-hidden="true"></span>`;
@@ -57,7 +79,7 @@ window.BTC = {
       if (btn.dataset.btcIdleLabel == null) {
         btn.dataset.btcIdleLabel = btn.textContent || "";
       }
-      const busyLabel = opts.busyLabel != null ? opts.busyLabel : "处理中...";
+      const busyLabel = opts.busyLabel != null ? opts.busyLabel : BTC.t("处理中...");
       btn.disabled = true;
       btn.classList.add("is-btc-busy");
       btn.setAttribute("aria-busy", "true");
@@ -137,14 +159,16 @@ syncColorScheme();
  */
 function syncThemeToggleButtons() {
   const dark = document.documentElement.classList.contains("blora-dark");
+  const lightLabel = BTC.t("切换至浅色");
+  const darkLabel = BTC.t("切换至暗色");
   const iconHtml =
     typeof window.SfIcon !== "undefined"
-      ? window.SfIcon.html(dark ? "sun.max" : "moon", { label: dark ? "切换至浅色" : "切换至暗色" })
+      ? window.SfIcon.html(dark ? "sun.max" : "moon", { label: dark ? lightLabel : darkLabel })
       : "";
   document.querySelectorAll("[data-blora-theme-toggle]").forEach((btn) => {
     if (iconHtml) btn.innerHTML = iconHtml;
-    btn.setAttribute("aria-label", dark ? "切换至浅色" : "切换至暗色");
-    btn.setAttribute("title", dark ? "切换至浅色" : "切换至暗色");
+    btn.setAttribute("aria-label", dark ? lightLabel : darkLabel);
+    btn.setAttribute("title", dark ? lightLabel : darkLabel);
   });
 }
 
@@ -170,4 +194,13 @@ document.querySelectorAll("[data-blora-theme-toggle]").forEach((btn) => {
   });
 });
 document.documentElement.addEventListener("blora:appearancechange", syncThemeToggleButtons);
+
+(function hydrateI18n() {
+  const boot = window.__BTC_I18N__;
+  if (!boot) return;
+  if (boot.lang) BTC.lang = boot.lang;
+  if (boot.catalog && typeof boot.catalog === "object") {
+    BTC.catalog = boot.catalog;
+  }
+})();
 syncThemeToggleButtons();

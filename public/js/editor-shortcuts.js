@@ -11,38 +11,38 @@
   /** @type {Record<string, { label: string, hint: string, scope: string, default: ShortcutBinding }>} */
   const ACTIONS = {
     saveAndNext: {
-      label: "保存并下一条",
-      hint: "在译文框中生效",
+      label: BTC.t('保存并下一条'),
+      hint: BTC.t('在译文框中生效'),
       scope: "draft",
       default: { key: "Enter", mod: true },
     },
     saveOnly: {
-      label: "仅保存",
-      hint: "在译文框中生效",
+      label: BTC.t('仅保存'),
+      hint: BTC.t('在译文框中生效'),
       scope: "draft",
       default: { key: "s", mod: true },
     },
     insertSource: {
-      label: "插入原文",
-      hint: "在译文框光标处插入源文",
+      label: BTC.t('插入原文'),
+      hint: BTC.t('在译文框光标处插入源文'),
       scope: "draft",
       default: { key: "i", mod: true, shift: true },
     },
     prevString: {
-      label: "上一条字符串",
-      hint: "焦点不在输入框时",
+      label: BTC.t('上一条字符串'),
+      hint: BTC.t('焦点不在输入框时'),
       scope: "global",
       default: { key: "ArrowUp" },
     },
     nextString: {
-      label: "下一条字符串",
-      hint: "焦点不在输入框时",
+      label: BTC.t('下一条字符串'),
+      hint: BTC.t('焦点不在输入框时'),
       scope: "global",
       default: { key: "ArrowDown" },
     },
     sendComment: {
-      label: "发送评论",
-      hint: "在讨论输入框中生效",
+      label: BTC.t('发送评论'),
+      hint: BTC.t('在讨论输入框中生效'),
       scope: "comment",
       default: { key: "Enter", mod: true },
     },
@@ -181,7 +181,7 @@
 
   /** @param {ShortcutBinding|null|undefined} b */
   function format(b) {
-    if (!b || !b.key) return "未设置";
+    if (!b || !b.key) return BTC.t('未设置');
     const parts = [];
     const mac = isMac();
     if (b.mod) {

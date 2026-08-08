@@ -91,7 +91,7 @@
       if (!selected.length) {
         const empty = document.createElement("span");
         empty.className = "blora-text-faint";
-        empty.textContent = "尚未选择语言";
+        empty.textContent = BTC.t('尚未选择语言');
         tagsEl.appendChild(empty);
       } else {
         selected.forEach((code) => {
@@ -164,8 +164,8 @@
 
     function renderModal() {
       const avail = filteredAvailable();
-      renderList(availList, avail, hiAvail, "没有可添加的语言");
-      renderList(selList, draft, hiSel, "尚未选择，请从左侧添加");
+      renderList(availList, avail, hiAvail, BTC.t('没有可添加的语言'));
+      renderList(selList, draft, hiSel, BTC.t('尚未选择，请从左侧添加'));
       if (availCount) availCount.textContent = String(avail.length);
       if (selCount) selCount.textContent = String(draft.length);
     }
@@ -256,21 +256,21 @@
       const code = (customCode?.value || "").trim();
       const rawLabel = (customLabel?.value || "").trim();
       if (!code) {
-        toast("error", "请填写语言代码");
+        toast("error", BTC.t('请填写语言代码'));
         return;
       }
       if (!rawLabel) {
-        toast("error", "请填写语言显示名（项目页会显示此名称）");
+        toast("error", BTC.t('请填写语言显示名（项目页会显示此名称）'));
         customLabel?.focus();
         return;
       }
       if (rawLabel.toLowerCase() === code.toLowerCase()) {
-        toast("error", "显示名不能与代码相同，请填写人类可读名称");
+        toast("error", BTC.t('显示名不能与代码相同，请填写人类可读名称'));
         customLabel?.focus();
         return;
       }
       if (!/^[a-zA-Z]{2,3}([_-][a-zA-Z0-9]+)*$/.test(code)) {
-        toast("error", "语言代码格式无效（如 en、zh-CN、yue）");
+        toast("error", BTC.t('语言代码格式无效（如 en、zh-CN、yue）'));
         return;
       }
       const label = rawLabel;
@@ -285,7 +285,7 @@
 
     modal.querySelector("[data-locale-confirm]")?.addEventListener("click", () => {
       if (!draft.length) {
-        toast("error", "请至少选择一种目标语言");
+        toast("error", BTC.t('请至少选择一种目标语言'));
         return;
       }
       selected = draft.slice();

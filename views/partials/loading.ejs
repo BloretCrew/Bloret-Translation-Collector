@@ -9,7 +9,7 @@
   var _size = typeof size !== 'undefined' && size ? String(size) : '';
   var _label = (typeof label !== 'undefined' && label === false)
     ? ''
-    : (typeof label !== 'undefined' && label != null ? String(label) : '加载中...');
+    : (typeof label !== 'undefined' && label != null ? String(label) : t('加载中...'));
   var _layout = typeof layout !== 'undefined' && layout ? String(layout) : 'page';
   var _wrap =
     _layout === 'row'

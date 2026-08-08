@@ -40,13 +40,13 @@
     async function loadGlossary() {
       if (!listEl) return;
       listEl.innerHTML =
-        window.BTC?.loadingHtml?.({ size: "md", label: "加载中...", layout: "inline" }) ||
+        window.BTC?.loadingHtml?.({ size: "md", label: BTC.t('加载中...'), layout: "inline" }) ||
         `<div class="inline-loading" role="status"><div class="loading-spinner md" aria-hidden="true"></div><div>加载中...</div></div>`;
       const { res, data } = await json(
         `/api/v1/orgs/${org}/projects/${project}/glossary`,
       );
       if (!res.ok) {
-        listEl.innerHTML = `<div class="blora-alert blora-alert--danger">${data.error || "加载失败"}</div>`;
+        listEl.innerHTML = `<div class="blora-alert blora-alert--danger">${data.error || BTC.t('加载失败')}</div>`;
         return;
       }
       const terms = data.terms || [];
@@ -88,9 +88,9 @@
         const save = document.createElement("button");
         save.type = "button";
         save.className = "blora-btn blora-btn--ghost blora-btn--sm";
-        save.textContent = "保存译法";
+        save.textContent = BTC.t('保存译法');
         save.addEventListener("click", async () => {
-          window.BTC?.setButtonBusy?.(save, true, { busyLabel: "保存中..." });
+          window.BTC?.setButtonBusy?.(save, true, { busyLabel: BTC.t('保存中...') });
           try {
             for (const loc of locales) {
               const input = edit.querySelector(`input[data-loc="${loc}"]`);
@@ -101,14 +101,14 @@
                 { method: "PUT", body: JSON.stringify({ translation: val }) },
               );
               if (!r.res.ok) {
-                toast?.("error", r.data.error || "保存失败");
+                toast?.("error", r.data.error || BTC.t('保存失败'));
                 return;
               }
             }
-            toast?.("success", "术语译法已保存");
+            toast?.("success", BTC.t('术语译法已保存'));
             loadGlossary();
           } finally {
-            window.BTC?.setButtonBusy?.(save, false, { idleLabel: "保存译法" });
+            window.BTC?.setButtonBusy?.(save, false, { idleLabel: BTC.t('保存译法') });
           }
         });
         edit.appendChild(save);
@@ -116,19 +116,19 @@
         card.querySelector("[data-del]").addEventListener("click", async () => {
           if (!confirm(`删除术语「${t.sourceTerm}」？`)) return;
           const delBtn = card.querySelector("[data-del]");
-          window.BTC?.setButtonBusy?.(delBtn, true, { busyLabel: "删除中..." });
+          window.BTC?.setButtonBusy?.(delBtn, true, { busyLabel: BTC.t('删除中...') });
           try {
             const r = await json(
               `/api/v1/orgs/${org}/projects/${project}/glossary/${t.id}`,
               { method: "DELETE" },
             );
             if (!r.res.ok) {
-              toast?.("error", r.data.error || "删除失败");
+              toast?.("error", r.data.error || BTC.t('删除失败'));
               return;
             }
             loadGlossary();
           } finally {
-            window.BTC?.setButtonBusy?.(delBtn, false, { idleLabel: "删除" });
+            window.BTC?.setButtonBusy?.(delBtn, false, { idleLabel: BTC.t('删除') });
           }
         });
         listEl.appendChild(card);
@@ -145,7 +145,7 @@
           translation: String(fd.get(`tr_${loc}`) || "").trim(),
         }))
         .filter((t) => t.translation);
-      window.BTC?.setButtonBusy?.(btn, true, { busyLabel: "添加中..." });
+      window.BTC?.setButtonBusy?.(btn, true, { busyLabel: BTC.t('添加中...') });
       try {
         const { res, data } = await json(
           `/api/v1/orgs/${org}/projects/${project}/glossary`,
@@ -159,10 +159,10 @@
           },
         );
         if (!res.ok) {
-          toast?.("error", data.error || "添加失败");
+          toast?.("error", data.error || BTC.t('添加失败'));
           return;
         }
-        toast?.("success", "术语已添加");
+        toast?.("success", BTC.t('术语已添加'));
         form.reset();
         loadGlossary();
       } finally {
@@ -192,13 +192,13 @@
     async function loadAssignees() {
       if (!listEl) return;
       listEl.innerHTML =
-        window.BTC?.loadingHtml?.({ size: "md", label: "加载中...", layout: "inline" }) ||
+        window.BTC?.loadingHtml?.({ size: "md", label: BTC.t('加载中...'), layout: "inline" }) ||
         `<div class="inline-loading" role="status"><div class="loading-spinner md" aria-hidden="true"></div><div>加载中...</div></div>`;
       const { res, data } = await json(
         `/api/v1/orgs/${org}/projects/${project}/assignees`,
       );
       if (!res.ok) {
-        listEl.innerHTML = `<div class="blora-alert blora-alert--danger">${data.error || "加载失败"}</div>`;
+        listEl.innerHTML = `<div class="blora-alert blora-alert--danger">${data.error || BTC.t('加载失败')}</div>`;
         return;
       }
       const rows = data.assignees || [];
@@ -216,26 +216,26 @@
         tr.innerHTML = `<td></td><td></td><td></td><td></td>`;
         tr.cells[0].textContent = a.locale;
         tr.cells[1].textContent = a.username;
-        tr.cells[2].textContent = a.kind === "proofreader" ? "审核员" : "译者";
+        tr.cells[2].textContent = a.kind === "proofreader" ? BTC.t('审核员') : BTC.t('译者');
         const btn = document.createElement("button");
         btn.type = "button";
         btn.className = "blora-btn blora-btn--danger blora-btn--xs";
-        btn.textContent = "移除";
+        btn.textContent = BTC.t('移除');
         btn.addEventListener("click", async () => {
           if (!confirm(`移除 ${a.username} 的 ${a.locale} 指派？`)) return;
-          window.BTC?.setButtonBusy?.(btn, true, { busyLabel: "移除中..." });
+          window.BTC?.setButtonBusy?.(btn, true, { busyLabel: BTC.t('移除中...') });
           try {
             const r = await json(
               `/api/v1/orgs/${org}/projects/${project}/assignees/${a.id}`,
               { method: "DELETE" },
             );
             if (!r.res.ok) {
-              toast?.("error", r.data.error || "移除失败");
+              toast?.("error", r.data.error || BTC.t('移除失败'));
               return;
             }
             loadAssignees();
           } finally {
-            window.BTC?.setButtonBusy?.(btn, false, { idleLabel: "移除" });
+            window.BTC?.setButtonBusy?.(btn, false, { idleLabel: BTC.t('移除') });
           }
         });
         tr.cells[3].appendChild(btn);
@@ -248,7 +248,7 @@
       e.preventDefault();
       const submitBtn = form.querySelector('button[type="submit"]');
       const fd = new FormData(form);
-      window.BTC?.setButtonBusy?.(submitBtn, true, { busyLabel: "添加中..." });
+      window.BTC?.setButtonBusy?.(submitBtn, true, { busyLabel: BTC.t('添加中...') });
       try {
         const { res, data } = await json(
           `/api/v1/orgs/${org}/projects/${project}/assignees`,
@@ -262,10 +262,10 @@
           },
         );
         if (!res.ok) {
-          toast?.("error", data.error || "添加失败");
+          toast?.("error", data.error || BTC.t('添加失败'));
           return;
         }
-        toast?.("success", "已添加指派");
+        toast?.("success", BTC.t('已添加指派'));
         form.reset();
         loadAssignees();
       } finally {
@@ -307,7 +307,7 @@
         ),
       };
 
-      window.BTC?.setButtonBusy?.(btn, true, { busyLabel: "保存中..." });
+      window.BTC?.setButtonBusy?.(btn, true, { busyLabel: BTC.t('保存中...') });
       try {
         const { res, data } = await json(
           `/api/v1/orgs/${org}/projects/${project}`,
@@ -319,23 +319,23 @@
         if (!res.ok) {
           if (errEl) {
             errEl.hidden = false;
-            errEl.textContent = data.error || "保存失败";
+            errEl.textContent = data.error || BTC.t('保存失败');
           }
-          toast?.("error", data.error || "保存失败");
+          toast?.("error", data.error || BTC.t('保存失败'));
           return;
         }
         if (okEl) {
           okEl.hidden = false;
-          okEl.textContent = "翻译规则已保存。";
+          okEl.textContent = BTC.t('翻译规则已保存。');
         }
-        toast?.("success", "翻译规则已保存");
+        toast?.("success", BTC.t('翻译规则已保存'));
       } catch {
         if (errEl) {
           errEl.hidden = false;
-          errEl.textContent = "网络错误";
+          errEl.textContent = BTC.t('网络错误');
         }
       } finally {
-        window.BTC?.setButtonBusy?.(btn, false, { idleLabel: "保存规则" });
+        window.BTC?.setButtonBusy?.(btn, false, { idleLabel: BTC.t('保存规则') });
       }
     });
   }

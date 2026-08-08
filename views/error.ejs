@@ -3,10 +3,10 @@
 <main class="app-main">
   <div class="blora-container">
     <div class="blora-alert blora-alert--danger" role="alert">
-      <strong class="sf-inline"><%- sfIcon('exclamationmark.triangle') %>出错了</strong>
-      <p class="u-mt-2"><%= typeof message !== 'undefined' ? message : '服务器内部错误' %></p>
+      <strong class="sf-inline"><%- sfIcon('exclamationmark.triangle') %><%= t('出错了') %></strong>
+      <p class="u-mt-2"><%= typeof message !== 'undefined' ? message : t('服务器内部错误') %></p>
     </div>
-    <p class="u-mt-4"><a class="sf-inline" href="/app"><%- sfIcon('house') %>返回工作台</a></p>
+    <p class="u-mt-4"><a class="sf-inline" href="/app"><%- sfIcon('house') %><%= t('返回工作台') %></a></p>
   </div>
 </main>
 <%- include('partials/foot') %>

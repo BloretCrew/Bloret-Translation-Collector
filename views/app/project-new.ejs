@@ -3,44 +3,44 @@
 <main class="app-main">
   <div class="blora-container blora-container--wide">
     <div class="app-narrow blora-stack blora-stack--lg">
-      <%- include('../partials/breadcrumbs', { crumbs: [{ label: '组织', href: '/app' }, { label: org.name, href: '/app/o/' + orgSlug }, { label: '新建项目' }] }) %>
+      <%- include('../partials/breadcrumbs', { crumbs: [{ label: t('组织'), href: '/app' }, { label: org.name, href: '/app/o/' + orgSlug }, { label: t('新建项目') }] }) %>
       <header class="app-page-header">
         <div class="app-page-header__copy">
-          <h1 class="blora-h2 sf-inline"><%- sfIcon('folder.badge.plus') %>新建项目</h1>
-          <p class="blora-text-muted u-mt-2">选择源语言与目标语言后，即可上传 JSON 开始翻译。</p>
+          <h1 class="blora-h2 sf-inline"><%- sfIcon('folder.badge.plus') %><%= t('新建项目') %></h1>
+          <p class="blora-text-muted u-mt-2"><%= t('选择源语言与目标语言后，即可上传 JSON 开始翻译。') %></p>
         </div>
       </header>
       <div class="blora-panel">
         <form id="create-project-form" class="blora-stack" data-org-slug="<%= orgSlug %>" method="post" action="#" onsubmit="return false;">
           <div id="form-error" class="blora-alert blora-alert--danger" hidden></div>
           <label class="blora-field">
-            <span class="blora-field__label">项目名称</span>
-            <input class="blora-input" name="name" id="project-name" required placeholder="我的应用" />
+            <span class="blora-field__label"><%= t('项目名称') %></span>
+            <input class="blora-input" name="name" id="project-name" required placeholder="<%= t('我的应用') %>" />
           </label>
           <details class="app-advanced">
-            <summary>高级：URL 标识 (Slug)</summary>
+            <summary><%= t('高级：URL 标识 (Slug)') %></summary>
             <label class="blora-field">
               <span class="blora-field__label">Slug</span>
               <input class="blora-input" name="slug" id="project-slug" required pattern="[a-z0-9]+(?:-[a-z0-9]+)*" />
-              <span class="blora-field__hint">根据名称自动生成，一般无需修改</span>
+              <span class="blora-field__hint"><%= t('根据名称自动生成，一般无需修改') %></span>
             </label>
           </details>
           <%- include('../partials/locale-source-select', { value: 'zh-CN' }) %>
           <%- include('../partials/locale-target-picker', { selected: ['en'] }) %>
           <label class="blora-field">
-            <span class="blora-field__label">可见性</span>
+            <span class="blora-field__label"><%= t('可见性') %></span>
             <select class="blora-select" name="visibility">
-              <option value="public">公开（登录用户可翻译）</option>
-              <option value="org" selected>组织内</option>
-              <option value="private">私有</option>
+              <option value="public"><%= t('公开（登录用户可翻译）') %></option>
+              <option value="org" selected><%= t('组织内') %></option>
+              <option value="private"><%= t('私有') %></option>
             </select>
-            <span class="blora-field__hint">公开项目允许任何已登录用户以翻译员身份提交译文，审核权限不变。</span>
+            <span class="blora-field__hint"><%= t('公开项目允许任何已登录用户以翻译员身份提交译文，审核权限不变。') %></span>
           </label>
           <label class="blora-field">
-            <span class="blora-field__label">简介（可选）</span>
+            <span class="blora-field__label"><%= t('简介（可选）') %></span>
             <textarea class="blora-textarea" name="description" rows="2"></textarea>
           </label>
-          <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %>创建项目</button>
+          <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %><%= t('创建项目') %></button>
         </form>
       </div>
     </div>

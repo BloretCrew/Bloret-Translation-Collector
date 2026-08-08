@@ -14,7 +14,7 @@
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(String(reader.result || ""));
-      reader.onerror = () => reject(new Error("读取文件失败"));
+      reader.onerror = () => reject(new Error(BTC.t('读取文件失败')));
       reader.readAsDataURL(file);
     });
   }
@@ -73,18 +73,18 @@
 
   async function uploadFile(root, file) {
     const endpoint = endpointFor(root);
-    if (!endpoint) throw new Error("缺少组织/项目上下文");
-    if (file.size > 2 * 1024 * 1024) throw new Error("图标不能超过 2MB");
+    if (!endpoint) throw new Error(BTC.t('缺少组织/项目上下文'));
+    if (file.size > 2 * 1024 * 1024) throw new Error(BTC.t('图标不能超过 2MB'));
     const dataUrl = await fileToDataUrl(file);
-    if (!String(dataUrl).startsWith("data:image/")) throw new Error("无法读取图片");
+    if (!String(dataUrl).startsWith("data:image/")) throw new Error(BTC.t('无法读取图片'));
     const { res, data } = await apiJson(endpoint, {
       method: "POST",
       credentials: "same-origin",
       body: JSON.stringify({ imageBase64: dataUrl }),
     });
-    if (!res.ok) throw new Error((data && data.error) || "上传失败");
+    if (!res.ok) throw new Error((data && data.error) || BTC.t('上传失败'));
     const url = ((data && (data.iconUrl || data.webpUrl)) || "").trim();
-    if (!url) throw new Error("图床未返回地址");
+    if (!url) throw new Error(BTC.t('图床未返回地址'));
     return url;
   }
 
@@ -115,7 +115,7 @@
         pickLabel.setAttribute("aria-busy", on ? "true" : "false");
       }
       if (fileInput) fileInput.disabled = !!on;
-      if (pickText) pickText.textContent = on ? "上传中..." : "选择图片";
+      if (pickText) pickText.textContent = on ? BTC.t('上传中...') : BTC.t('选择图片');
     }
 
     if (fileInput) {
@@ -127,13 +127,13 @@
         try {
           const url = await uploadFile(root, file);
           setPreview(root, url);
-          toast("success", "图标已上传并保存");
+          toast("success", BTC.t('图标已上传并保存'));
           setTimeout(function () {
             location.reload();
           }, 450);
         } catch (e) {
           console.error("[entity-icon]", e);
-          const msg = e && e.message ? e.message : "上传失败";
+          const msg = e && e.message ? e.message : BTC.t('上传失败');
           showErr(msg);
           toast("error", msg);
         } finally {
@@ -149,7 +149,7 @@
       clearBtn.addEventListener("click", async function () {
         const endpoint = endpointFor(root);
         if (!endpoint) return;
-        if (!confirm("确定移除图标？")) return;
+        if (!confirm(BTC.t('确定移除图标？'))) return;
         showErr("");
         clearBtn.disabled = true;
         try {
@@ -158,19 +158,19 @@
             credentials: "same-origin",
           });
           if (!res.ok) {
-            const msg = (data && data.error) || "移除失败";
+            const msg = (data && data.error) || BTC.t('移除失败');
             showErr(msg);
             toast("error", msg);
             return;
           }
           setPreview(root, "");
-          toast("success", "图标已移除");
+          toast("success", BTC.t('图标已移除'));
           setTimeout(function () {
             location.reload();
           }, 400);
         } catch (e) {
-          showErr("网络错误");
-          toast("error", "网络错误");
+          showErr(BTC.t('网络错误'));
+          toast("error", BTC.t('网络错误'));
         } finally {
           clearBtn.disabled = false;
         }

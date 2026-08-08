@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import { computeAssetV } from "@/lib/asset-v";
 import { sessionMiddleware } from "@/lib/auth/session";
 import { loadConfig } from "@/lib/config";
+import { t, i18nMiddleware } from "@/lib/i18n";
 import { Logger } from "@/lib/logger";
 import {
   COMMON_LOCALES,
@@ -49,6 +50,7 @@ export function createApp() {
   // 5mb: context screenshots still arrive as base64 before proxy upload to img.bloret.net
   app.use(express.json({ limit: "5mb" }));
   app.use(express.urlencoded({ extended: false }));
+  app.use(i18nMiddleware());
   app.use(sessionMiddleware);
 
   // CONSOLE-LOG-SPEC: request access log
@@ -113,19 +115,19 @@ export function createApp() {
 
   app.use((req, res) => {
     if (req.path.startsWith("/api/")) {
-      return res.status(404).json({ error: "未找到", code: "NOT_FOUND" });
+      return res.status(404).json({ error: t("未找到"), code: "NOT_FOUND" });
     }
-    return res.status(404).render("404", { title: "未找到" });
+    return res.status(404).render("404", { title: t("未找到") });
   });
 
   app.use(
     (err: unknown, req: express.Request, res: express.Response, _next: express.NextFunction) => {
       Logger.error(err instanceof Error ? err : String(err));
-      const message = err instanceof Error ? err.message : "服务器错误";
+      const message = err instanceof Error ? err.message : t("服务器错误");
       if (req.path.startsWith("/api/")) {
         return res.status(500).json({ error: message, code: "INTERNAL" });
       }
-      return res.status(500).render("error", { title: "出错了", message });
+      return res.status(500).render("error", { title: t("出错了"), message });
     },
   );
 

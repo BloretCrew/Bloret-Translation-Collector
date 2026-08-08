@@ -41,10 +41,10 @@
       prefsApi.save({ skipProjectRules: skipRulesEl.checked === true });
       showRulesOk(
         skipRulesEl.checked
-          ? "已保存：保存译文时将跳过项目翻译规则。"
-          : "已保存：保存译文时将应用项目翻译规则。",
+          ? BTC.t('已保存：保存译文时将跳过项目翻译规则。')
+          : BTC.t('已保存：保存译文时将应用项目翻译规则。'),
       );
-      window.BTC?.toast?.("success", "翻译规则偏好已保存");
+      window.BTC?.toast?.("success", BTC.t('翻译规则偏好已保存'));
     });
   }
 
@@ -134,7 +134,7 @@
       const kbd = document.createElement("kbd");
       kbd.className = "settings-shortcut__kbd blora-text-mono";
       if (capturingId === id) {
-        kbd.textContent = "按下组合键…";
+        kbd.textContent = BTC.t('按下组合键…');
         kbd.classList.add("is-listening");
       } else {
         kbd.textContent = api.format(draft[id]);
@@ -146,7 +146,7 @@
       const rec = document.createElement("button");
       rec.type = "button";
       rec.className = "blora-btn blora-btn--secondary blora-btn--sm";
-      rec.textContent = capturingId === id ? "录制中" : "录制";
+      rec.textContent = capturingId === id ? BTC.t('录制中') : BTC.t('录制');
       rec.disabled = capturingId != null && capturingId !== id;
       rec.addEventListener("click", () => {
         if (capturingId === id) stopCapture();
@@ -156,7 +156,7 @@
       const def = document.createElement("button");
       def.type = "button";
       def.className = "blora-btn blora-btn--ghost blora-btn--sm";
-      def.textContent = "默认";
+      def.textContent = BTC.t('默认');
       def.disabled = capturingId != null;
       def.addEventListener("click", () => {
         draft[id] = { ...meta.default };
@@ -182,17 +182,17 @@
     }
     api.save(draft);
     draft = api.load();
-    showOk("快捷键已保存，刷新翻译工作台后生效（若已打开则立即对后续按键生效）。");
-    toast?.("success", "快捷键已保存");
+    showOk(BTC.t('快捷键已保存，刷新翻译工作台后生效（若已打开则立即对后续按键生效）。'));
+    toast?.("success", BTC.t('快捷键已保存'));
     render();
   });
 
   resetBtn?.addEventListener("click", () => {
     if (capturingId) stopCapture();
-    if (!confirm("恢复全部快捷键为默认？")) return;
+    if (!confirm(BTC.t('恢复全部快捷键为默认？'))) return;
     draft = api.reset();
-    showOk("已恢复默认快捷键。");
-    toast?.("success", "已恢复默认");
+    showOk(BTC.t('已恢复默认快捷键。'));
+    toast?.("success", BTC.t('已恢复默认'));
     render();
   });
 

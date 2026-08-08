@@ -7,10 +7,10 @@
   <div class="blora-container blora-container--wide">
     <div class="blora-stack blora-stack--lg">
       <%- include('../partials/breadcrumbs', { crumbs: [
-        { label: '组织', href: '/app' },
+        { label: t('组织'), href: '/app' },
         { label: org.name, href: '/app/o/' + orgSlug },
         { label: project.name, href: '/app/o/' + orgSlug + '/p/' + projectSlug },
-        { label: '设置' }
+        { label: t('设置') }
       ] }) %>
       <%- include('../partials/project-nav', { activeNav: 'settings' }) %>
 
@@ -19,21 +19,21 @@
         data-settings-tabs
         data-default-tab="general"
       >
-        <nav class="settings-nav" aria-label="设置分区">
-          <a class="settings-nav__link<%= settingsTab === 'general' ? ' is-active' : '' %>" href="?tab=general" data-tab="general"><%- sfIcon('info.circle') %>基本信息</a>
+        <nav class="settings-nav" aria-label="<%= t('设置分区') %>">
+          <a class="settings-nav__link<%= settingsTab === 'general' ? ' is-active' : '' %>" href="?tab=general" data-tab="general"><%- sfIcon('info.circle') %><%= t('基本信息') %></a>
           <a class="settings-nav__link<%= settingsTab === 'readme' ? ' is-active' : '' %>" href="?tab=readme" data-tab="readme"><%- sfIcon('text.book.closed') %>README</a>
-          <a class="settings-nav__link<%= settingsTab === 'glossary' ? ' is-active' : '' %>" href="?tab=glossary" data-tab="glossary"><%- sfIcon('character.book.closed') %>术语表</a>
-          <a class="settings-nav__link<%= settingsTab === 'assignees' ? ' is-active' : '' %>" href="?tab=assignees" data-tab="assignees"><%- sfIcon('person.2') %>语言负责人</a>
-          <a class="settings-nav__link<%= settingsTab === 'rules' ? ' is-active' : '' %>" href="?tab=rules" data-tab="rules"><%- sfIcon('textformat') %>翻译规则</a>
-          <a class="settings-nav__link settings-nav__link--danger<%= settingsTab === 'danger' ? ' is-active' : '' %>" href="?tab=danger" data-tab="danger"><%- sfIcon('exclamationmark.triangle') %>危险区域</a>
+          <a class="settings-nav__link<%= settingsTab === 'glossary' ? ' is-active' : '' %>" href="?tab=glossary" data-tab="glossary"><%- sfIcon('character.book.closed') %><%= t('术语表') %></a>
+          <a class="settings-nav__link<%= settingsTab === 'assignees' ? ' is-active' : '' %>" href="?tab=assignees" data-tab="assignees"><%- sfIcon('person.2') %><%= t('语言负责人') %></a>
+          <a class="settings-nav__link<%= settingsTab === 'rules' ? ' is-active' : '' %>" href="?tab=rules" data-tab="rules"><%- sfIcon('textformat') %><%= t('翻译规则') %></a>
+          <a class="settings-nav__link settings-nav__link--danger<%= settingsTab === 'danger' ? ' is-active' : '' %>" href="?tab=danger" data-tab="danger"><%- sfIcon('exclamationmark.triangle') %><%= t('危险区域') %></a>
         </nav>
 
         <div class="settings-main">
           <section class="settings-panel blora-panel" data-tab-panel="general" <%= settingsTab === 'general' ? '' : 'hidden' %>>
             <header class="settings-panel__head">
               <div>
-                <h2 class="blora-h3 sf-inline"><%- sfIcon('info.circle') %>基本信息</h2>
-                <p class="blora-text-faint u-text-sm u-mt-1">名称、语言与可见性</p>
+                <h2 class="blora-h3 sf-inline"><%- sfIcon('info.circle') %><%= t('基本信息') %></h2>
+                <p class="blora-text-faint u-text-sm u-mt-1"><%= t('名称、语言与可见性') %></p>
               </div>
             </header>
             <form id="project-settings-form" class="blora-stack u-mt-4" data-org-slug="<%= orgSlug %>" data-project-slug="<%= projectSlug %>">
@@ -44,28 +44,28 @@
                 fallbackSf: 'folder.fill'
               }) %>
               <label class="blora-field">
-                <span class="blora-field__label">项目名称</span>
+                <span class="blora-field__label"><%= t('项目名称') %></span>
                 <input class="blora-input" name="name" required value="<%= project.name %>" />
               </label>
               <label class="blora-field">
-                <span class="blora-field__label">简介</span>
+                <span class="blora-field__label"><%= t('简介') %></span>
                 <textarea class="blora-textarea" name="description" rows="2"><%= project.description || '' %></textarea>
               </label>
               <%- include('../partials/locale-source-select', { value: project.sourceLocale }) %>
               <label class="blora-field">
-                <span class="blora-field__label">可见性</span>
+                <span class="blora-field__label"><%= t('可见性') %></span>
                 <select class="blora-select" name="visibility">
-                  <option value="public" <%= project.visibility === 'public' ? 'selected' : '' %>>公开（登录用户可翻译）</option>
-                  <option value="org" <%= project.visibility === 'org' ? 'selected' : '' %>>组织内</option>
-                  <option value="private" <%= project.visibility === 'private' ? 'selected' : '' %>>私有</option>
+                  <option value="public" <%= project.visibility === 'public' ? 'selected' : '' %>><%= t('公开（登录用户可翻译）') %></option>
+                  <option value="org" <%= project.visibility === 'org' ? 'selected' : '' %>><%= t('组织内') %></option>
+                  <option value="private" <%= project.visibility === 'private' ? 'selected' : '' %>><%= t('私有') %></option>
                 </select>
               </label>
               <%- include('../partials/locale-target-picker', { selected: targetLanguages }) %>
               <p class="blora-text-faint u-text-xs">
-                Slug <code class="blora-code"><%= projectSlug %></code> 创建后不可修改。
+                Slug <code class="blora-code"><%= projectSlug %></code> <%= t('创建后不可修改。') %>
               </p>
               <div class="settings-panel__footer">
-                <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %>保存设置</button>
+                <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %><%= t('保存设置') %></button>
               </div>
             </form>
           </section>
@@ -74,23 +74,23 @@
             <header class="settings-panel__head">
               <div>
                 <h2 class="blora-h3 sf-inline"><%- sfIcon('text.book.closed') %>README</h2>
-                <p class="blora-text-faint u-text-sm u-mt-1">展示在项目总览。若填写 URL，将优先从远程加载 Markdown。</p>
+                <p class="blora-text-faint u-text-sm u-mt-1"><%= t('展示在项目总览。若填写 URL，将优先从远程加载 Markdown。') %></p>
               </div>
             </header>
             <form id="project-readme-form" class="blora-stack u-mt-4" data-org-slug="<%= orgSlug %>" data-project-slug="<%= projectSlug %>">
               <div id="readme-form-error" class="blora-alert blora-alert--danger" hidden></div>
               <label class="blora-field">
-                <span class="blora-field__label">README URL（可选）</span>
+                <span class="blora-field__label"><%= t('README URL（可选）') %></span>
                 <input class="blora-input blora-text-mono" name="readmeUrl" type="url" placeholder="https://raw.githubusercontent.com/org/repo/refs/heads/main/README.md" value="<%= project.readmeUrl || '' %>" />
-                <span class="blora-field__hint">仅支持 HTTPS。示例：raw.githubusercontent.com/…/README.md</span>
+                <span class="blora-field__hint"><%= t('仅支持 HTTPS。示例：raw.githubusercontent.com/…/README.md') %></span>
               </label>
               <label class="blora-field">
-                <span class="blora-field__label">本地 Markdown（URL 不可用时的后备）</span>
-                <textarea class="blora-textarea blora-text-mono" name="readme" rows="14" placeholder="# 项目说明&#10;&#10;翻译约定……"><%= project.readme || '' %></textarea>
+                <span class="blora-field__label"><%= t('本地 Markdown（URL 不可用时的后备）') %></span>
+                <textarea class="blora-textarea blora-text-mono" name="readme" rows="14" placeholder="<%= t('# 项目说明&#10;&#10;翻译约定……') %>"><%= project.readme || '' %></textarea>
               </label>
               <div class="settings-panel__footer">
-                <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %>保存 README</button>
-                <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>">查看总览</a>
+                <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %><%= t('保存 README') %></button>
+                <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>"><%= t('查看总览') %></a>
               </div>
             </form>
           </section>
@@ -106,29 +106,29 @@
           >
             <header class="settings-panel__head">
               <div>
-                <h2 class="blora-h3 sf-inline"><%- sfIcon('character.book.closed') %>术语表</h2>
-                <p class="blora-text-faint u-text-sm u-mt-1">源文命中术语时，工作台会提示推荐译法</p>
+                <h2 class="blora-h3 sf-inline"><%- sfIcon('character.book.closed') %><%= t('术语表') %></h2>
+                <p class="blora-text-faint u-text-sm u-mt-1"><%= t('源文命中术语时，工作台会提示推荐译法') %></p>
               </div>
             </header>
             <div id="glossary-list" class="glossary-list u-mt-4"></div>
             <form id="glossary-add-form" class="blora-stack u-mt-4 settings-subform">
-              <h3 class="blora-h4 sf-inline"><%- sfIcon('plus.circle') %>添加术语</h3>
+              <h3 class="blora-h4 sf-inline"><%- sfIcon('plus.circle') %><%= t('添加术语') %></h3>
               <div class="blora-grid blora-grid--2">
                 <label class="blora-field">
-                  <span class="blora-field__label">源术语</span>
-                  <input class="blora-input" name="sourceTerm" required placeholder="例如：账号" />
+                  <span class="blora-field__label"><%= t('源术语') %></span>
+                  <input class="blora-input" name="sourceTerm" required placeholder="<%= t('例如：账号') %>" />
                 </label>
                 <label class="blora-field">
-                  <span class="blora-field__label">说明（可选）</span>
-                  <input class="blora-input" name="description" placeholder="上下文备注" />
+                  <span class="blora-field__label"><%= t('说明（可选）') %></span>
+                  <input class="blora-input" name="description" placeholder="<%= t('上下文备注') %>" />
                 </label>
               </div>
               <label class="blora-field">
-                <span class="blora-field__label">目标语言译法（可选，可稍后补全）</span>
+                <span class="blora-field__label"><%= t('目标语言译法（可选，可稍后补全）') %></span>
                 <div class="blora-row" style="flex-wrap:wrap;gap:8px" id="glossary-tr-fields"></div>
               </label>
               <div class="settings-panel__footer">
-                <button type="submit" class="blora-btn blora-btn--secondary"><%- sfIcon('plus.circle') %>添加术语</button>
+                <button type="submit" class="blora-btn blora-btn--secondary"><%- sfIcon('plus.circle') %><%= t('添加术语') %></button>
               </div>
             </form>
           </section>
@@ -144,30 +144,30 @@
           >
             <header class="settings-panel__head">
               <div>
-                <h2 class="blora-h3 sf-inline"><%- sfIcon('person.2') %>语言负责人</h2>
-                <p class="blora-text-faint u-text-sm u-mt-1">为某语言指派审核员或译者（审核员可批准该语言译文）</p>
+                <h2 class="blora-h3 sf-inline"><%- sfIcon('person.2') %><%= t('语言负责人') %></h2>
+                <p class="blora-text-faint u-text-sm u-mt-1"><%= t('为某语言指派审核员或译者（审核员可批准该语言译文）') %></p>
               </div>
             </header>
             <div id="assignees-list" class="assignees-list u-mt-4"></div>
             <form id="assignee-add-form" class="settings-subform u-mt-4">
-              <h3 class="blora-h4 sf-inline"><%- sfIcon('person.badge.plus') %>添加指派</h3>
+              <h3 class="blora-h4 sf-inline"><%- sfIcon('person.badge.plus') %><%= t('添加指派') %></h3>
               <div class="blora-row" style="align-items:flex-end;flex-wrap:wrap;gap:8px">
                 <label class="blora-field">
-                  <span class="blora-field__label">语言</span>
+                  <span class="blora-field__label"><%= t('语言') %></span>
                   <select class="blora-select" name="locale" id="assignee-locale"></select>
                 </label>
                 <label class="blora-field">
-                  <span class="blora-field__label">用户名</span>
-                  <input class="blora-input" name="username" required placeholder="PassPort 用户名" />
+                  <span class="blora-field__label"><%= t('用户名') %></span>
+                  <input class="blora-input" name="username" required placeholder="<%= t('PassPort 用户名') %>" />
                 </label>
                 <label class="blora-field">
-                  <span class="blora-field__label">职责</span>
+                  <span class="blora-field__label"><%= t('职责') %></span>
                   <select class="blora-select" name="kind">
-                    <option value="proofreader">审核员</option>
-                    <option value="translator">译者</option>
+                    <option value="proofreader"><%= t('审核员') %></option>
+                    <option value="translator"><%= t('译者') %></option>
                   </select>
                 </label>
-                <button type="submit" class="blora-btn blora-btn--secondary"><%- sfIcon('person.badge.plus') %>添加指派</button>
+                <button type="submit" class="blora-btn blora-btn--secondary"><%- sfIcon('person.badge.plus') %><%= t('添加指派') %></button>
               </div>
             </form>
           </section>
@@ -181,8 +181,8 @@
           <section class="settings-panel blora-panel" data-tab-panel="rules" <%= settingsTab === 'rules' ? '' : 'hidden' %>>
             <header class="settings-panel__head">
               <div>
-                <h2 class="blora-h3 sf-inline"><%- sfIcon('textformat') %>翻译规则</h2>
-                <p class="blora-text-faint u-text-sm u-mt-1">保存建议时自动整理译文排版。译员可在用户设置中选择不遵循。</p>
+                <h2 class="blora-h3 sf-inline"><%- sfIcon('textformat') %><%= t('翻译规则') %></h2>
+                <p class="blora-text-faint u-text-sm u-mt-1"><%= t('保存建议时自动整理译文排版。译员可在用户设置中选择不遵循。') %></p>
               </div>
             </header>
             <form
@@ -198,8 +198,8 @@
                 <input type="checkbox" name="spaceCjkLatin" value="1" <%= ruleSpaceCjkLatin ? 'checked' : '' %> />
                 <span class="blora-switch__track" aria-hidden="true"></span>
                 <span>
-                  <span class="blora-field__label">中文与英文之间加空格</span>
-                  <span class="blora-field__hint blora-text-faint u-text-xs" style="display:block">例如：你好 world</span>
+                  <span class="blora-field__label"><%= t('中文与英文之间加空格') %></span>
+                  <span class="blora-field__hint blora-text-faint u-text-xs" style="display:block"><%= t('例如：你好 world') %></span>
                 </span>
               </label>
 
@@ -207,8 +207,8 @@
                 <input type="checkbox" name="spaceCjkDigit" value="1" <%= ruleSpaceCjkDigit ? 'checked' : '' %> />
                 <span class="blora-switch__track" aria-hidden="true"></span>
                 <span>
-                  <span class="blora-field__label">中文与数字之间加空格</span>
-                  <span class="blora-field__hint blora-text-faint u-text-xs" style="display:block">例如：版本 2</span>
+                  <span class="blora-field__label"><%= t('中文与数字之间加空格') %></span>
+                  <span class="blora-field__hint blora-text-faint u-text-xs" style="display:block"><%= t('例如：版本 2') %></span>
                 </span>
               </label>
 
@@ -216,17 +216,17 @@
                 <input type="checkbox" name="spaceLatinDigit" value="1" <%= ruleSpaceLatinDigit ? 'checked' : '' %> />
                 <span class="blora-switch__track" aria-hidden="true"></span>
                 <span>
-                  <span class="blora-field__label">英文与数字之间加空格</span>
-                  <span class="blora-field__hint blora-text-faint u-text-xs" style="display:block">例如：iOS 15</span>
+                  <span class="blora-field__label"><%= t('英文与数字之间加空格') %></span>
+                  <span class="blora-field__hint blora-text-faint u-text-xs" style="display:block"><%= t('例如：iOS 15') %></span>
                 </span>
               </label>
 
               <p class="blora-text-faint u-text-xs">
-                规则仅在保存建议时应用，不会批量改写已有译文。常见占位符（如 <code class="blora-code">{name}</code>、<code class="blora-code">%s</code>）会被保护。
+                <%= t('规则仅在保存建议时应用，不会批量改写已有译文。常见占位符（如') %> <code class="blora-code">{name}</code>、<code class="blora-code">%s</code><%= t('）会被保护。') %>
               </p>
 
               <div class="settings-panel__footer">
-                <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %>保存规则</button>
+                <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('checkmark.circle') %><%= t('保存规则') %></button>
               </div>
             </form>
           </section>
@@ -234,14 +234,14 @@
           <section class="settings-panel blora-panel settings-panel--danger" data-tab-panel="danger" <%= settingsTab === 'danger' ? '' : 'hidden' %>>
             <header class="settings-panel__head">
               <div>
-                <h2 class="blora-h3 sf-inline"><%- sfIcon('exclamationmark.triangle') %>危险区域</h2>
-                <p class="blora-text-faint u-text-sm u-mt-1">不可逆操作，请谨慎确认</p>
+                <h2 class="blora-h3 sf-inline"><%- sfIcon('exclamationmark.triangle') %><%= t('危险区域') %></h2>
+                <p class="blora-text-faint u-text-sm u-mt-1"><%= t('不可逆操作，请谨慎确认') %></p>
               </div>
             </header>
             <div class="settings-danger-card u-mt-4">
               <div>
-                <strong>删除项目</strong>
-                <p class="blora-text-muted u-mt-1">将清除所有源文件与译文，且无法恢复。</p>
+                <strong><%= t('删除项目') %></strong>
+                <p class="blora-text-muted u-mt-1"><%= t('将清除所有源文件与译文，且无法恢复。') %></p>
               </div>
               <button
                 type="button"
@@ -250,7 +250,7 @@
                 data-org-slug="<%= orgSlug %>"
                 data-project-slug="<%= projectSlug %>"
                 data-name="<%= project.name %>"
-              ><%- sfIcon('trash') %>删除项目</button>
+              ><%- sfIcon('trash') %><%= t('删除项目') %></button>
             </div>
           </section>
         </div>

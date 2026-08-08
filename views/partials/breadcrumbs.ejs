@@ -1,5 +1,5 @@
 <% if (typeof crumbs !== 'undefined' && crumbs && crumbs.length) { %>
-<nav class="blora-breadcrumb app-breadcrumb" aria-label="面包屑">
+<nav class="blora-breadcrumb app-breadcrumb" aria-label="<%= t('面包屑') %>">
   <% crumbs.forEach(function (item, i) { %>
     <span class="app-breadcrumb__item">
       <% if (i > 0) { %>

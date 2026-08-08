@@ -10,10 +10,10 @@
   var known = opts.some(function (o) { return o.code === current; });
 %>
 <label class="blora-field">
-  <span class="blora-field__label">源语言</span>
+  <span class="blora-field__label"><%= t('源语言') %></span>
   <select class="blora-select" name="<%= fieldName %>" id="<%= fieldId %>" required>
     <% if (current && !known) { %>
-      <option value="<%= current %>" selected><%= current %>（自定义）</option>
+      <option value="<%= current %>" selected><%= current %><%= t('（自定义）') %></option>
     <% } %>
     <% opts.forEach(function (o) { %>
       <option value="<%= o.code %>" <%= o.code === current ? 'selected' : '' %>>

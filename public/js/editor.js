@@ -123,10 +123,10 @@
     if (els.draft) {
       els.draft.readOnly = !suggest;
       els.draft.placeholder = suggest
-        ? "输入译文…"
+        ? BTC.t('输入译文…')
         : workMode === "proofread"
-          ? "审核模式：在右侧建议中批准"
-          : "只读";
+          ? BTC.t('审核模式：在右侧建议中批准')
+          : BTC.t('只读');
     }
     if (els.saveBtn) els.saveBtn.hidden = !suggest;
     if (els.saveOnlyBtn) els.saveOnlyBtn.hidden = !suggest;
@@ -143,11 +143,11 @@
     const msg = document.getElementById("editor-list-empty-msg");
     if (!msg) return;
     if (workMode === "translate" && els.filter?.value === "todo") {
-      msg.textContent = "没有待翻译词条";
+      msg.textContent = BTC.t('没有待翻译词条');
     } else if (workMode === "proofread" && els.filter?.value === "pending") {
-      msg.textContent = "没有待批准词条";
+      msg.textContent = BTC.t('没有待批准词条');
     } else {
-      msg.textContent = "没有匹配的字符串";
+      msg.textContent = BTC.t('没有匹配的字符串');
     }
   }
 
@@ -322,16 +322,16 @@
         `<span class="loading-spinner sm save-hint__spinner" aria-hidden="true"></span>保存中...`;
     } else if (state === "saved") {
       els.saveHint.classList.add("is-saved");
-      els.saveHint.textContent = "已保存";
+      els.saveHint.textContent = BTC.t('已保存');
     } else if (state === "error") {
       els.saveHint.classList.add("is-error");
-      els.saveHint.textContent = "保存失败";
+      els.saveHint.textContent = BTC.t('保存失败');
     } else {
       els.saveHint.textContent = effectiveCanSuggest()
-        ? "就绪"
+        ? BTC.t('就绪')
         : workMode === "proofread"
-          ? "审核中"
-          : "只读";
+          ? BTC.t('审核中')
+          : BTC.t('只读');
     }
   }
 
@@ -358,7 +358,7 @@
     const pct = (n) => (total === 0 ? 0 : Math.round((n / total) * 100));
     const title = total
       ? `已批准 ${approved}（${pct(approved)}%）· 有译文 ${suggestedOnly}（${pct(suggestedOnly)}%）· 未翻译 ${empty}（${pct(empty)}%）· 共 ${total}`
-      : "暂无字符串";
+      : BTC.t('暂无字符串');
     if (els.progress) {
       els.progress.title = title;
       els.progress.setAttribute("aria-label", title);
@@ -446,9 +446,9 @@
   }
 
   function workflowBadge(status) {
-    if (status === "approved") return { cls: "status-dot--done", label: "已批准" };
-    if (status === "suggested") return { cls: "status-dot--suggested", label: "有建议" };
-    return { cls: "status-dot--empty", label: "未翻译" };
+    if (status === "approved") return { cls: "status-dot--done", label: BTC.t('已批准') };
+    if (status === "suggested") return { cls: "status-dot--suggested", label: BTC.t('有建议') };
+    return { cls: "status-dot--empty", label: BTC.t('未翻译') };
   }
 
   function escapeHtml(s) {
@@ -488,7 +488,7 @@
       btn.querySelector(".editor-list__src").textContent = s.sourceText;
       const meta = [];
       if (s.suggestionCount) meta.push(`${s.suggestionCount} 条建议`);
-      if (wf === "approved") meta.push("已批准");
+      if (wf === "approved") meta.push(BTC.t('已批准'));
       btn.querySelector(".editor-list__meta").textContent = meta.join(" · ");
       btn.addEventListener("click", () => selectString(s.id));
       els.list.appendChild(btn);
@@ -528,7 +528,7 @@
       if (reqId !== listRequestId) return;
 
       if (!res.ok) {
-        showError(data.error || "加载失败");
+        showError(data.error || BTC.t('加载失败'));
         setShellState("workspace");
         strings = [];
         total = 0;
@@ -587,7 +587,7 @@
       }
     } catch {
       if (reqId !== listRequestId) return;
-      showError("网络错误");
+      showError(BTC.t('网络错误'));
       setShellState("workspace");
       strings = [];
       renderList();
@@ -640,7 +640,7 @@
     if (els.suggestions) {
       els.suggestions.innerHTML =
         (window.BTC && window.BTC.loadingHtml
-          ? window.BTC.loadingHtml({ size: "md", label: "加载中...", layout: "inline" })
+          ? window.BTC.loadingHtml({ size: "md", label: BTC.t('加载中...'), layout: "inline" })
           : `<div class="inline-loading" role="status"><div class="loading-spinner md" aria-hidden="true"></div><div>加载中...</div></div>`);
     }
     if (els.comments) els.comments.innerHTML = "";
@@ -651,7 +651,7 @@
       );
       if (!res.ok) {
         if (els.suggestions) {
-          els.suggestions.innerHTML = `<div class="blora-alert blora-alert--danger">${data.error || "加载失败"}</div>`;
+          els.suggestions.innerHTML = `<div class="blora-alert blora-alert--danger">${data.error || BTC.t('加载失败')}</div>`;
         }
         return;
       }
@@ -774,7 +774,7 @@
         const del = document.createElement("button");
         del.type = "button";
         del.className = "blora-btn blora-btn--ghost blora-btn--xs";
-        del.textContent = "删除";
+        del.textContent = BTC.t('删除');
         del.addEventListener("click", () => deleteContext(c.id));
         card.querySelector(".context-shot__actions").appendChild(del);
       }
@@ -786,19 +786,19 @@
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(reader.result);
-      reader.onerror = () => reject(new Error("读取文件失败"));
+      reader.onerror = () => reject(new Error(BTC.t('读取文件失败')));
       reader.readAsDataURL(file);
     });
   }
 
   async function uploadContext() {
     if (!activeId || !els.contextFile?.files?.length) {
-      toast?.("error", "请选择图片");
+      toast?.("error", BTC.t('请选择图片'));
       return;
     }
     const file = els.contextFile.files[0];
     if (!file.type.startsWith("image/")) {
-      toast?.("error", "仅支持图片");
+      toast?.("error", BTC.t('仅支持图片'));
       return;
     }
     try {
@@ -812,32 +812,32 @@
         },
       );
       if (!res.ok) {
-        toast?.("error", data.error || "上传失败");
+        toast?.("error", data.error || BTC.t('上传失败'));
         return;
       }
       if (els.contextFile) els.contextFile.value = "";
       if (els.contextCaption) els.contextCaption.value = "";
-      toast?.("success", "截图已上传");
+      toast?.("success", BTC.t('截图已上传'));
       await loadDetail(activeId);
     } catch {
-      toast?.("error", "上传失败");
+      toast?.("error", BTC.t('上传失败'));
     }
   }
 
   async function deleteContext(id) {
-    if (!confirm("删除这张截图？")) return;
+    if (!confirm(BTC.t('删除这张截图？'))) return;
     try {
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/contexts/${id}`,
         { method: "DELETE" },
       );
       if (!res.ok) {
-        toast?.("error", data.error || "删除失败");
+        toast?.("error", data.error || BTC.t('删除失败'));
         return;
       }
       if (activeId) await loadDetail(activeId);
     } catch {
-      toast?.("error", "网络错误");
+      toast?.("error", BTC.t('网络错误'));
     }
   }
 
@@ -845,12 +845,12 @@
     if (!effectiveCanSuggest() || !activeId || mtBusy) return;
     const text = (els.source?.textContent || "").trim();
     if (!text) {
-      toast?.("error", "源文为空");
+      toast?.("error", BTC.t('源文为空'));
       return;
     }
     mtBusy = true;
     if (els.mtBtn) {
-      window.BTC?.setButtonBusy?.(els.mtBtn, true, { busyLabel: "翻译中..." });
+      window.BTC?.setButtonBusy?.(els.mtBtn, true, { busyLabel: BTC.t('翻译中...') });
     }
     try {
       const { res, data } = await json(
@@ -867,18 +867,18 @@
         },
       );
       if (!res.ok) {
-        toast?.("error", data.error || "机器翻译失败");
+        toast?.("error", data.error || BTC.t('机器翻译失败'));
         return;
       }
       els.draft.value = data.text || "";
       els.draft.focus();
-      toast?.("success", "已填入机器译文，请检查后保存建议");
+      toast?.("success", BTC.t('已填入机器译文，请检查后保存建议'));
     } catch {
-      toast?.("error", "网络错误");
+      toast?.("error", BTC.t('网络错误'));
     } finally {
       mtBusy = false;
       if (els.mtBtn) {
-        window.BTC?.setButtonBusy?.(els.mtBtn, false, { idleLabel: "机器翻译" });
+        window.BTC?.setButtonBusy?.(els.mtBtn, false, { idleLabel: BTC.t('机器翻译') });
       }
     }
   }
@@ -901,7 +901,7 @@
     if (!effectiveCanSuggest() || !els.draft || els.draft.readOnly) return false;
     const src = currentSourceText();
     if (!src) {
-      if (!opts.silent) toast?.("error", "当前没有可插入的原文");
+      if (!opts.silent) toast?.("error", BTC.t('当前没有可插入的原文'));
       return false;
     }
     const ta = els.draft;
@@ -919,15 +919,15 @@
     ta.focus({ preventScroll: true });
     // Notify any listeners that rely on input events
     ta.dispatchEvent(new Event("input", { bubbles: true }));
-    if (!opts.silent) toast?.("success", "已插入原文");
+    if (!opts.silent) toast?.("success", BTC.t('已插入原文'));
     return true;
   }
 
   async function assignTask() {
     if (!activeId || !detail?.canManage) return;
-    const username = window.prompt("指派给（用户名）：");
+    const username = window.prompt(BTC.t('指派给（用户名）：'));
     if (!username || !username.trim()) return;
-    const note = window.prompt("备注（可选）：") || "";
+    const note = window.prompt(BTC.t('备注（可选）：')) || "";
     try {
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/tasks`,
@@ -943,12 +943,12 @@
         },
       );
       if (!res.ok) {
-        toast?.("error", data.error || "指派失败");
+        toast?.("error", data.error || BTC.t('指派失败'));
         return;
       }
       toast?.("success", `已指派给 ${username.trim()}`);
     } catch {
-      toast?.("error", "网络错误");
+      toast?.("error", BTC.t('网络错误'));
     }
   }
 
@@ -963,7 +963,7 @@
       const row = document.createElement("div");
       row.className = "tm-hit";
       const matchLabel =
-        h.match === "exact" ? "完全匹配" : h.match === "contains" ? "包含" : "被包含";
+        h.match === "exact" ? BTC.t('完全匹配') : h.match === "contains" ? BTC.t('包含') : BTC.t('被包含');
       row.innerHTML = `
         <div class="tm-hit__score">${h.score}%</div>
         <div class="tm-hit__body">
@@ -984,7 +984,7 @@
         use.addEventListener("click", () => {
           els.draft.value = h.translation;
           els.draft.focus();
-          toast?.("success", "已采用 TM 译文，请保存建议");
+          toast?.("success", BTC.t('已采用 TM 译文，请保存建议'));
         });
       }
       els.tmList.appendChild(row);
@@ -1011,7 +1011,7 @@
       `;
       row.querySelector(".glossary-hit__src").textContent = h.sourceTerm;
       row.querySelector(".glossary-hit__dst").textContent =
-        h.translation || "（未定义此语言译法）";
+        h.translation || BTC.t('（未定义此语言译法）');
       const use = row.querySelector("[data-use]");
       if (!h.translation || !effectiveCanSuggest()) {
         use.hidden = true;
@@ -1063,13 +1063,13 @@
       if (s.isApproved) {
         const b = document.createElement("span");
         b.className = "blora-badge";
-        b.textContent = "已批准";
+        b.textContent = BTC.t('已批准');
         badges.appendChild(b);
       }
       if (s.isMine) {
         const b = document.createElement("span");
         b.className = "blora-badge blora-badge--pill";
-        b.textContent = "我的";
+        b.textContent = BTC.t('我的');
         badges.appendChild(b);
       }
 
@@ -1078,11 +1078,11 @@
         const useBtn = document.createElement("button");
         useBtn.type = "button";
         useBtn.className = "blora-btn blora-btn--ghost blora-btn--xs";
-        useBtn.textContent = "采用";
+        useBtn.textContent = BTC.t('采用');
         useBtn.addEventListener("click", () => {
           els.draft.value = s.text;
           els.draft.focus();
-          toast?.("success", "已填入编辑框，请点「保存」确认");
+          toast?.("success", BTC.t('已填入编辑框，请点「保存」确认'));
         });
         actions.appendChild(useBtn);
       }
@@ -1092,7 +1092,7 @@
         voteBtn.className =
           "blora-btn blora-btn--xs " +
           (s.votedByMe ? "blora-btn--primary" : "blora-btn--outline");
-        voteBtn.textContent = s.votedByMe ? "取消投票" : "投票";
+        voteBtn.textContent = s.votedByMe ? BTC.t('取消投票') : BTC.t('投票');
         voteBtn.addEventListener("click", () => voteSuggestion(s.id));
         actions.appendChild(voteBtn);
       }
@@ -1100,7 +1100,7 @@
         const appr = document.createElement("button");
         appr.type = "button";
         appr.className = "blora-btn blora-btn--secondary blora-btn--xs";
-        appr.textContent = "批准";
+        appr.textContent = BTC.t('批准');
         appr.addEventListener("click", () => approveSuggestion(s.id));
         actions.appendChild(appr);
       }
@@ -1108,7 +1108,7 @@
         const un = document.createElement("button");
         un.type = "button";
         un.className = "blora-btn blora-btn--ghost blora-btn--xs";
-        un.textContent = "取消批准";
+        un.textContent = BTC.t('取消批准');
         un.addEventListener("click", () => unapprove());
         actions.appendChild(un);
       }
@@ -1118,7 +1118,7 @@
       toggleComments.type = "button";
       toggleComments.className = "blora-btn blora-btn--ghost blora-btn--xs";
       toggleComments.textContent =
-        commentCount > 0 ? `评论 (${commentCount})` : "评论";
+        commentCount > 0 ? `评论 (${commentCount})` : BTC.t('评论');
       actions.appendChild(toggleComments);
 
       const commentsMount = card.querySelector(".collab-card__comments");
@@ -1208,7 +1208,7 @@
       const compose = document.createElement("div");
       compose.className = "suggestion-comments__compose";
       compose.innerHTML = `
-        <textarea class="blora-textarea suggestion-comments__body" rows="2" placeholder="针对这条建议回复…"></textarea>
+        <textarea class="blora-textarea suggestion-comments__body" rows="2" placeholder=BTC.t('针对这条建议回复…')></textarea>
         <button type="button" class="blora-btn blora-btn--secondary blora-btn--xs suggestion-comments__send">发送</button>
       `;
       const ta = compose.querySelector(".suggestion-comments__body");
@@ -1252,7 +1252,7 @@
       const replyBtn = document.createElement("button");
       replyBtn.type = "button";
       replyBtn.className = "blora-btn blora-btn--ghost blora-btn--xs";
-      replyBtn.textContent = "回复";
+      replyBtn.textContent = BTC.t('回复');
       replyBtn.addEventListener("click", () => {
         const existing = item.querySelector(".suggestion-comment__reply-form");
         if (existing) {
@@ -1305,7 +1305,7 @@
     const del = document.createElement("button");
     del.type = "button";
     del.className = "blora-btn blora-btn--ghost blora-btn--xs";
-    del.textContent = "删除";
+    del.textContent = BTC.t('删除');
     del.addEventListener("click", () =>
       deleteSuggestionComment(c.id, opts.onChanged),
     );
@@ -1318,7 +1318,7 @@
     if (!bodyEl) return;
     const body = bodyEl.value.trim();
     if (!body) {
-      toast?.("error", "请输入评论内容");
+      toast?.("error", BTC.t('请输入评论内容'));
       return;
     }
     const payload = { body };
@@ -1332,31 +1332,31 @@
         },
       );
       if (!res.ok) {
-        toast?.("error", data.error || "发送失败");
+        toast?.("error", data.error || BTC.t('发送失败'));
         return;
       }
       bodyEl.value = "";
-      toast?.("success", opts.parentId ? "回复已发送" : "评论已发送");
+      toast?.("success", opts.parentId ? BTC.t('回复已发送') : BTC.t('评论已发送'));
       opts.onDone?.();
     } catch {
-      toast?.("error", "网络错误");
+      toast?.("error", BTC.t('网络错误'));
     }
   }
 
   async function deleteSuggestionComment(id, onDone) {
-    if (!confirm("删除这条评论？")) return;
+    if (!confirm(BTC.t('删除这条评论？'))) return;
     try {
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/suggestion-comments/${id}`,
         { method: "DELETE" },
       );
       if (!res.ok) {
-        toast?.("error", data.error || "删除失败");
+        toast?.("error", data.error || BTC.t('删除失败'));
         return;
       }
       onDone?.();
     } catch {
-      toast?.("error", "网络错误");
+      toast?.("error", BTC.t('网络错误'));
     }
   }
 
@@ -1387,7 +1387,7 @@
       const replyBtn = document.createElement("button");
       replyBtn.type = "button";
       replyBtn.className = "blora-btn blora-btn--ghost blora-btn--xs";
-      replyBtn.textContent = "回复";
+      replyBtn.textContent = BTC.t('回复');
       replyBtn.addEventListener("click", () => toggleReplyForm(item, c));
       actions.appendChild(replyBtn);
     }
@@ -1395,7 +1395,7 @@
     const del = document.createElement("button");
     del.type = "button";
     del.className = "blora-btn blora-btn--ghost blora-btn--xs";
-    del.textContent = "删除";
+    del.textContent = BTC.t('删除');
     del.addEventListener("click", () => deleteComment(c.id));
     actions.appendChild(del);
     return item;
@@ -1516,7 +1516,7 @@
       );
       if (!res.ok) {
         setSaveHint("error");
-        toast?.("error", data.error || "保存失败");
+        toast?.("error", data.error || BTC.t('保存失败'));
         return;
       }
       // Reflect server-side rule application in the draft box
@@ -1525,9 +1525,9 @@
       }
       setSaveHint("saved");
       if (advance && text) {
-        toast?.("success", atEnd ? "已保存 · 本批已到最后一条" : "已保存，下一条");
+        toast?.("success", atEnd ? BTC.t('已保存 · 本批已到最后一条') : BTC.t('已保存，下一条'));
       } else {
-        toast?.("success", "建议已保存");
+        toast?.("success", BTC.t('建议已保存'));
       }
 
       const preferId = nextId || activeId;
@@ -1542,22 +1542,22 @@
 
   async function deleteSuggestion() {
     if (!effectiveCanSuggest() || !activeId) return;
-    if (!confirm("删除我的建议？")) return;
+    if (!confirm(BTC.t('删除我的建议？'))) return;
     try {
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/strings/${activeId}/suggestions/${encodeURIComponent(locale)}`,
         { method: "DELETE" },
       );
       if (!res.ok) {
-        toast?.("error", data.error || "删除失败");
+        toast?.("error", data.error || BTC.t('删除失败'));
         return;
       }
       els.draft.value = "";
-      toast?.("success", "已删除我的建议");
+      toast?.("success", BTC.t('已删除我的建议'));
       await loadList({ quiet: true });
       if (activeId) await loadDetail(activeId);
     } catch {
-      toast?.("error", "网络错误");
+      toast?.("error", BTC.t('网络错误'));
     }
   }
 
@@ -1568,52 +1568,52 @@
         { method: "POST", body: "{}" },
       );
       if (!res.ok) {
-        toast?.("error", data.error || "投票失败");
+        toast?.("error", data.error || BTC.t('投票失败'));
         return;
       }
       if (activeId) await loadDetail(activeId);
     } catch {
-      toast?.("error", "网络错误");
+      toast?.("error", BTC.t('网络错误'));
     }
   }
 
   async function approveSuggestion(id) {
     if (!effectiveCanApprove()) return;
-    if (!confirm("批准该建议作为定稿译文？导出将使用此文本。")) return;
+    if (!confirm(BTC.t('批准该建议作为定稿译文？导出将使用此文本。'))) return;
     try {
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/suggestions/${id}/approve`,
         { method: "POST", body: "{}" },
       );
       if (!res.ok) {
-        toast?.("error", data.error || "批准失败");
+        toast?.("error", data.error || BTC.t('批准失败'));
         return;
       }
 
       await loadList({ quiet: true });
       if (activeId) await loadDetail(activeId);
     } catch {
-      toast?.("error", "网络错误");
+      toast?.("error", BTC.t('网络错误'));
     }
   }
 
   async function unapprove() {
     if (!effectiveCanApprove() || !activeId) return;
-    if (!confirm("取消批准？定稿将清空（建议仍保留）。")) return;
+    if (!confirm(BTC.t('取消批准？定稿将清空（建议仍保留）。'))) return;
     try {
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/strings/${activeId}/translations/${encodeURIComponent(locale)}/unapprove`,
         { method: "POST", body: "{}" },
       );
       if (!res.ok) {
-        toast?.("error", data.error || "操作失败");
+        toast?.("error", data.error || BTC.t('操作失败'));
         return;
       }
-      toast?.("success", "已取消批准");
+      toast?.("success", BTC.t('已取消批准'));
       await loadList({ quiet: true });
       if (activeId) await loadDetail(activeId);
     } catch {
-      toast?.("error", "网络错误");
+      toast?.("error", BTC.t('网络错误'));
     }
   }
 
@@ -1626,7 +1626,7 @@
     if (!bodyEl) return;
     const body = bodyEl.value.trim();
     if (!body) {
-      toast?.("error", "请输入评论内容");
+      toast?.("error", BTC.t('请输入评论内容'));
       return;
     }
     const payload = { body, locale };
@@ -1640,32 +1640,32 @@
         },
       );
       if (!res.ok) {
-        toast?.("error", data.error || "发送失败");
+        toast?.("error", data.error || BTC.t('发送失败'));
         return;
       }
       bodyEl.value = "";
       opts.onDone?.();
-      toast?.("success", opts.parentId ? "回复已发送" : "评论已发送");
+      toast?.("success", opts.parentId ? BTC.t('回复已发送') : BTC.t('评论已发送'));
       await loadDetail(activeId);
     } catch {
-      toast?.("error", "网络错误");
+      toast?.("error", BTC.t('网络错误'));
     }
   }
 
   async function deleteComment(id) {
-    if (!confirm("删除这条评论？")) return;
+    if (!confirm(BTC.t('删除这条评论？'))) return;
     try {
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/comments/${id}`,
         { method: "DELETE" },
       );
       if (!res.ok) {
-        toast?.("error", data.error || "删除失败");
+        toast?.("error", data.error || BTC.t('删除失败'));
         return;
       }
       if (activeId) await loadDetail(activeId);
     } catch {
-      toast?.("error", "网络错误");
+      toast?.("error", BTC.t('网络错误'));
     }
   }
 

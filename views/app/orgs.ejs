@@ -5,21 +5,21 @@
     <div class="blora-stack blora-stack--lg">
       <header class="app-page-header">
         <div class="app-page-header__copy">
-          <h1 class="blora-h2 sf-inline"><%- sfIcon('building.2') %>我的组织</h1>
-          <p class="blora-text-muted u-mt-2">选择组织以管理项目与翻译</p>
+          <h1 class="blora-h2 sf-inline"><%- sfIcon('building.2') %><%= t('我的组织') %></h1>
+          <p class="blora-text-muted u-mt-2"><%= t('选择组织以管理项目与翻译') %></p>
         </div>
         <div class="app-page-header__actions">
-          <a class="blora-btn blora-btn--primary" href="/app/orgs/new"><%- sfIcon('plus.circle') %>新建组织</a>
+          <a class="blora-btn blora-btn--primary" href="/app/orgs/new"><%- sfIcon('plus.circle') %><%= t('新建组织') %></a>
         </div>
       </header>
 
       <% if (!orgs || orgs.length === 0) { %>
         <div class="blora-empty">
           <div class="blora-empty__icon"><%- sfIcon('building.2') %></div>
-          <div class="blora-empty__title">还没有组织</div>
-          <div class="blora-empty__desc">创建一个组织，开始收集翻译</div>
+          <div class="blora-empty__title"><%= t('还没有组织') %></div>
+          <div class="blora-empty__desc"><%= t('创建一个组织，开始收集翻译') %></div>
           <div class="app-empty-actions">
-            <a class="blora-btn blora-btn--primary" href="/app/orgs/new"><%- sfIcon('plus.circle') %>创建第一个组织</a>
+            <a class="blora-btn blora-btn--primary" href="/app/orgs/new"><%- sfIcon('plus.circle') %><%= t('创建第一个组织') %></a>
           </div>
         </div>
       <% } else { %>
@@ -34,10 +34,10 @@
                 <% } %>
                 <%= org.name %>
               </h3>
-              <p class="blora-card__body blora-text-muted"><%= org.description || '暂无简介' %></p>
+              <p class="blora-card__body blora-text-muted"><%= org.description || t('暂无简介') %></p>
               <div class="blora-card__foot blora-row blora-row--between">
                 <span class="blora-badge blora-badge--pill"><%= roleLabels[org.role] %></span>
-                <span class="blora-text-faint blora-text-mono u-text-xs sf-inline"><%- sfIcon('folder', { className: 'sf-icon--sm' }) %><%= org.projectCount %> 项目</span>
+                <span class="blora-text-faint blora-text-mono u-text-xs sf-inline"><%- sfIcon('folder', { className: 'sf-icon--sm' }) %><%= org.projectCount %> <%= t('项目') %></span>
               </div>
             </a>
           <% }) %>

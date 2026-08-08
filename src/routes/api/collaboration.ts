@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { Router } from "express";
 import { and, eq } from "drizzle-orm";
 import { requireSession } from "@/lib/auth/session";
@@ -99,10 +100,10 @@ collaborationRouter.get(
           and(eq(sourceFiles.id, req.params.fileId), eq(sourceFiles.projectId, access.project.id)),
         )
         .limit(1);
-      if (!file) return notFound(res, "文件不存在");
+      if (!file) return notFound(res, t('文件不存在'));
 
       const locale = typeof req.query.locale === "string" ? req.query.locale : "";
-      if (!locale) return jsonError(res, "缺少 locale");
+      if (!locale) return jsonError(res, t('缺少 locale'));
 
       const status = typeof req.query.status === "string" ? req.query.status : null;
       const q = typeof req.query.q === "string" ? req.query.q.trim() : "";
@@ -143,7 +144,7 @@ collaborationRouter.get(
       if (!session) return unauthorized(res);
 
       const localeParsed = localeSchema.safeParse(req.params.locale);
-      if (!localeParsed.success) return jsonError(res, "无效语言代码");
+      if (!localeParsed.success) return jsonError(res, t('无效语言代码'));
 
       const access = await requireProjectAccess(
         req.params.orgSlug,
@@ -156,7 +157,7 @@ collaborationRouter.get(
       }
 
       const unit = await assertStringInProject(access.project.id, req.params.stringId);
-      if (!unit) return notFound(res, "字符串不存在");
+      if (!unit) return notFound(res, t('字符串不存在'));
 
       const data = await listSuggestionsForString(
         unit.id,
@@ -234,7 +235,7 @@ collaborationRouter.get(
       const text = typeof req.query.text === "string" ? req.query.text : "";
       const exclude =
         typeof req.query.excludeStringId === "string" ? req.query.excludeStringId : undefined;
-      if (!locale || !text) return jsonError(res, "需要 locale 与 text");
+      if (!locale || !text) return jsonError(res, t('需要 locale 与 text'));
       const hits = await lookupTranslationMemory({
         projectId: access.project.id,
         locale,
@@ -257,7 +258,7 @@ collaborationRouter.get(
       if (!session) return unauthorized(res);
       const locale = typeof req.query.locale === "string" ? req.query.locale : "";
       const localeParsed = localeSchema.safeParse(locale);
-      if (!localeParsed.success) return jsonError(res, "缺少或无效 locale");
+      if (!localeParsed.success) return jsonError(res, t('缺少或无效 locale'));
 
       const access = await requireProjectAccess(
         req.params.orgSlug,
@@ -269,7 +270,7 @@ collaborationRouter.get(
         return forbidden(res);
       }
       const unit = await assertStringInProject(access.project.id, req.params.stringId);
-      if (!unit) return notFound(res, "字符串不存在");
+      if (!unit) return notFound(res, t('字符串不存在'));
 
       const comments = await listComments(unit.id, localeParsed.data);
       return jsonOk(res, { comments });
@@ -287,7 +288,7 @@ collaborationRouter.post(
       if (!session) return unauthorized(res);
       const locale = typeof req.body?.locale === "string" ? req.body.locale : req.query.locale;
       const localeParsed = localeSchema.safeParse(locale);
-      if (!localeParsed.success) return jsonError(res, "缺少或无效 locale");
+      if (!localeParsed.success) return jsonError(res, t('缺少或无效 locale'));
 
       const access = await requireProjectAccess(
         req.params.orgSlug,
@@ -302,10 +303,10 @@ collaborationRouter.post(
       if (access.role === undefined) return forbidden(res);
 
       const unit = await assertStringInProject(access.project.id, req.params.stringId);
-      if (!unit) return notFound(res, "字符串不存在");
+      if (!unit) return notFound(res, t('字符串不存在'));
 
       const parsed = stringCommentSchema.safeParse(req.body);
-      if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
+      if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
 
       const result = await addComment({
         stringId: unit.id,
@@ -315,8 +316,8 @@ collaborationRouter.post(
         parentId: parsed.data.parentId ?? null,
       });
       if (!result.ok) {
-        if (result.error === "parent_not_found") return notFound(res, "回复的评论不存在");
-        return jsonError(res, "只能回复同一字符串下的评论");
+        if (result.error === "parent_not_found") return notFound(res, t('回复的评论不存在'));
+        return jsonError(res, t('只能回复同一字符串下的评论'));
       }
       const row = result.row;
       return jsonCreated(res, {
@@ -355,7 +356,7 @@ collaborationRouter.delete(
         canManageProjects(access.role) || canApproveTranslations(access.role),
       );
       if (!result.ok) {
-        if (result.error === "forbidden") return forbidden(res, "只能删除自己的评论");
+        if (result.error === "forbidden") return forbidden(res, t('只能删除自己的评论'));
         return notFound(res);
       }
       return jsonOk(res, { ok: true });
@@ -398,7 +399,7 @@ collaborationRouter.get(
           ),
         )
         .limit(1);
-      if (!s) return notFound(res, "建议不存在");
+      if (!s) return notFound(res, t('建议不存在'));
 
       const comments = await listSuggestionComments(s.id);
       return jsonOk(res, { comments });
@@ -438,10 +439,10 @@ collaborationRouter.post(
           ),
         )
         .limit(1);
-      if (!s) return notFound(res, "建议不存在");
+      if (!s) return notFound(res, t('建议不存在'));
 
       const parsed = suggestionCommentSchema.safeParse(req.body);
-      if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
+      if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
 
       const result = await addSuggestionComment({
         suggestionId: s.id,
@@ -450,8 +451,8 @@ collaborationRouter.post(
         parentId: parsed.data.parentId ?? null,
       });
       if (!result.ok) {
-        if (result.error === "parent_not_found") return notFound(res, "回复的评论不存在");
-        return jsonError(res, "只能回复同一建议下的评论");
+        if (result.error === "parent_not_found") return notFound(res, t('回复的评论不存在'));
+        return jsonError(res, t('只能回复同一建议下的评论'));
       }
       const row = result.row;
       return jsonCreated(res, {
@@ -510,7 +511,7 @@ collaborationRouter.delete(
         canManageProjects(access.role) || canApproveTranslations(access.role),
       );
       if (!result.ok) {
-        if (result.error === "forbidden") return forbidden(res, "只能删除自己的评论");
+        if (result.error === "forbidden") return forbidden(res, t('只能删除自己的评论'));
         return notFound(res);
       }
       return jsonOk(res, { ok: true });
@@ -529,7 +530,7 @@ async function putSuggestion(req: import("express").Request, res: import("expres
   const projectSlug = String(req.params.projectSlug ?? "");
   const stringId = String(req.params.stringId ?? "");
   const localeParsed = localeSchema.safeParse(req.params.locale);
-  if (!localeParsed.success) return jsonError(res, "无效语言代码");
+  if (!localeParsed.success) return jsonError(res, t('无效语言代码'));
 
   const access = await requireProjectAccess(
     orgSlug,
@@ -544,10 +545,10 @@ async function putSuggestion(req: import("express").Request, res: import("expres
   if (!canSuggestTranslations(access.role)) return forbidden(res);
 
   const unit = await assertStringInProject(access.project.id, stringId);
-  if (!unit) return notFound(res, "字符串不存在");
+  if (!unit) return notFound(res, t('字符串不存在'));
 
   const parsed = saveSuggestionSchema.safeParse(req.body);
-  if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
+  if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
 
   const row = await upsertMySuggestion({
     stringId: unit.id,
@@ -598,7 +599,7 @@ collaborationRouter.delete(
       if (!session) return unauthorized(res);
 
       const localeParsed = localeSchema.safeParse(req.params.locale);
-      if (!localeParsed.success) return jsonError(res, "无效语言代码");
+      if (!localeParsed.success) return jsonError(res, t('无效语言代码'));
 
       const access = await requireProjectAccess(
         req.params.orgSlug,
@@ -613,7 +614,7 @@ collaborationRouter.delete(
       if (!canSuggestTranslations(access.role)) return forbidden(res);
 
       const unit = await assertStringInProject(access.project.id, req.params.stringId);
-      if (!unit) return notFound(res, "字符串不存在");
+      if (!unit) return notFound(res, t('字符串不存在'));
 
       const result = await deleteMySuggestion({
         stringId: unit.id,
@@ -622,9 +623,9 @@ collaborationRouter.delete(
       });
       if (!result.ok) {
         if (result.error === "approved") {
-          return jsonError(res, "已批准的建议不能直接删除，请先取消批准", 409);
+          return jsonError(res, t('已批准的建议不能直接删除，请先取消批准'), 409);
         }
-        return notFound(res, "建议不存在");
+        return notFound(res, t('建议不存在'));
       }
       return jsonOk(res, { ok: true });
     } catch (err) {
@@ -664,11 +665,11 @@ collaborationRouter.post(
         .where(eq(translationSuggestions.id, req.params.suggestionId))
         .limit(1);
 
-      if (!s || s.projectId !== access.project.id) return notFound(res, "建议不存在");
+      if (!s || s.projectId !== access.project.id) return notFound(res, t('建议不存在'));
 
       const result = await toggleVote(s.id, session.userId!);
       if (!result.ok) {
-        if (result.error === "own") return jsonError(res, "不能给自己的建议投票");
+        if (result.error === "own") return jsonError(res, t('不能给自己的建议投票'));
         return notFound(res);
       }
       return jsonOk(res, { voted: result.voted });
@@ -708,7 +709,7 @@ collaborationRouter.post(
         .where(eq(translationSuggestions.id, req.params.suggestionId))
         .limit(1);
 
-      if (!s || s.projectId !== access.project.id) return notFound(res, "建议不存在");
+      if (!s || s.projectId !== access.project.id) return notFound(res, t('建议不存在'));
 
       const localeProofreader = await isLocaleAssignee(
         access.project.id,
@@ -717,12 +718,12 @@ collaborationRouter.post(
         "proofreader",
       );
       if (!canApproveTranslations(access.role) && !localeProofreader) {
-        return forbidden(res, "仅审核员、语言审核指派或管理员可批准译文");
+        return forbidden(res, t('仅审核员、语言审核指派或管理员可批准译文'));
       }
 
       const result = await approveSuggestion(s.id, session.userId!);
       if (!result.ok) {
-        if (result.error === "empty") return jsonError(res, "空建议无法批准");
+        if (result.error === "empty") return jsonError(res, t('空建议无法批准'));
         return notFound(res);
       }
       return jsonOk(res, {
@@ -745,7 +746,7 @@ collaborationRouter.post(
       if (!session) return unauthorized(res);
 
       const localeParsed = localeSchema.safeParse(req.params.locale);
-      if (!localeParsed.success) return jsonError(res, "无效语言代码");
+      if (!localeParsed.success) return jsonError(res, t('无效语言代码'));
 
       const access = await requireProjectAccess(
         req.params.orgSlug,
@@ -759,7 +760,7 @@ collaborationRouter.post(
       }
 
       const unit = await assertStringInProject(access.project.id, req.params.stringId);
-      if (!unit) return notFound(res, "字符串不存在");
+      if (!unit) return notFound(res, t('字符串不存在'));
 
       const localeProofreader = await isLocaleAssignee(
         access.project.id,
@@ -768,7 +769,7 @@ collaborationRouter.post(
         "proofreader",
       );
       if (!canApproveTranslations(access.role) && !localeProofreader) {
-        return forbidden(res, "仅审核员、语言审核指派或管理员可取消批准");
+        return forbidden(res, t('仅审核员、语言审核指派或管理员可取消批准'));
       }
 
       await unapproveLocale(unit.id, localeParsed.data);

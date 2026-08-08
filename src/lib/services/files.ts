@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
@@ -31,7 +32,7 @@ export async function upsertSourceFile(params: {
 
   const { entries, warnings, data, formatMeta } = parsed;
   if (entries.length === 0) {
-    return { error: "未解析到任何可翻译字符串", warnings };
+    return { error: t('未解析到任何可翻译字符串'), warnings };
   }
 
   const hash = computeContentHash(params.content);

@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { Router } from "express";
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import { requireSession } from "@/lib/auth/session";
@@ -36,7 +37,7 @@ pagesRouter.get("/", async (req, res, next) => {
     const err = typeof req.query.error === "string" ? req.query.error : null;
     const errorMsg =
       err === "oauth_denied"
-        ? "你取消了授权，或 PassPort 未返回授权码。"
+        ? t('你取消了授权，或 PassPort 未返回授权码。')
         : err
           ? decodeURIComponent(err)
           : null;
@@ -71,7 +72,7 @@ pagesRouter.get("/app/tasks", async (req, res, next) => {
       ...t,
       orgSlug: slugByOrg.get(t.orgId) ?? "",
     }));
-    return res.render("app/tasks", { title: "我的任务", tasks });
+    return res.render("app/tasks", { title: t('我的任务'), tasks });
   } catch (e) {
     next(e);
   }
@@ -81,7 +82,7 @@ pagesRouter.get("/app/settings", async (req, res, next) => {
   try {
     const tabParam = typeof req.query.tab === "string" ? req.query.tab : "shortcuts";
     const activeTab = ["shortcuts", "rules"].includes(tabParam) ? tabParam : "shortcuts";
-    return res.render("app/settings", { title: "用户设置", activeTab });
+    return res.render("app/settings", { title: t('用户设置'), activeTab });
   } catch (e) {
     next(e);
   }
@@ -108,7 +109,7 @@ pagesRouter.get("/app", async (req, res, next) => {
       .orderBy(desc(organizations.createdAt));
 
     return res.render("app/orgs", {
-      title: "我的组织",
+      title: t('我的组织'),
       orgs,
       roleLabels: ROLE_LABELS,
     });
@@ -118,7 +119,7 @@ pagesRouter.get("/app", async (req, res, next) => {
 });
 
 pagesRouter.get("/app/orgs/new", (_req, res) => {
-  return res.render("app/org-new", { title: "新建组织" });
+  return res.render("app/org-new", { title: t('新建组织') });
 });
 
 pagesRouter.get("/app/o/:org", async (req, res, next) => {
@@ -128,7 +129,7 @@ pagesRouter.get("/app/o/:org", async (req, res, next) => {
 
     const access = await requireOrgAccess(orgSlug, session.userId!);
     if ("error" in access) {
-      if (access.error === "not_found") return res.status(404).render("404", { title: "未找到" });
+      if (access.error === "not_found") return res.status(404).render("404", { title: t('未找到') });
       return res.redirect("/app");
     }
 
@@ -193,7 +194,7 @@ pagesRouter.get("/app/o/:org/members", async (req, res, next) => {
 
     const access = await requireOrgAccess(orgSlug, session.userId!);
     if ("error" in access) {
-      if (access.error === "not_found") return res.status(404).render("404", { title: "未找到" });
+      if (access.error === "not_found") return res.status(404).render("404", { title: t('未找到') });
       return res.redirect("/app");
     }
 
@@ -233,7 +234,7 @@ pagesRouter.get("/app/o/:org/settings", async (req, res, next) => {
 
     const access = await requireOrgAccess(orgSlug, session.userId!);
     if ("error" in access) {
-      if (access.error === "not_found") return res.status(404).render("404", { title: "未找到" });
+      if (access.error === "not_found") return res.status(404).render("404", { title: t('未找到') });
       return res.redirect("/app");
     }
     if (!access.membership || !canManageOrg(access.role)) {
@@ -265,13 +266,13 @@ pagesRouter.get("/app/o/:org/projects/new", async (req, res, next) => {
 
     const access = await requireOrgAccess(orgSlug, session.userId!, "manager");
     if ("error" in access) {
-      if (access.error === "not_found") return res.status(404).render("404", { title: "未找到" });
+      if (access.error === "not_found") return res.status(404).render("404", { title: t('未找到') });
       return res.redirect(`/app/o/${orgSlug}`);
     }
     if (!canManageProjects(access.role)) return res.redirect(`/app/o/${orgSlug}`);
 
     return res.render("app/project-new", {
-      title: "新建项目",
+      title: t('新建项目'),
       orgSlug,
       org: access.org,
     });
@@ -413,7 +414,7 @@ pagesRouter.get("/app/o/:org/p/:project", async (req, res, next) => {
 
     const ctx = await loadProjectPageContext(orgSlug, projectSlug, session.userId!);
     if ("error" in ctx) {
-      if (ctx.error === "not_found") return res.status(404).render("404", { title: "未找到" });
+      if (ctx.error === "not_found") return res.status(404).render("404", { title: t('未找到') });
       return res.redirect("/app");
     }
 
@@ -439,7 +440,7 @@ pagesRouter.get("/app/o/:org/p/:project/sources", async (req, res, next) => {
 
     const ctx = await loadProjectPageContext(orgSlug, projectSlug, session.userId!);
     if ("error" in ctx) {
-      if (ctx.error === "not_found") return res.status(404).render("404", { title: "未找到" });
+      if (ctx.error === "not_found") return res.status(404).render("404", { title: t('未找到') });
       return res.redirect("/app");
     }
 
@@ -459,7 +460,7 @@ pagesRouter.get("/app/o/:org/p/:project/import", async (req, res, next) => {
 
     const ctx = await loadProjectPageContext(orgSlug, projectSlug, session.userId!);
     if ("error" in ctx) {
-      if (ctx.error === "not_found") return res.status(404).render("404", { title: "未找到" });
+      if (ctx.error === "not_found") return res.status(404).render("404", { title: t('未找到') });
       return res.redirect("/app");
     }
     if (!ctx.canUpload) {
@@ -482,7 +483,7 @@ pagesRouter.get("/app/o/:org/p/:project/export", async (req, res, next) => {
 
     const ctx = await loadProjectPageContext(orgSlug, projectSlug, session.userId!);
     if ("error" in ctx) {
-      if (ctx.error === "not_found") return res.status(404).render("404", { title: "未找到" });
+      if (ctx.error === "not_found") return res.status(404).render("404", { title: t('未找到') });
       return res.redirect("/app");
     }
     if (!ctx.canExport) {
@@ -505,7 +506,7 @@ pagesRouter.get("/app/o/:org/p/:project/settings", async (req, res, next) => {
 
     const ctx = await loadProjectPageContext(orgSlug, projectSlug, session.userId!, "manager");
     if ("error" in ctx) {
-      if (ctx.error === "not_found") return res.status(404).render("404", { title: "未找到" });
+      if (ctx.error === "not_found") return res.status(404).render("404", { title: t('未找到') });
       return res.redirect(`/app/o/${orgSlug}`);
     }
     if (!ctx.canManageSettings) {
@@ -535,7 +536,7 @@ pagesRouter.get("/app/o/:org/p/:project/files/:fileId", async (req, res, next) =
 
     const access = await requireProjectAccess(orgSlug, projectSlug, session.userId!);
     if ("error" in access) {
-      if (access.error === "not_found") return res.status(404).render("404", { title: "未找到" });
+      if (access.error === "not_found") return res.status(404).render("404", { title: t('未找到') });
       return res.redirect("/app");
     }
 
@@ -544,7 +545,7 @@ pagesRouter.get("/app/o/:org/p/:project/files/:fileId", async (req, res, next) =
       .from(sourceFiles)
       .where(and(eq(sourceFiles.id, fileId), eq(sourceFiles.projectId, access.project.id)))
       .limit(1);
-    if (!file) return res.status(404).render("404", { title: "未找到" });
+    if (!file) return res.status(404).render("404", { title: t('未找到') });
 
     const langs = await db
       .select()
@@ -602,7 +603,7 @@ pagesRouter.get("/app/o/:org/p/:project/translate", async (req, res, next) => {
 
     const access = await requireProjectAccess(orgSlug, projectSlug, session.userId!);
     if ("error" in access) {
-      if (access.error === "not_found") return res.status(404).render("404", { title: "未找到" });
+      if (access.error === "not_found") return res.status(404).render("404", { title: t('未找到') });
       return res.redirect("/app");
     }
 
@@ -652,7 +653,7 @@ pagesRouter.get("/app/o/:org/p/:project/translate", async (req, res, next) => {
     else if (canModeProofread) initialMode = "proofread";
 
     return res.render("app/translate", {
-      title: "翻译工作台",
+      title: t('翻译工作台'),
       orgSlug,
       projectSlug,
       org: access.org,

@@ -12,7 +12,7 @@
   data-kind="<%= _kind %>"
   data-icon-url="<%= _icon %>"
 >
-  <span class="blora-field__label">图标</span>
+  <span class="blora-field__label"><%= t('图标') %></span>
   <div class="entity-icon-field__row">
     <div class="entity-icon-preview" aria-hidden="true">
       <img
@@ -37,7 +37,7 @@
             accept="image/png,image/jpeg,image/gif,image/webp,.png,.jpg,.jpeg,.gif,.webp"
           />
           <%- sfIcon('photo') %>
-          <span class="entity-icon-field__pick-text">选择图片</span>
+          <span class="entity-icon-field__pick-text"><%= t('选择图片') %></span>
         </label>
         <button
           type="button"
@@ -45,10 +45,10 @@
           data-icon-clear
           <%= _icon ? '' : 'hidden' %>
         >
-          <%- sfIcon('trash') %>移除
+          <%- sfIcon('trash') %><%= t('移除') %>
         </button>
       </div>
-      <p class="blora-field__hint u-mt-1">PNG / JPG / WebP / GIF，最大 2MB。选择后自动上传到图床；也可点下方「保存」一并提交。</p>
+      <p class="blora-field__hint u-mt-1"><%= t('PNG / JPG / WebP / GIF，最大 2MB。选择后自动上传到图床；也可点下方「保存」一并提交。') %></p>
       <div class="blora-alert blora-alert--danger entity-icon-field__error" hidden></div>
     </div>
   </div>

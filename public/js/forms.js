@@ -64,7 +64,7 @@
         slugEl.value = toSlug(nameEl.value || "org", "org");
         slugTouched = true;
       }
-      setButtonBusy(btn, true, { busyLabel: "创建中..." });
+      setButtonBusy(btn, true, { busyLabel: BTC.t('创建中...') });
       try {
         const visibilityEl = document.getElementById("org-visibility");
         const body = {
@@ -78,14 +78,14 @@
           body: JSON.stringify(body),
         });
         if (!res.ok) {
-          showError(err, data.error || "创建失败");
+          showError(err, data.error || BTC.t('创建失败'));
           return;
         }
         location.href = `/app/o/${data.slug}`;
       } catch {
-        showError(err, "网络错误");
+        showError(err, BTC.t('网络错误'));
       } finally {
-        setButtonBusy(btn, false, { idleLabel: "创建组织" });
+        setButtonBusy(btn, false, { idleLabel: BTC.t('创建组织') });
       }
     });
   }
@@ -99,7 +99,7 @@
       const err = document.getElementById("form-error");
       const btn = orgSettings.querySelector('button[type="submit"]');
       showError(err, "");
-      setButtonBusy(btn, true, { busyLabel: "保存中..." });
+      setButtonBusy(btn, true, { busyLabel: BTC.t('保存中...') });
       try {
         // If user picked a file but auto-upload didn't finish, upload before PATCH
         const iconRoot = orgSettings.querySelector("[data-entity-icon]");
@@ -109,7 +109,7 @@
             const url = await uploadEntityIconFile(iconRoot, pendingFile);
             setEntityIconPreview(iconRoot, url);
           } catch (iconErr) {
-            showError(err, iconErr instanceof Error ? iconErr.message : "图标上传失败");
+            showError(err, iconErr instanceof Error ? iconErr.message : BTC.t('图标上传失败'));
             return;
           }
         }
@@ -129,15 +129,15 @@
           }),
         });
         if (!res.ok) {
-          showError(err, data.error || "保存失败");
+          showError(err, data.error || BTC.t('保存失败'));
           return;
         }
-        toast("success", "组织已更新");
+        toast("success", BTC.t('组织已更新'));
         location.reload();
       } catch {
-        showError(err, "网络错误");
+        showError(err, BTC.t('网络错误'));
       } finally {
-        setButtonBusy(btn, false, { idleLabel: "保存" });
+        setButtonBusy(btn, false, { idleLabel: BTC.t('保存') });
       }
     });
   }
@@ -151,7 +151,7 @@
       const err = document.getElementById("readme-form-error");
       const btn = orgReadme.querySelector('button[type="submit"]');
       showError(err, "");
-      setButtonBusy(btn, true, { busyLabel: "保存中..." });
+      setButtonBusy(btn, true, { busyLabel: BTC.t('保存中...') });
       try {
         const fd = new FormData(orgReadme);
         const { res, data } = await json(`/api/v1/orgs/${orgSlug}`, {
@@ -162,15 +162,15 @@
           }),
         });
         if (!res.ok) {
-          showError(err, data.error || "保存失败");
+          showError(err, data.error || BTC.t('保存失败'));
           return;
         }
-        toast("success", "README 已更新");
+        toast("success", BTC.t('README 已更新'));
         location.reload();
       } catch {
-        showError(err, "网络错误");
+        showError(err, BTC.t('网络错误'));
       } finally {
-        setButtonBusy(btn, false, { idleLabel: "保存 README" });
+        setButtonBusy(btn, false, { idleLabel: BTC.t('保存 README') });
       }
     });
   }
@@ -185,7 +185,7 @@
       const err = document.getElementById("readme-form-error");
       const btn = projectReadme.querySelector('button[type="submit"]');
       showError(err, "");
-      setButtonBusy(btn, true, { busyLabel: "保存中..." });
+      setButtonBusy(btn, true, { busyLabel: BTC.t('保存中...') });
       try {
         const fd = new FormData(projectReadme);
         const { res, data } = await json(`/api/v1/orgs/${orgSlug}/projects/${projectSlug}`, {
@@ -196,15 +196,15 @@
           }),
         });
         if (!res.ok) {
-          showError(err, data.error || "保存失败");
+          showError(err, data.error || BTC.t('保存失败'));
           return;
         }
-        toast("success", "README 已更新");
+        toast("success", BTC.t('README 已更新'));
         location.reload();
       } catch {
-        showError(err, "网络错误");
+        showError(err, BTC.t('网络错误'));
       } finally {
-        setButtonBusy(btn, false, { idleLabel: "保存 README" });
+        setButtonBusy(btn, false, { idleLabel: BTC.t('保存 README') });
       }
     });
   }
@@ -235,7 +235,7 @@
       const projectLanguages = readProjectLanguages(createProject);
       const locales = projectLanguages.locales;
       if (!locales.length) {
-        showError(err, "请至少选择一种目标语言");
+        showError(err, BTC.t('请至少选择一种目标语言'));
         return;
       }
       const missingNames = languagesMissingDisplayName(projectLanguages);
@@ -246,7 +246,7 @@
         );
         return;
       }
-      setButtonBusy(btn, true, { busyLabel: "创建中..." });
+      setButtonBusy(btn, true, { busyLabel: BTC.t('创建中...') });
       try {
         const { res, data } = await json(`/api/v1/orgs/${orgSlug}/projects`, {
           method: "POST",
@@ -261,14 +261,14 @@
           }),
         });
         if (!res.ok) {
-          showError(err, data.error || "创建失败");
+          showError(err, data.error || BTC.t('创建失败'));
           return;
         }
         location.href = `/app/o/${orgSlug}/p/${data.slug}`;
       } catch {
-        showError(err, "网络错误");
+        showError(err, BTC.t('网络错误'));
       } finally {
-        setButtonBusy(btn, false, { idleLabel: "创建项目" });
+        setButtonBusy(btn, false, { idleLabel: BTC.t('创建项目') });
       }
     });
   }
@@ -287,7 +287,7 @@
       const locales = projectLanguages.locales;
       showError(err, "");
       if (!locales.length) {
-        showError(err, "请至少选择一种目标语言");
+        showError(err, BTC.t('请至少选择一种目标语言'));
         return;
       }
       const missingNames = languagesMissingDisplayName(projectLanguages);
@@ -298,7 +298,7 @@
         );
         return;
       }
-      setButtonBusy(btn, true, { busyLabel: "保存中..." });
+      setButtonBusy(btn, true, { busyLabel: BTC.t('保存中...') });
       try {
         const iconRoot = projectSettings.querySelector("[data-entity-icon]");
         const pendingFile = iconRoot?.querySelector(".entity-icon-field__file")?.files?.[0];
@@ -307,7 +307,7 @@
             const url = await uploadEntityIconFile(iconRoot, pendingFile);
             setEntityIconPreview(iconRoot, url);
           } catch (iconErr) {
-            showError(err, iconErr instanceof Error ? iconErr.message : "图标上传失败");
+            showError(err, iconErr instanceof Error ? iconErr.message : BTC.t('图标上传失败'));
             return;
           }
         }
@@ -324,7 +324,7 @@
           }),
         });
         if (!res.ok) {
-          showError(err, data.error || "保存失败");
+          showError(err, data.error || BTC.t('保存失败'));
           return;
         }
         const langRes = await json(`/api/v1/orgs/${orgSlug}/projects/${projectSlug}/languages`, {
@@ -333,18 +333,18 @@
           body: JSON.stringify({ locales, languages: projectLanguages.languages }),
         });
         if (!langRes.res.ok) {
-          showError(err, langRes.data.error || "语言保存失败");
+          showError(err, langRes.data.error || BTC.t('语言保存失败'));
           return;
         }
-        toast("success", "项目已更新");
+        toast("success", BTC.t('项目已更新'));
         // Brief delay so the success toast is visible before full reload.
         setTimeout(() => {
           location.reload();
         }, 450);
       } catch {
-        showError(err, "网络错误");
+        showError(err, BTC.t('网络错误'));
       } finally {
-        setButtonBusy(btn, false, { idleLabel: "保存设置" });
+        setButtonBusy(btn, false, { idleLabel: BTC.t('保存设置') });
       }
     });
   }
@@ -356,20 +356,20 @@
       if (!confirm(`确定删除项目「${name}」？所有文件与译文将不可恢复。`)) return;
       const orgSlug = deleteProjectBtn.dataset.orgSlug;
       const projectSlug = deleteProjectBtn.dataset.projectSlug;
-      setButtonBusy(deleteProjectBtn, true, { busyLabel: "删除中..." });
+      setButtonBusy(deleteProjectBtn, true, { busyLabel: BTC.t('删除中...') });
       try {
         const { res, data } = await json(`/api/v1/orgs/${orgSlug}/projects/${projectSlug}`, {
           method: "DELETE",
         });
         if (!res.ok) {
-          toast("error", data.error || "删除失败");
+          toast("error", data.error || BTC.t('删除失败'));
           return;
         }
         location.href = `/app/o/${orgSlug}`;
       } catch {
-        toast("error", "网络错误");
+        toast("error", BTC.t('网络错误'));
       } finally {
-        setButtonBusy(deleteProjectBtn, false, { idleLabel: "删除项目" });
+        setButtonBusy(deleteProjectBtn, false, { idleLabel: BTC.t('删除项目') });
       }
     });
   }
@@ -403,9 +403,11 @@
       if (singlePathField) singlePathField.hidden = true;
       listEl.hidden = false;
       listEl.innerHTML =
-        '<div class="upload-file-list__title">将上传 ' +
+        '<div class="upload-file-list__title">' +
+        BTC.t("将上传 ") +
         pendingFiles.length +
-        " 个文件：</div>" +
+        BTC.t(" 个文件：") +
+        "</div>" +
         pendingFiles
           .map(
             (f, i) =>
@@ -507,12 +509,12 @@
       }
 
       if (!payloadFiles.length) {
-        showError(err, "请选择文件或粘贴内容");
+        showError(err, BTC.t('请选择文件或粘贴内容'));
         return;
       }
       for (const f of payloadFiles) {
         if (!f.path) {
-          showError(err, "请填写项目内路径");
+          showError(err, BTC.t('请填写项目内路径'));
           return;
         }
         if (!f.content.trim()) {
@@ -521,7 +523,7 @@
         }
       }
 
-      setButtonBusy(btn, true, { busyLabel: "上传中..." });
+      setButtonBusy(btn, true, { busyLabel: BTC.t('上传中...') });
       try {
         if (payloadFiles.length === 1) {
           const { res, data } = await json(
@@ -532,13 +534,13 @@
             },
           );
           if (!res.ok) {
-            showError(err, data.error || "上传失败");
+            showError(err, data.error || BTC.t('上传失败'));
             return;
           }
           if (data.warnings?.length && warn) {
             warn.hidden = false;
             warn.innerHTML =
-              "<strong>警告：</strong><ul style='margin:8px 0 0;padding-left:18px'>" +
+              BTC.t('<strong>警告：</strong><ul style=\'margin:8px 0 0;padding-left:18px\'>') +
               data.warnings.map((w) => `<li>${w}</li>`).join("") +
               "</ul>";
           }
@@ -559,7 +561,7 @@
           },
         );
         if (!res.ok) {
-          showError(err, data.error || "批量上传失败");
+          showError(err, data.error || BTC.t('批量上传失败'));
           return;
         }
         const summary = data.summary || {};
@@ -567,7 +569,7 @@
         if (failed.length && warn) {
           warn.hidden = false;
           warn.innerHTML =
-            "<strong>部分失败：</strong><ul style='margin:8px 0 0;padding-left:18px'>" +
+            BTC.t('<strong>部分失败：</strong><ul style=\'margin:8px 0 0;padding-left:18px\'>') +
             failed.map((r) => `<li>${r.path}: ${r.error}</li>`).join("") +
             "</ul>";
         }
@@ -579,12 +581,12 @@
           );
           if (!summary.failed) location.reload();
         } else {
-          showError(err, "全部文件上传失败");
+          showError(err, BTC.t('全部文件上传失败'));
         }
       } catch {
-        showError(err, "网络错误");
+        showError(err, BTC.t('网络错误'));
       } finally {
-        setButtonBusy(btn, false, { idleLabel: "上传 / 更新" });
+        setButtonBusy(btn, false, { idleLabel: BTC.t('上传 / 更新') });
       }
     });
   }
@@ -613,22 +615,22 @@
       const orgSlug = deleteFileBtn.dataset.orgSlug;
       const projectSlug = deleteFileBtn.dataset.projectSlug;
       const fileId = deleteFileBtn.dataset.fileId;
-      setButtonBusy(deleteFileBtn, true, { busyLabel: "删除中..." });
+      setButtonBusy(deleteFileBtn, true, { busyLabel: BTC.t('删除中...') });
       try {
         const { res, data } = await json(
           `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/files/${fileId}`,
           { method: "DELETE" },
         );
         if (!res.ok) {
-          toast("error", data.error || "删除失败");
+          toast("error", data.error || BTC.t('删除失败'));
           return;
         }
-        toast("success", "文件已删除");
+        toast("success", BTC.t('文件已删除'));
         location.href = `/app/o/${orgSlug}/p/${projectSlug}`;
       } catch {
-        toast("error", "网络错误");
+        toast("error", BTC.t('网络错误'));
       } finally {
-        setButtonBusy(deleteFileBtn, false, { idleLabel: "删除文件" });
+        setButtonBusy(deleteFileBtn, false, { idleLabel: BTC.t('删除文件') });
       }
     });
   }
@@ -649,13 +651,13 @@
             { method: "PATCH", body: JSON.stringify({ role: sel.value }) },
           );
           if (!res.ok) {
-            showError(err, data.error || "修改失败");
+            showError(err, data.error || BTC.t('修改失败'));
             return;
           }
-          toast("success", "角色已更新");
+          toast("success", BTC.t('角色已更新'));
           location.reload();
         } catch {
-          showError(err, "网络错误");
+          showError(err, BTC.t('网络错误'));
         } finally {
           sel.disabled = false;
         }
@@ -666,22 +668,22 @@
       btn.addEventListener("click", async () => {
         if (!confirm(`确定移除成员 ${btn.dataset.username}？`)) return;
         showError(err, "");
-        setButtonBusy(btn, true, { busyLabel: "移除中..." });
+        setButtonBusy(btn, true, { busyLabel: BTC.t('移除中...') });
         try {
           const { res, data } = await json(
             `/api/v1/orgs/${orgSlug}/members/${btn.dataset.userId}`,
             { method: "DELETE" },
           );
           if (!res.ok) {
-            showError(err, data.error || "移除失败");
+            showError(err, data.error || BTC.t('移除失败'));
             return;
           }
           toast("success", `已移除 ${btn.dataset.username}`);
           location.reload();
         } catch {
-          showError(err, "网络错误");
+          showError(err, BTC.t('网络错误'));
         } finally {
-          setButtonBusy(btn, false, { idleLabel: "移除" });
+          setButtonBusy(btn, false, { idleLabel: BTC.t('移除') });
         }
       });
     });
@@ -696,7 +698,7 @@
       const btn = addMember.querySelector('button[type="submit"]');
       const fd = new FormData(addMember);
       showError(err, "");
-      setButtonBusy(btn, true, { busyLabel: "添加中..." });
+      setButtonBusy(btn, true, { busyLabel: BTC.t('添加中...') });
       try {
         const { res, data } = await json(`/api/v1/orgs/${orgSlug}/members`, {
           method: "POST",
@@ -706,15 +708,15 @@
           }),
         });
         if (!res.ok) {
-          showError(err, data.error || "添加失败");
+          showError(err, data.error || BTC.t('添加失败'));
           return;
         }
         toast("success", `已添加 ${data.username}`);
         location.reload();
       } catch {
-        showError(err, "网络错误");
+        showError(err, BTC.t('网络错误'));
       } finally {
-        setButtonBusy(btn, false, { idleLabel: "添加成员" });
+        setButtonBusy(btn, false, { idleLabel: BTC.t('添加成员') });
       }
     });
   }
@@ -724,7 +726,7 @@
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
       reader.onload = () => resolve(String(reader.result || ""));
-      reader.onerror = () => reject(new Error("读取文件失败"));
+      reader.onerror = () => reject(new Error(BTC.t('读取文件失败')));
       reader.readAsDataURL(file);
     });
   }
@@ -746,18 +748,18 @@
     } else if (orgSlug) {
       endpoint = `/api/v1/orgs/${orgSlug}/icon`;
     }
-    if (!endpoint) throw new Error("缺少组织/项目上下文");
+    if (!endpoint) throw new Error(BTC.t('缺少组织/项目上下文'));
 
-    if (file.size > 2 * 1024 * 1024) throw new Error("图标不能超过 2MB");
+    if (file.size > 2 * 1024 * 1024) throw new Error(BTC.t('图标不能超过 2MB'));
     if (file.type && !/^image\/(png|jpe?g|gif|webp)$/i.test(file.type)) {
       if (!/\.(png|jpe?g|gif|webp)$/i.test(file.name || "")) {
-        throw new Error("请选择 PNG / JPG / WebP / GIF 图片");
+        throw new Error(BTC.t('请选择 PNG / JPG / WebP / GIF 图片'));
       }
     }
 
     const dataUrl = await fileToDataUrl(file);
     if (!dataUrl.startsWith("data:image/")) {
-      throw new Error("无法读取图片，请换一张再试");
+      throw new Error(BTC.t('无法读取图片，请换一张再试'));
     }
 
     const { res, data } = await json(endpoint, {
@@ -765,9 +767,9 @@
       credentials: "same-origin",
       body: JSON.stringify({ imageBase64: dataUrl }),
     });
-    if (!res.ok) throw new Error(data.error || "上传失败");
+    if (!res.ok) throw new Error(data.error || BTC.t('上传失败'));
     const url = (data.iconUrl || data.webpUrl || "").trim();
-    if (!url) throw new Error("图床未返回地址");
+    if (!url) throw new Error(BTC.t('图床未返回地址'));
     return url;
   }
 
@@ -821,7 +823,7 @@
         pickLabel.setAttribute("aria-busy", busy ? "true" : "false");
       }
       if (fileInput) fileInput.disabled = busy;
-      if (pickText) pickText.textContent = busy ? "上传中..." : "选择图片";
+      if (pickText) pickText.textContent = busy ? BTC.t('上传中...') : BTC.t('选择图片');
     }
 
     fileInput?.addEventListener("change", async () => {
@@ -832,12 +834,12 @@
       try {
         const url = await uploadEntityIconFile(root, file);
         setEntityIconPreview(root, url);
-        toast("success", "图标已上传并保存");
+        toast("success", BTC.t('图标已上传并保存'));
         // Refresh so headers/cards pick up the new icon
         setTimeout(() => location.reload(), 500);
       } catch (err) {
         console.error("[entity-icon] upload failed", err);
-        const msg = err instanceof Error ? err.message : "上传失败";
+        const msg = err instanceof Error ? err.message : BTC.t('上传失败');
         showIconErr(msg);
         toast("error", msg);
       } finally {
@@ -860,26 +862,26 @@
         endpoint = `/api/v1/orgs/${orgSlug}/icon`;
       }
       if (!endpoint) return;
-      if (!confirm("确定移除图标？")) return;
-      setButtonBusy(clearBtn, true, { busyLabel: "移除中..." });
+      if (!confirm(BTC.t('确定移除图标？'))) return;
+      setButtonBusy(clearBtn, true, { busyLabel: BTC.t('移除中...') });
       try {
         const { res, data } = await json(endpoint, {
           method: "DELETE",
           credentials: "same-origin",
         });
         if (!res.ok) {
-          showIconErr(data.error || "移除失败");
-          toast("error", data.error || "移除失败");
+          showIconErr(data.error || BTC.t('移除失败'));
+          toast("error", data.error || BTC.t('移除失败'));
           return;
         }
         setEntityIconPreview(root, "");
-        toast("success", "图标已移除");
+        toast("success", BTC.t('图标已移除'));
         setTimeout(() => location.reload(), 400);
       } catch {
-        showIconErr("网络错误");
-        toast("error", "网络错误");
+        showIconErr(BTC.t('网络错误'));
+        toast("error", BTC.t('网络错误'));
       } finally {
-        setButtonBusy(clearBtn, false, { idleLabel: "移除" });
+        setButtonBusy(clearBtn, false, { idleLabel: BTC.t('移除') });
       }
     });
   }

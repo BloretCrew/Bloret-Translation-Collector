@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="<%= typeof htmlLang !== 'undefined' ? htmlLang : 'zh-CN' %>">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -12,7 +12,7 @@
       %><%= _app %><%
     }
   %></title>
-  <meta name="description" content="Bloret 翻译收集平台 — 组织 · 项目 · 文件 · 语言" />
+  <meta name="description" content="<%= t('Bloret 翻译收集平台 — 组织 · 项目 · 文件 · 语言') %>" />
   <link rel="icon" href="/favicon.svg" />
   <script>
     (() => {

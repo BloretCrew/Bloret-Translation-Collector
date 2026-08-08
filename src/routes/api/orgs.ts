@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { randomBytes } from "crypto";
 import { Router } from "express";
 import { and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
@@ -111,7 +112,7 @@ orgsRouter.post("/v1/orgs", async (req, res, next) => {
 
     const parsed = createOrgSchema.safeParse(rawBody);
     if (!parsed.success) {
-      return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
+      return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
     }
 
     const { name, slug, description, visibility } = parsed.data;
@@ -202,7 +203,7 @@ orgsRouter.patch("/v1/orgs/:orgSlug", async (req, res, next) => {
     }
 
     const parsed = updateOrgSchema.safeParse(req.body);
-    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
+    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
 
     const [updated] = await db
       .update(organizations)
@@ -259,8 +260,8 @@ orgsRouter.post("/v1/orgs/:orgSlug/icon", async (req, res, next) => {
 
     const dataUrl = typeof req.body?.imageBase64 === "string" ? req.body.imageBase64 : "";
     const parsed = parseImageDataUrl(dataUrl);
-    if (!parsed) return jsonError(res, "请上传 data URL 格式的图片 (png/jpg/gif/webp)");
-    if (parsed.buffer.length > 2 * 1024 * 1024) return jsonError(res, "图标不能超过 2MB");
+    if (!parsed) return jsonError(res, t('请上传 data URL 格式的图片 (png/jpg/gif/webp)'));
+    if (parsed.buffer.length > 2 * 1024 * 1024) return jsonError(res, t('图标不能超过 2MB'));
 
     let uploaded;
     try {
@@ -270,7 +271,7 @@ orgsRouter.post("/v1/orgs/:orgSlug/icon", async (req, res, next) => {
         contentType: parsed.contentType,
       });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "图床上传失败";
+      const msg = e instanceof Error ? e.message : t('图床上传失败');
       return jsonError(res, msg, 502);
     }
 
@@ -360,7 +361,7 @@ orgsRouter.post("/v1/orgs/:orgSlug/members", async (req, res, next) => {
     if (!canManageOrg(access.role)) return forbidden(res, "仅所有者可管理成员");
 
     const parsed = addMemberSchema.safeParse(req.body);
-    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
+    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
 
     const { username, role } = parsed.data;
 
@@ -411,7 +412,7 @@ orgsRouter.patch("/v1/orgs/:orgSlug/members/:userId", async (req, res, next) => 
     if (!canManageOrg(access.role)) return forbidden(res, "仅所有者可修改角色");
 
     const parsed = updateMemberSchema.safeParse(req.body);
-    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
+    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
 
     const [target] = await db
       .select()
@@ -552,7 +553,7 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects", async (req, res, next) => {
     }
 
     const parsed = createProjectSchema.safeParse(rawBody);
-    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
+    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
 
     const data = parsed.data;
 
@@ -668,7 +669,7 @@ orgsRouter.patch("/v1/orgs/:orgSlug/projects/:projectSlug", async (req, res, nex
     if (!canManageProjects(access.role)) return forbidden(res);
 
     const parsed = updateProjectSchema.safeParse(req.body);
-    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
+    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
 
     const [updated] = await db
       .update(projects)
@@ -732,8 +733,8 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/icon", async (req, res,
 
     const dataUrl = typeof req.body?.imageBase64 === "string" ? req.body.imageBase64 : "";
     const parsed = parseImageDataUrl(dataUrl);
-    if (!parsed) return jsonError(res, "请上传 data URL 格式的图片 (png/jpg/gif/webp)");
-    if (parsed.buffer.length > 2 * 1024 * 1024) return jsonError(res, "图标不能超过 2MB");
+    if (!parsed) return jsonError(res, t('请上传 data URL 格式的图片 (png/jpg/gif/webp)'));
+    if (parsed.buffer.length > 2 * 1024 * 1024) return jsonError(res, t('图标不能超过 2MB'));
 
     let uploaded;
     try {
@@ -743,7 +744,7 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/icon", async (req, res,
         contentType: parsed.contentType,
       });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : "图床上传失败";
+      const msg = e instanceof Error ? e.message : t('图床上传失败');
       return jsonError(res, msg, 502);
     }
 
@@ -838,7 +839,7 @@ orgsRouter.put("/v1/orgs/:orgSlug/projects/:projectSlug/languages", async (req, 
     if (!canManageProjects(access.role)) return forbidden(res);
 
     const parsed = setLanguagesSchema.safeParse(req.body);
-    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
+    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
 
     const languageRows = parsed.data.languages
       ? parsed.data.languages.map((language) => ({
@@ -980,7 +981,7 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/files", async (req, res
     if (!canUploadFiles(access.role)) return forbidden(res);
 
     const parsed = uploadFileSchema.safeParse(req.body);
-    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
+    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
 
     const result = await upsertSourceFile({
       projectId: access.project.id,
@@ -1018,7 +1019,7 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/files/batch", async (re
     if (!canUploadFiles(access.role)) return forbidden(res);
 
     const parsed = uploadBatchSchema.safeParse(req.body);
-    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? "参数错误");
+    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
 
     // Validate all first (fail fast on parse errors)
     const results: Array<
@@ -1111,7 +1112,7 @@ orgsRouter.get(
         )
         .limit(1);
 
-      if (!file) return notFound(res, "文件不存在");
+      if (!file) return notFound(res, t('文件不存在'));
 
       const progress = await getFileProgress(file.id);
 
@@ -1155,7 +1156,7 @@ orgsRouter.delete(
         )
         .limit(1);
 
-      if (!file) return notFound(res, "文件不存在");
+      if (!file) return notFound(res, t('文件不存在'));
 
       await db.delete(sourceFiles).where(eq(sourceFiles.id, file.id));
       return jsonOk(res, { ok: true });
@@ -1212,7 +1213,7 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects/:projectSlug/export", async (req, res
 
     if (!localeRaw) return jsonError(res, "缺少 locale 参数");
     const localeParsed = localeSchema.safeParse(localeRaw);
-    if (!localeParsed.success) return jsonError(res, "无效语言代码");
+    if (!localeParsed.success) return jsonError(res, t('无效语言代码'));
     const locale = localeParsed.data;
 
     const [lang] = await db
@@ -1235,7 +1236,7 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects/:projectSlug/export", async (req, res
 
     if (fileId) {
       files = files.filter((f) => f.id === fileId);
-      if (!files.length) return notFound(res, "文件不存在");
+      if (!files.length) return notFound(res, t('文件不存在'));
     }
 
     if (files.length === 0) return jsonError(res, "项目中没有源文件");
