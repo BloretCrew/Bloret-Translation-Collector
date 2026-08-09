@@ -170,6 +170,20 @@ export function isPassportConfigured(): boolean {
   return Boolean(env.PASSPORT_APP_ID && env.PASSPORT_APP_SECRET);
 }
 
+/**
+ * Public origin of this deployment, derived from the OAuth redirectUri
+ * (e.g. https://tr.bloret.net/auth/callback → https://tr.bloret.net).
+ * Used for building absolute links in public API responses.
+ */
+export function publicBaseUrl(): string {
+  try {
+    const u = new URL(loadConfig().passport.redirectUri || "http://localhost:3000");
+    return `${u.protocol}//${u.host}`;
+  } catch {
+    return "http://localhost:3000";
+  }
+}
+
 /** Apply config into process.env for child tools / convenience */
 export function applyConfigToProcessEnv(): AppConfig {
   const c = loadConfig();

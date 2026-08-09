@@ -21,6 +21,7 @@ import {
   sourceFiles,
   stringUnits,
   translations,
+  translationSuggestions,
   users,
 } from "@/lib/db/schema";
 import {
@@ -58,14 +59,140 @@ import {
   upsertSourceFile,
 } from "@/lib/services/files";
 import { Logger } from "@/lib/logger";
+import { publicBaseUrl } from "@/lib/config";
 import { slugify } from "@/lib/slug";
 
 export const orgsRouter = Router();
+
+/**
+ * Public API routes (mounted before the auth gate in routes/api/index.ts).
+ * These endpoints intentionally require no session; they only expose data
+ * that is already public (e.g. project manifests of public projects).
+ */
+export const publicOrgsRouter = Router();
 
 /** Stable project count subquery (plain table name — avoids drizzle alias quirks) */
 const orgProjectCountSql = sql<number>`(
   select count(*)::int from projects p where p.org_id = ${organizations.id}
 )`;
+
+// —— Public project manifest ——
+// Publicly reachable so launchers / third parties can fetch project metadata
+// without signing in. Only public projects of public orgs are exposed;
+// anything else → 404.
+publicOrgsRouter.get(
+  "/v1/orgs/:orgSlug/projects/:projectSlug/manifest",
+  async (req, res, next) => {
+    try {
+      const orgSlug = req.params.orgSlug;
+      const projectSlug = req.params.projectSlug;
+
+      const [org, project] = await Promise.all([
+        db
+          .select({
+            id: organizations.id,
+            slug: organizations.slug,
+            name: organizations.name,
+            visibility: organizations.visibility,
+          })
+          .from(organizations)
+          .where(eq(organizations.slug, orgSlug))
+          .limit(1)
+          .then((r) => r[0] ?? null),
+        db
+          .select({
+            id: projects.id,
+            slug: projects.slug,
+            name: projects.name,
+            description: projects.description,
+            sourceLocale: projects.sourceLocale,
+            iconUrl: projects.iconUrl,
+            visibility: projects.visibility,
+          })
+          .from(projects)
+          .innerJoin(organizations, eq(projects.orgId, organizations.id))
+          .where(and(eq(organizations.slug, orgSlug), eq(projects.slug, projectSlug)))
+          .limit(1)
+          .then((r) => r[0] ?? null),
+      ]);
+
+      // Keep non-public content hidden from anonymous requests.
+      if (!org || !project) return notFound(res);
+      if (org.slug !== orgSlug || project.slug !== projectSlug) return notFound(res);
+      if (org.visibility !== "public" || project.visibility !== "public") {
+        return notFound(res);
+      }
+
+      const [langs, ownerRow, contributorRows] = await Promise.all([
+        db
+          .select({ locale: projectLanguages.locale, displayName: projectLanguages.displayName })
+          .from(projectLanguages)
+          .where(
+            and(eq(projectLanguages.projectId, project.id), eq(projectLanguages.enabled, true)),
+          )
+          .orderBy(asc(projectLanguages.locale)),
+        db
+          .select({ username: users.username })
+          .from(organizationMembers)
+          .innerJoin(users, eq(organizationMembers.userId, users.id))
+          .where(
+            and(
+              eq(organizationMembers.orgId, org.id),
+              eq(organizationMembers.role, "owner"),
+            ),
+          )
+          .limit(1)
+          .then((r) => r[0] ?? null),
+        db
+          .select({ locale: translationSuggestions.locale, username: users.username })
+          .from(translationSuggestions)
+          .innerJoin(stringUnits, eq(translationSuggestions.stringId, stringUnits.id))
+          .innerJoin(sourceFiles, eq(stringUnits.fileId, sourceFiles.id))
+          .innerJoin(users, eq(translationSuggestions.authorId, users.id))
+          .where(eq(sourceFiles.projectId, project.id)),
+      ]);
+
+      // Group contributor usernames by locale (distinct).
+      const contributorsByLocale = new Map<string, Set<string>>();
+      for (const row of contributorRows) {
+        let set = contributorsByLocale.get(row.locale);
+        if (!set) {
+          set = new Set();
+          contributorsByLocale.set(row.locale, set);
+        }
+        set.add(row.username);
+      }
+
+      const baseUrl = publicBaseUrl();
+      const lang: Record<string, unknown> = {};
+      for (const l of langs) {
+        const name = l.displayName && l.displayName.trim() ? l.displayName : l.locale;
+        lang[l.locale] = {
+          name,
+          file: `${l.locale}.json`,
+          contributor: [...(contributorsByLocale.get(l.locale) ?? [])],
+        };
+      }
+
+      return jsonOk(res, {
+        lang,
+        project: {
+          owner: ownerRow?.username ?? org.name,
+          link: `${baseUrl}/app/o/${org.slug}/p/${project.slug}`,
+          name: project.name,
+          slug: project.slug,
+          description: project.description,
+          sourceLocale: project.sourceLocale,
+          iconUrl: project.iconUrl,
+          org: org.name,
+          orgSlug: org.slug,
+        },
+      });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
 
 // —— Orgs list / create ——
 orgsRouter.get("/v1/orgs", async (req, res, next) => {
