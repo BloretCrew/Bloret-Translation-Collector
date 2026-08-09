@@ -18,8 +18,11 @@
         <%= t('以「组织 → 项目 → 文件 → 语言」管理本地化。上传 JSON 源文案，邀请译者在线填写， 一键导出目标语言文件。通过 Bloret PassPort 安全登录。') %>
       </p>
       <div class="blora-row landing-hero__actions">
-        <a class="blora-btn blora-btn--primary blora-btn--lg" href="/auth/login"><%- sfIcon('person.crop.circle') %><%= t('PassPort 登录') %></a>
-        <a class="blora-btn blora-btn--outline blora-btn--lg" href="#features"><%- sfIcon('info.circle') %><%= t('了解能力') %></a>
+        <% if (session && session.isLoggedIn) { %>
+          <a class="blora-btn blora-btn--primary blora-btn--lg" href="/app"><%- sfIcon('building.2') %><%= t('进入工作台') %></a>
+        <% } else { %>
+          <a class="blora-btn blora-btn--primary blora-btn--lg" href="/auth/login"><%- sfIcon('person.crop.circle') %><%= t('PassPort 登录') %></a>
+        <% } %>
       </div>
       <% if (typeof isDev !== 'undefined' && isDev) { %>
       <p class="blora-text-faint landing-hero__hint">
@@ -32,25 +35,98 @@
 
     <hr class="blora-brush" />
 
-    <section id="features" class="feature-grid" aria-label="<%= t('产品能力') %>">
-      <article class="blora-card">
-        <h3 class="blora-card__title"><%- sfIcon('person.2') %><%= t('组织与权限') %></h3>
-        <p class="blora-card__body blora-text-muted">
-          <%= t('所有者 / 管理员 / 译者 / 访客 四级角色，协作边界清晰。') %>
-        </p>
-      </article>
-      <article class="blora-card">
-        <h3 class="blora-card__title"><%- sfIcon('document') %><%= t('JSON 源文件') %></h3>
-        <p class="blora-card__body blora-text-muted">
-          <%= t('支持扁平与嵌套 i18n JSON，保留结构导出，更新源文不丢已有译文。') %>
-        </p>
-      </article>
-      <article class="blora-card">
-        <h3 class="blora-card__title"><%- sfIcon('translate') %><%= t('翻译工作台') %></h3>
-        <p class="blora-card__body blora-text-muted">
-          <%= t('左 key 右译文，筛选未译、自动保存，进度一目了然。') %>
-        </p>
-      </article>
+    <section class="app-section" aria-label="<%= t('公开组织') %>">
+      <div class="app-section-head">
+        <h2 class="blora-h3 sf-inline"><%- sfIcon('building.2') %><%= t('公开组织') %></h2>
+      </div>
+      <p class="blora-text-muted u-mt-2"><%= t('以下组织已公开，任何登录用户均可浏览其公开项目。') %></p>
+
+      <% if (!orgs || orgs.length === 0) { %>
+        <div class="blora-empty">
+          <div class="blora-empty__icon"><%- sfIcon('building.2') %></div>
+          <div class="blora-empty__title"><%= t('还没有公开组织') %></div>
+          <div class="blora-empty__desc"><%= t('将组织设为公开后，会显示在这里供大家浏览。') %></div>
+        </div>
+      <% } else { %>
+        <div class="blora-grid blora-grid--3">
+          <% orgs.forEach(function (org) { %>
+            <a href="/app/o/<%= org.slug %>" class="blora-card blora-card--hover" style="text-decoration:none;color:inherit">
+              <h3 class="blora-card__title org-card-title entity-title">
+                <% if (org.iconUrl) { %>
+                  <img class="entity-icon" src="<%= org.iconUrl %>" alt="" width="28" height="28" />
+                <% } else { %>
+                  <%- sfIcon('building.2.fill') %>
+                <% } %>
+                <%= org.name %>
+              </h3>
+              <p class="blora-card__body blora-text-muted"><%= org.description || t('暂无简介') %></p>
+              <div class="blora-card__foot blora-row blora-row--between">
+                <span class="blora-badge blora-badge--pill"><%= t('公开') %></span>
+                <span class="blora-text-faint blora-text-mono u-text-xs sf-inline"><%- sfIcon('folder', { className: 'sf-icon--sm' }) %><%= org.publicProjectCount %> <%= t('项目') %></span>
+              </div>
+            </a>
+          <% }) %>
+        </div>
+      <% } %>
+    </section>
+
+    <section class="app-section" aria-label="<%= t('公开项目') %>">
+      <div class="app-section-head">
+        <h2 class="blora-h3 sf-inline"><%- sfIcon('folder') %><%= t('公开项目') %></h2>
+      </div>
+      <p class="blora-text-muted u-mt-2"><%= t('这些项目已标记为公开，登录后即可参与翻译。') %></p>
+
+      <% if (!projects || projects.length === 0) { %>
+        <div class="blora-empty">
+          <div class="blora-empty__icon"><%- sfIcon('folder') %></div>
+          <div class="blora-empty__title"><%= t('还没有公开项目') %></div>
+          <div class="blora-empty__desc"><%= t('将项目设为公开后，会显示在这里供大家浏览与翻译。') %></div>
+        </div>
+      <% } else { %>
+        <div class="blora-table-wrap">
+          <table class="blora-table blora-table--striped">
+            <thead>
+              <tr>
+                <th><%= t('项目') %></th>
+                <th><%= t('所属组织') %></th>
+                <th><%= t('源语言') %></th>
+                <th><%= t('目标语言') %></th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% projects.forEach(function (p) { %>
+                <tr>
+                  <td>
+                    <a href="/app/o/<%= p.orgSlug %>/p/<%= p.slug %>" class="entity-title entity-title--link">
+                      <% if (p.iconUrl) { %>
+                        <img class="entity-icon entity-icon--sm" src="<%= p.iconUrl %>" alt="" width="22" height="22" />
+                      <% } else { %>
+                        <%- sfIcon('folder.fill', { className: 'sf-icon--sm' }) %>
+                      <% } %>
+                      <%= p.name %>
+                    </a>
+                  </td>
+                  <td>
+                    <a href="/app/o/<%= p.orgSlug %>"><%= p.orgName %></a>
+                  </td>
+                  <td><span class="blora-badge"><%= localeLabel(p.sourceLocale) %></span></td>
+                  <td>
+                    <div class="blora-row u-gap-1">
+                      <% (p.targetLanguages || (p.targetLocales || []).map(function (l) { return { locale: l, displayName: null }; })).forEach(function (lang) { %>
+                        <span class="blora-badge"><%= languageShortLabel(lang.locale, lang.displayName) %></span>
+                      <% }) %>
+                    </div>
+                  </td>
+                  <td>
+                    <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= p.orgSlug %>/p/<%= p.slug %>"><%- sfIcon('arrow.right') %><%= t('打开') %></a>
+                  </td>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      <% } %>
     </section>
   </div>
 </main>

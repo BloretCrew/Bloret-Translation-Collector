@@ -32,8 +32,6 @@ export const pagesRouter = Router();
 
 pagesRouter.get("/", async (req, res, next) => {
   try {
-    if (req.session?.isLoggedIn) return res.redirect("/app");
-
     const err = typeof req.query.error === "string" ? req.query.error : null;
     const errorMsg =
       err === "oauth_denied"
@@ -42,10 +40,78 @@ pagesRouter.get("/", async (req, res, next) => {
           ? decodeURIComponent(err)
           : null;
 
+    // Homepage is a public directory: any visitor (logged-in or not) sees all
+    // public organizations and their public projects. Entering an org/project
+    // may still require sign-in / membership as enforced by access rules.
+    const [orgRows, projectRows] = await Promise.all([
+      db
+        .select({
+          id: organizations.id,
+          slug: organizations.slug,
+          name: organizations.name,
+          description: organizations.description,
+          iconUrl: organizations.iconUrl,
+        })
+        .from(organizations)
+        .where(eq(organizations.visibility, "public"))
+        .orderBy(desc(organizations.updatedAt)),
+      db
+        .select({
+          id: projects.id,
+          slug: projects.slug,
+          name: projects.name,
+          description: projects.description,
+          iconUrl: projects.iconUrl,
+          sourceLocale: projects.sourceLocale,
+          updatedAt: projects.updatedAt,
+          orgId: organizations.id,
+          orgSlug: organizations.slug,
+          orgName: organizations.name,
+        })
+        .from(projects)
+        .innerJoin(organizations, eq(projects.orgId, organizations.id))
+        .where(eq(projects.visibility, "public"))
+        .orderBy(desc(projects.updatedAt)),
+    ]);
+
+    // Per-org count of public projects, derived from the public project rows
+    // already fetched (avoids an extra correlated count query).
+    const publicCountByOrg = new Map<string, number>();
+    for (const p of projectRows) {
+      publicCountByOrg.set(p.orgId, (publicCountByOrg.get(p.orgId) ?? 0) + 1);
+    }
+    const orgs = orgRows.map((o) => ({
+      ...o,
+      publicProjectCount: publicCountByOrg.get(o.id) ?? 0,
+    }));
+
+    const projectIds = projectRows.map((p) => p.id);
+    const allLangs =
+      projectIds.length === 0
+        ? []
+        : await db
+            .select()
+            .from(projectLanguages)
+            .where(inArray(projectLanguages.projectId, projectIds));
+
+    const langMap = new Map<string, { locale: string; displayName: string | null }[]>();
+    for (const l of allLangs) {
+      if (!l.enabled) continue;
+      const arr = langMap.get(l.projectId) ?? [];
+      arr.push({ locale: l.locale, displayName: l.displayName });
+      langMap.set(l.projectId, arr);
+    }
+
     return res.render("home", {
       title: "Bloret Translation",
       layout: "landing",
       errorMsg,
+      orgs,
+      projects: projectRows.map((p) => ({
+        ...p,
+        targetLanguages: langMap.get(p.id) ?? [],
+        targetLocales: (langMap.get(p.id) ?? []).map((l) => l.locale),
+      })),
     });
   } catch (e) {
     next(e);
