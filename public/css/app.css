@@ -748,6 +748,26 @@ html.is-translation-editor .app-main--editor {
   pointer-events: none;
 }
 
+.editor-list__more {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--blora-space-2);
+  padding: var(--blora-space-3);
+  font-size: var(--blora-text-sm);
+  color: var(--blora-ink-light);
+  cursor: pointer;
+  user-select: none;
+}
+
+.editor-list__more:hover {
+  color: var(--blora-seal);
+}
+
+.editor-list__more .loading-spinner {
+  flex: 0 0 auto;
+}
+
 .editor-list-empty {
   position: absolute;
   inset: 5.5rem 0 0;

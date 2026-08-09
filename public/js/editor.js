@@ -207,15 +207,15 @@
     if (els.saveBtn) els.saveBtn.title = f("saveAndNext");
     if (els.saveOnlyBtn) els.saveOnlyBtn.title = f("saveOnly");
     if (els.insertSourceBtn) {
-      els.insertSourceBtn.title = `${f("insertSource")} 在光标处插入源文`;
+      els.insertSourceBtn.title = `${f("insertSource")} ${BTC.t('在光标处插入源文')}`;
     }
-    if (els.prev) els.prev.title = `上一条 (${f("prevString")})`;
-    if (els.next) els.next.title = `下一条 (${f("nextString")})`;
+    if (els.prev) els.prev.title = `${BTC.t('上一条')} (${f("prevString")})`;
+    if (els.next) els.next.title = `${BTC.t('下一条')} (${f("nextString")})`;
     if (els.saveHint && effectiveCanSuggest()) {
-      els.saveHint.title = `${f("saveAndNext")} 保存并下一条 · ${f("saveOnly")} 仅保存 · ${f("insertSource")} 插入原文`;
+      els.saveHint.title = `${f("saveAndNext")} ${BTC.t('保存并下一条')} · ${f("saveOnly")} ${BTC.t('仅保存')} · ${f("insertSource")} ${BTC.t('插入原文')}`;
     }
     if (els.commentBody) {
-      els.commentBody.placeholder = `讨论语境、术语… (${f("sendComment")} 发送)`;
+      els.commentBody.placeholder = `${BTC.t('讨论语境、术语…')} (${f("sendComment")} ${BTC.t('发送')})`;
     }
   }
 
@@ -273,6 +273,10 @@
 
   let strings = [];
   let total = 0;
+  let page = 1;
+  const pageSize = 200;
+  let hasMore = false;
+  let loadingMore = false;
   let activeId = null;
   let detail = null;
   let saving = false;
@@ -319,7 +323,7 @@
     if (state === "saving") {
       els.saveHint.classList.add("is-saving");
       els.saveHint.innerHTML =
-        `<span class="loading-spinner sm save-hint__spinner" aria-hidden="true"></span>保存中...`;
+        `<span class="loading-spinner sm save-hint__spinner" aria-hidden="true"></span>${BTC.t('保存中...')}`;
     } else if (state === "saved") {
       els.saveHint.classList.add("is-saved");
       els.saveHint.textContent = BTC.t('已保存');
@@ -357,7 +361,15 @@
 
     const pct = (n) => (total === 0 ? 0 : Math.round((n / total) * 100));
     const title = total
-      ? `已批准 ${approved}（${pct(approved)}%）· 有译文 ${suggestedOnly}（${pct(suggestedOnly)}%）· 未翻译 ${empty}（${pct(empty)}%）· 共 ${total}`
+      ? BTC.t('已批准 {approved}（{approvedPct}%）· 有译文 {suggested}（{suggestedPct}%）· 未翻译 {empty}（{emptyPct}%）· 共 {total}', {
+          approved,
+          approvedPct: pct(approved),
+          suggested: suggestedOnly,
+          suggestedPct: pct(suggestedOnly),
+          empty,
+          emptyPct: pct(empty),
+          total,
+        })
       : BTC.t('暂无字符串');
     if (els.progress) {
       els.progress.title = title;
@@ -365,7 +377,11 @@
     }
     if (els.progressText) {
       els.progressText.textContent = total
-        ? `${approved + suggestedOnly}/${total} · ${pct(approved)}% 批准`
+        ? BTC.t('{done}/{total} · {pct}% 批准', {
+            done: approved + suggestedOnly,
+            total,
+            pct: pct(approved),
+          })
         : "0/0";
     }
   }
@@ -487,22 +503,69 @@
       btn.querySelector(".editor-list__key").textContent = s.keyPath;
       btn.querySelector(".editor-list__src").textContent = s.sourceText;
       const meta = [];
-      if (s.suggestionCount) meta.push(`${s.suggestionCount} 条建议`);
+      if (s.suggestionCount) meta.push(BTC.t('{count} 条建议', { count: s.suggestionCount }));
       if (wf === "approved") meta.push(BTC.t('已批准'));
       btn.querySelector(".editor-list__meta").textContent = meta.join(" · ");
       btn.addEventListener("click", () => selectString(s.id));
       els.list.appendChild(btn);
     });
+
+    // Infinite-scroll sentinel: shows a load-more affordance at the bottom of
+    // the list when there are more matching strings to fetch.
+    if (hasMore) {
+      const sentinel = document.createElement("div");
+      sentinel.className = "editor-list__more";
+      sentinel.setAttribute("data-list-more", "");
+      const label = document.createElement("span");
+      label.textContent = BTC.t('加载更多…');
+      const spinner = document.createElement("span");
+      spinner.className = "loading-spinner sm";
+      spinner.hidden = true;
+      sentinel.appendChild(spinner);
+      sentinel.appendChild(label);
+      sentinel.addEventListener("click", () => loadMore());
+      els.list.appendChild(sentinel);
+    }
+
+    watchListMore();
+  }
+
+  /** Infinite-scroll observer: trigger loadMore when the sentinel is visible. */
+  let moreObserver = null;
+  let moreObserved = false;
+  function watchListMore() {
+    if (!els.list || !("IntersectionObserver" in window)) return;
+    const node = els.list.querySelector("[data-list-more]");
+    if (!node) {
+      if (moreObserved && moreObserver) moreObserver.disconnect();
+      moreObserved = false;
+      return;
+    }
+    if (!moreObserver) {
+      moreObserver = new IntersectionObserver(
+        (entries) => {
+          if (entries.some((en) => en.isIntersecting)) loadMore();
+        },
+        { root: els.list, rootMargin: "200px" },
+      );
+    }
+    if (!moreObserved) {
+      moreObserver.observe(node);
+      moreObserved = true;
+    }
   }
 
   /**
-   * @param {{ preferId?: string|null, quiet?: boolean, keepSearchFocus?: boolean }} [opts]
+   * @param {{ preferId?: string|null, quiet?: boolean, keepSearchFocus?: boolean, append?: boolean }} [opts]
    */
   async function loadList(opts = {}) {
     const preferId = opts.preferId || null;
     const quiet = Boolean(opts.quiet);
     const keepSearchFocus = Boolean(opts.keepSearchFocus) || isSearchFocused();
+    const append = Boolean(opts.append);
     const reqId = ++listRequestId;
+
+    if (!append) page = 1;
 
     if (!quiet) {
       setShellState("loading");
@@ -515,7 +578,8 @@
 
     const params = new URLSearchParams({
       locale,
-      pageSize: "200",
+      page: String(page),
+      pageSize: String(pageSize),
     });
     const filter = els.filter?.value;
     if (filter && filter !== "all") params.set("status", filter);
@@ -532,6 +596,7 @@
         setShellState("workspace");
         strings = [];
         total = 0;
+        hasMore = false;
         if (els.count) els.count.textContent = "0/0";
         renderList();
         showMainEmpty();
@@ -539,8 +604,18 @@
         if (!quiet) loadProgress();
         return;
       }
-      strings = data.strings || [];
+
+      if (append) {
+        const incoming = data.strings || [];
+        // De-dupe against already-loaded ids (safe when rows move pages).
+        const seen = new Set(strings.map((s) => s.id));
+        strings = strings.concat(incoming.filter((s) => !seen.has(s.id)));
+      } else {
+        strings = data.strings || [];
+      }
       total = data.total || 0;
+      hasMore = strings.length < total;
+      if (append) page += 1;
       if (els.count) els.count.textContent = `${strings.length}/${total}`;
       setShellState("workspace");
       if (!quiet) loadProgress();
@@ -561,6 +636,14 @@
       }
 
       let pick = null;
+      if (append) {
+        // Appending a page: keep the current selection and just re-render the
+        // (longer) list + sentinel. No need to re-fetch the active detail.
+        renderList();
+        if (keepSearchFocus) restoreSearchFocus();
+        return;
+      }
+
       if (preferId && strings.some((s) => s.id === preferId)) {
         pick = preferId;
         pendingFocus = null;
@@ -573,23 +656,30 @@
         pick = strings[0].id;
       }
 
-      if (pick === activeId) {
-        renderList();
-        scrollActiveIntoView();
-        await loadDetail(activeId);
-        if (reqId !== listRequestId) return;
-        if (keepSearchFocus) restoreSearchFocus();
-        else focusDraft();
+      if (pick) {
+        if (pick === activeId) {
+          renderList();
+          scrollActiveIntoView();
+          await loadDetail(activeId);
+          if (reqId !== listRequestId) return;
+          if (keepSearchFocus) restoreSearchFocus();
+          else focusDraft();
+        } else {
+          await selectString(pick, { focusDraft: !keepSearchFocus });
+          if (reqId !== listRequestId) return;
+          if (keepSearchFocus) restoreSearchFocus();
+        }
       } else {
-        await selectString(pick, { focusDraft: !keepSearchFocus });
-        if (reqId !== listRequestId) return;
-        if (keepSearchFocus) restoreSearchFocus();
+        // Append with no selection change: just re-render the sentinel.
+        renderList();
       }
     } catch {
       if (reqId !== listRequestId) return;
       showError(BTC.t('网络错误'));
       setShellState("workspace");
       strings = [];
+      total = 0;
+      hasMore = false;
       renderList();
       showMainEmpty();
       if (keepSearchFocus) restoreSearchFocus();
@@ -601,18 +691,39 @@
     }
   }
 
+  /** Fetch the next page and append to the list (infinite scroll / load-more). */
+  async function loadMore() {
+    if (!hasMore || loadingMore) return;
+    loadingMore = true;
+    const sentinel = els.list?.querySelector("[data-list-more]");
+    const spinner = sentinel?.querySelector(".loading-spinner");
+    const label = sentinel?.querySelector("span:last-child");
+    if (spinner) spinner.hidden = false;
+    if (label) label.textContent = BTC.t('加载中...');
+    try {
+      await loadList({ quiet: true, append: true, keepSearchFocus: isSearchFocused() });
+    } finally {
+      loadingMore = false;
+      const s2 = els.list?.querySelector("[data-list-more]");
+      const sp2 = s2?.querySelector(".loading-spinner");
+      const lb2 = s2?.querySelector("span:last-child");
+      if (sp2) sp2.hidden = true;
+      if (lb2) lb2.textContent = BTC.t('加载更多…');
+    }
+  }
+
   function clearSidePanels() {
     if (els.suggestions) {
-      els.suggestions.innerHTML = `<div class="blora-text-faint u-text-sm">选择字符串查看建议</div>`;
+      els.suggestions.innerHTML = `<div class="blora-text-faint u-text-sm">${BTC.t('选择字符串查看建议')}</div>`;
     }
     if (els.tmList) {
-      els.tmList.innerHTML = `<div class="blora-text-faint u-text-sm">暂无</div>`;
+      els.tmList.innerHTML = `<div class="blora-text-faint u-text-sm">${BTC.t('暂无')}</div>`;
     }
     if (els.contextsList) {
-      els.contextsList.innerHTML = `<div class="blora-text-faint u-text-sm">暂无截图语境</div>`;
+      els.contextsList.innerHTML = `<div class="blora-text-faint u-text-sm">${BTC.t('暂无截图语境')}</div>`;
     }
     if (els.comments) {
-      els.comments.innerHTML = `<div class="blora-text-faint u-text-sm">暂无讨论</div>`;
+      els.comments.innerHTML = `<div class="blora-text-faint u-text-sm">${BTC.t('暂无讨论')}</div>`;
     }
   }
 
@@ -641,7 +752,7 @@
       els.suggestions.innerHTML =
         (window.BTC && window.BTC.loadingHtml
           ? window.BTC.loadingHtml({ size: "md", label: BTC.t('加载中...'), layout: "inline" })
-          : `<div class="inline-loading" role="status"><div class="loading-spinner md" aria-hidden="true"></div><div>加载中...</div></div>`);
+          : `<div class="inline-loading" role="status"><div class="loading-spinner md" aria-hidden="true"></div><div>${BTC.t('加载中...')}</div></div>`);
     }
     if (els.comments) els.comments.innerHTML = "";
     if (els.workflow) els.workflow.textContent = "";
@@ -699,7 +810,7 @@
           const approved = (data.suggestions || []).find((s) => s.isApproved);
           if (approved) {
             els.workflow.innerHTML +=
-              ` · 定稿：` +
+              ` · ${BTC.t('定稿：')}` +
               escapeHtml(approved.text).slice(0, 80) +
               (approved.text.length > 80 ? "…" : "");
           }
@@ -715,7 +826,7 @@
       updateExtrasUi(data);
     } catch {
       if (els.suggestions) {
-        els.suggestions.innerHTML = `<div class="blora-alert blora-alert--danger">网络错误</div>`;
+        els.suggestions.innerHTML = `<div class="blora-alert blora-alert--danger">${BTC.t('网络错误')}</div>`;
       }
     }
   }
@@ -738,7 +849,7 @@
 
     els.contextsList.innerHTML = "";
     if (!contexts.length) {
-      els.contextsList.innerHTML = `<div class="blora-text-faint u-text-sm">暂无截图语境</div>`;
+      els.contextsList.innerHTML = `<div class="blora-text-faint u-text-sm">${BTC.t('暂无截图语境')}</div>`;
       return;
     }
     contexts.forEach((c) => {
@@ -764,7 +875,7 @@
           ? original.replace(/(\/img\/\d+\/[a-f0-9]+)(\?.*)?$/i, "$1.webp$2")
           : original);
       img.src = preview;
-      img.alt = c.caption || "截图语境";
+      img.alt = c.caption || BTC.t('截图语境');
       link.href = original;
       card.querySelector(".context-shot__caption").textContent = c.caption || "";
       card.querySelector(".context-shot__by").textContent = c.username
@@ -946,7 +1057,7 @@
         toast?.("error", data.error || BTC.t('指派失败'));
         return;
       }
-      toast?.("success", `已指派给 ${username.trim()}`);
+      toast?.("success", BTC.t('已指派给 {username}', { username: username.trim() }));
     } catch {
       toast?.("error", BTC.t('网络错误'));
     }
@@ -955,7 +1066,7 @@
   function renderTm(hits) {
     if (!els.tmList) return;
     if (!hits.length) {
-      els.tmList.innerHTML = `<div class="blora-text-faint u-text-sm">暂无翻译记忆匹配</div>`;
+      els.tmList.innerHTML = `<div class="blora-text-faint u-text-sm">${BTC.t('暂无翻译记忆匹配')}</div>`;
       return;
     }
     els.tmList.innerHTML = "";
@@ -971,7 +1082,7 @@
           <div class="tm-hit__dst"></div>
           <div class="tm-hit__meta blora-text-faint u-text-xs"></div>
         </div>
-        <button type="button" class="blora-btn blora-btn--ghost blora-btn--xs" data-use>采用</button>
+        <button type="button" class="blora-btn blora-btn--ghost blora-btn--xs" data-use>${BTC.t('采用')}</button>
       `;
       row.querySelector(".tm-hit__src").textContent = h.sourceText;
       row.querySelector(".tm-hit__dst").textContent = h.translation;
@@ -1007,7 +1118,7 @@
         <span class="glossary-hit__src"></span>
         <span class="glossary-hit__arrow">→</span>
         <span class="glossary-hit__dst"></span>
-        <button type="button" class="blora-btn blora-btn--ghost blora-btn--xs" data-use>填入</button>
+        <button type="button" class="blora-btn blora-btn--ghost blora-btn--xs" data-use>${BTC.t('填入')}</button>
       `;
       row.querySelector(".glossary-hit__src").textContent = h.sourceTerm;
       row.querySelector(".glossary-hit__dst").textContent =
@@ -1020,7 +1131,7 @@
           const cur = els.draft.value;
           els.draft.value = cur ? cur + h.translation : h.translation;
           els.draft.focus();
-          toast?.("success", `已填入术语「${h.sourceTerm}」`);
+          toast?.("success", BTC.t('已填入术语「{term}」', { term: h.sourceTerm }));
         });
       }
       if (h.description) {
@@ -1033,7 +1144,7 @@
   function renderSuggestions(data) {
     const list = data.suggestions || [];
     if (!list.length) {
-      els.suggestions.innerHTML = `<div class="blora-text-faint u-text-sm">暂无建议，成为第一个译者吧</div>`;
+      els.suggestions.innerHTML = `<div class="blora-text-faint u-text-sm">${BTC.t('暂无建议，成为第一个译者吧')}</div>`;
       return;
     }
     els.suggestions.innerHTML = "";
@@ -1118,7 +1229,7 @@
       toggleComments.type = "button";
       toggleComments.className = "blora-btn blora-btn--ghost blora-btn--xs";
       toggleComments.textContent =
-        commentCount > 0 ? `评论 (${commentCount})` : BTC.t('评论');
+        commentCount > 0 ? BTC.t('评论 ({count})', { count: commentCount }) : BTC.t('评论');
       actions.appendChild(toggleComments);
 
       const commentsMount = card.querySelector(".collab-card__comments");
@@ -1176,7 +1287,7 @@
     }
 
     if (!roots.length) {
-      listEl.innerHTML = `<div class="blora-text-faint u-text-xs">暂无评论</div>`;
+      listEl.innerHTML = `<div class="blora-text-faint u-text-xs">${BTC.t('暂无评论')}</div>`;
     } else {
       roots.forEach((c) => {
         const node = buildSuggestionCommentNode(c, suggestion, {
@@ -1208,8 +1319,8 @@
       const compose = document.createElement("div");
       compose.className = "suggestion-comments__compose";
       compose.innerHTML = `
-        <textarea class="blora-textarea suggestion-comments__body" rows="2" placeholder=BTC.t('针对这条建议回复…')></textarea>
-        <button type="button" class="blora-btn blora-btn--secondary blora-btn--xs suggestion-comments__send">发送</button>
+        <textarea class="blora-textarea suggestion-comments__body" rows="2" placeholder="${BTC.t('针对这条建议回复…').replace(/"/g, "&quot;")}"></textarea>
+        <button type="button" class="blora-btn blora-btn--secondary blora-btn--xs suggestion-comments__send">${BTC.t('发送')}</button>
       `;
       const ta = compose.querySelector(".suggestion-comments__body");
       const send = () =>
@@ -1265,10 +1376,10 @@
         const form = document.createElement("div");
         form.className = "suggestion-comment__reply-form";
         form.innerHTML = `
-          <textarea class="blora-textarea suggestion-comment__reply-body" rows="2" placeholder="回复 ${escapeAttr(c.authorUsername)}…"></textarea>
+          <textarea class="blora-textarea suggestion-comment__reply-body" rows="2" placeholder="${escapeAttr(BTC.t('回复 {user}…', { user: c.authorUsername }))}"></textarea>
           <div class="suggestion-comment__reply-actions">
-            <button type="button" class="blora-btn blora-btn--secondary blora-btn--xs suggestion-comment__reply-send">发送</button>
-            <button type="button" class="blora-btn blora-btn--ghost blora-btn--xs suggestion-comment__reply-cancel">取消</button>
+            <button type="button" class="blora-btn blora-btn--secondary blora-btn--xs suggestion-comment__reply-send">${BTC.t('发送')}</button>
+            <button type="button" class="blora-btn blora-btn--ghost blora-btn--xs suggestion-comment__reply-cancel">${BTC.t('取消')}</button>
           </div>
         `;
         const ta = form.querySelector(".suggestion-comment__reply-body");
@@ -1413,10 +1524,10 @@
     const form = document.createElement("div");
     form.className = "collab-comment__reply-form";
     form.innerHTML = `
-      <textarea class="blora-textarea collab-comment__reply-body" rows="2" placeholder="回复 ${escapeAttr(parentComment.authorUsername)}…"></textarea>
+      <textarea class="blora-textarea collab-comment__reply-body" rows="2" placeholder="${escapeAttr(BTC.t('回复 {user}…', { user: parentComment.authorUsername }))}"></textarea>
       <div class="collab-comment__reply-actions">
-        <button type="button" class="blora-btn blora-btn--secondary blora-btn--xs collab-comment__reply-send">发送</button>
-        <button type="button" class="blora-btn blora-btn--ghost blora-btn--xs collab-comment__reply-cancel">取消</button>
+        <button type="button" class="blora-btn blora-btn--secondary blora-btn--xs collab-comment__reply-send">${BTC.t('发送')}</button>
+        <button type="button" class="blora-btn blora-btn--ghost blora-btn--xs collab-comment__reply-cancel">${BTC.t('取消')}</button>
       </div>
     `;
     const ta = form.querySelector(".collab-comment__reply-body");
@@ -1452,7 +1563,7 @@
     if (!els.comments) return;
     els.comments.innerHTML = "";
     if (!comments.length) {
-      els.comments.innerHTML = `<div class="blora-text-faint u-text-sm">暂无讨论</div>`;
+      els.comments.innerHTML = `<div class="blora-text-faint u-text-sm">${BTC.t('暂无讨论')}</div>`;
       return;
     }
 
