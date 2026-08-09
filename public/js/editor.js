@@ -1075,6 +1075,7 @@
       row.className = "tm-hit";
       const matchLabel =
         h.match === "exact" ? BTC.t('完全匹配') : h.match === "contains" ? BTC.t('包含') : BTC.t('被包含');
+      const sourceLabel = h.source === "approved" ? BTC.t('已批准') : BTC.t('建议');
       row.innerHTML = `
         <div class="tm-hit__score">${h.score}%</div>
         <div class="tm-hit__body">
@@ -1082,12 +1083,18 @@
           <div class="tm-hit__dst"></div>
           <div class="tm-hit__meta blora-text-faint u-text-xs"></div>
         </div>
+        <div class="tm-hit__src-tag"></div>
         <button type="button" class="blora-btn blora-btn--ghost blora-btn--xs" data-use>${BTC.t('采用')}</button>
       `;
       row.querySelector(".tm-hit__src").textContent = h.sourceText;
       row.querySelector(".tm-hit__dst").textContent = h.translation;
       row.querySelector(".tm-hit__meta").textContent =
         `${matchLabel} · ${h.filePath} · ${h.keyPath}`;
+      const tag = row.querySelector(".tm-hit__src-tag");
+      if (tag) {
+        tag.className = h.source === "approved" ? "blora-badge" : "blora-badge blora-badge--pill";
+        tag.textContent = sourceLabel;
+      }
       const use = row.querySelector("[data-use]");
       if (!effectiveCanSuggest()) {
         use.hidden = true;
