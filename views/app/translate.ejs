@@ -210,13 +210,19 @@
         <div class="blora-tabs editor-side-tabs" data-blora-tabs id="editor-side-tabs">
           <div class="blora-tabs__nav editor-side-tabs__nav">
             <button type="button" class="blora-tabs__tab is-active" data-tab="0"><%- sfIcon('list.bullet', { className: 'sf-icon--sm' }) %><%= t('建议') %></button>
-            <button type="button" class="blora-tabs__tab" data-tab="1"><%- sfIcon('rectangle.stack', { className: 'sf-icon--sm' }) %>TM</button>
-            <button type="button" class="blora-tabs__tab" data-tab="2"><%- sfIcon('photo', { className: 'sf-icon--sm' }) %><%= t('语境') %></button>
-            <button type="button" class="blora-tabs__tab" data-tab="3"><%- sfIcon('bubble.left', { className: 'sf-icon--sm' }) %><%= t('讨论') %></button>
+            <button type="button" class="blora-tabs__tab" data-tab="1"><%- sfIcon('globe', { className: 'sf-icon--sm' }) %>MT</button>
+            <button type="button" class="blora-tabs__tab" data-tab="2"><%- sfIcon('rectangle.stack', { className: 'sf-icon--sm' }) %>TM</button>
+            <button type="button" class="blora-tabs__tab" data-tab="3"><%- sfIcon('photo', { className: 'sf-icon--sm' }) %><%= t('语境') %></button>
+            <button type="button" class="blora-tabs__tab" data-tab="4"><%- sfIcon('bubble.left', { className: 'sf-icon--sm' }) %><%= t('讨论') %></button>
           </div>
           <div class="editor-side-tabs__body">
             <div class="blora-tabs__panel editor-side-panel" data-panel="suggestions">
               <div id="editor-suggestions" class="collab-suggestions__list"></div>
+            </div>
+            <div class="blora-tabs__panel editor-side-panel blora-hide" data-panel="mt">
+              <div id="editor-mt" class="mt-hits">
+                <div id="editor-mt-list" class="mt-hits__list"></div>
+              </div>
             </div>
             <div class="blora-tabs__panel editor-side-panel blora-hide" data-panel="tm">
               <div id="editor-tm" class="tm-hits">

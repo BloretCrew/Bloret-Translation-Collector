@@ -38,6 +38,7 @@ import {
 import { lookupTranslationMemory } from "@/lib/services/tm";
 import { listContexts } from "@/lib/services/contexts";
 import { isMtEnabled } from "@/lib/services/mt";
+import { lookupStringMt } from "@/lib/services/mt-file";
 import {
   addComment,
   addSuggestionComment,
@@ -179,6 +180,12 @@ collaborationRouter.get(
         limit: 6,
       });
       const contexts = await listContexts(unit.id);
+      const mt = await lookupStringMt(
+        access.project.id,
+        unit.fileId,
+        localeParsed.data,
+        unit.keyPath,
+      );
 
       const localeProofreader = await isLocaleAssignee(
         access.project.id,
@@ -201,6 +208,7 @@ collaborationRouter.get(
         glossaryHits,
         tmHits,
         contexts,
+        mt,
         mtEnabled: isMtEnabled(),
         sourceLocale: access.project.sourceLocale,
         canSuggest: canSuggestTranslations(access.role),

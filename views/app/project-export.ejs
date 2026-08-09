@@ -69,6 +69,14 @@
                   </select>
                 </label>
 
+                <label class="blora-field blora-field--check">
+                  <span class="blora-field__check-row">
+                    <input type="checkbox" name="fallbackMt" id="export-fallback-mt" />
+                    <span class="blora-field__label"><%= t('用机器翻译兜底') %></span>
+                  </span>
+                  <span class="blora-field__hint"><%= t('已批准/建议优先；缺失项用机器翻译译文填充') %></span>
+                </label>
+
                 <label class="blora-field">
                   <span class="blora-field__label"><%= t('打包方式') %></span>
                   <select class="blora-select" name="pack" id="export-pack">

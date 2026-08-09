@@ -50,6 +50,7 @@ export function computeAssetV(
     "public/js/export-page.js",
     "public/js/editor-shortcuts.js",
     "public/js/entity-icon.js",
+    "public/js/mt-upload.js",
   ],
   root = projectRoot(),
 ): string {

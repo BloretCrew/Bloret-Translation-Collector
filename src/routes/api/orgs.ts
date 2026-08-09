@@ -1,6 +1,7 @@
 import { t } from "@/lib/i18n";
 import { randomBytes } from "crypto";
 import { Router } from "express";
+import { z } from "zod";
 import { and, asc, desc, eq, ilike, inArray, isNull, or, sql } from "drizzle-orm";
 import { requireSession } from "@/lib/auth/session";
 import { requireOrgAccess, requireProjectAccess } from "@/lib/access";
@@ -58,6 +59,12 @@ import {
   getProjectProgress,
   upsertSourceFile,
 } from "@/lib/services/files";
+import {
+  countMachineTranslationsByLocale,
+  deleteMachineTranslations,
+  parseMtFile,
+  upsertMachineTranslations,
+} from "@/lib/services/mt-file";
 import { Logger } from "@/lib/logger";
 import { publicBaseUrl } from "@/lib/config";
 import { slugify } from "@/lib/slug";
@@ -1295,6 +1302,139 @@ orgsRouter.delete(
 
 // Strings / suggestions / votes / approve → collaboration router
 
+// —— Machine translation files (project-owner uploads) ——
+const mtFileSchema = z.object({
+  locale: localeSchema,
+  /** Optional source file to scope MT rows to; omitted → project-global. */
+  fileId: z.string().uuid().optional().nullable(),
+  /** Raw MT JSON file content (target-language). */
+  content: z.string().min(1).max(2 * 1024 * 1024),
+});
+
+orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/mt-files", async (req, res, next) => {
+  try {
+    const session = requireSession(req);
+    if (!session) return unauthorized(res);
+
+    const access = await requireProjectAccess(
+      req.params.orgSlug,
+      req.params.projectSlug,
+      session.userId!,
+      "manager",
+    );
+    if ("error" in access) {
+      if (access.error === "not_found") return notFound(res);
+      return forbidden(res);
+    }
+    if (!canManageProjects(access.role)) return forbidden(res);
+
+    const parsed = mtFileSchema.safeParse(req.body);
+    if (!parsed.success) {
+      return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
+    }
+    const { locale, fileId, content } = parsed.data;
+
+    if (fileId) {
+      const [file] = await db
+        .select({ id: sourceFiles.id })
+        .from(sourceFiles)
+        .where(
+          and(eq(sourceFiles.id, fileId), eq(sourceFiles.projectId, access.project.id)),
+        )
+        .limit(1);
+      if (!file) return notFound(res, t('文件不存在'));
+    }
+
+    const parsedMt = parseMtFile(content);
+    if (parsedMt.error) return jsonError(res, parsedMt.error);
+
+    const result = await upsertMachineTranslations({
+      projectId: access.project.id,
+      fileId: fileId ?? null,
+      locale,
+      entries: parsedMt.entries,
+      raw: (() => {
+        try {
+          const d = JSON.parse(content) as unknown;
+          return d && typeof d === "object" && !Array.isArray(d)
+            ? (d as Record<string, unknown>)
+            : null;
+        } catch {
+          return null;
+        }
+      })(),
+      userId: session.userId!,
+    });
+
+    return jsonCreated(res, {
+      locale,
+      fileId: fileId ?? null,
+      upserted: result.upserted,
+      warnings: parsedMt.warnings,
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+orgsRouter.get("/v1/orgs/:orgSlug/projects/:projectSlug/mt-files", async (req, res, next) => {
+  try {
+    const session = requireSession(req);
+    if (!session) return unauthorized(res);
+
+    const access = await requireProjectAccess(
+      req.params.orgSlug,
+      req.params.projectSlug,
+      session.userId!,
+    );
+    if ("error" in access) {
+      if (access.error === "not_found") return notFound(res);
+      return forbidden(res);
+    }
+
+    const byLocale = await countMachineTranslationsByLocale(access.project.id);
+    return jsonOk(res, {
+      locales: [...byLocale.entries()].map(([locale, info]) => ({
+        locale,
+        count: info.count,
+        fileScoped: info.files.has(access.project.id) || info.files.size > 0,
+      })),
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
+orgsRouter.delete("/v1/orgs/:orgSlug/projects/:projectSlug/mt-files", async (req, res, next) => {
+  try {
+    const session = requireSession(req);
+    if (!session) return unauthorized(res);
+
+    const access = await requireProjectAccess(
+      req.params.orgSlug,
+      req.params.projectSlug,
+      session.userId!,
+      "manager",
+    );
+    if ("error" in access) {
+      if (access.error === "not_found") return notFound(res);
+      return forbidden(res);
+    }
+    if (!canManageProjects(access.role)) return forbidden(res);
+
+    const locale = typeof req.query.locale === "string" ? req.query.locale : null;
+    const fileId = typeof req.query.fileId === "string" ? req.query.fileId : null;
+    await deleteMachineTranslations({
+      projectId: access.project.id,
+      fileId: fileId ?? undefined,
+      locale: locale ?? undefined,
+    });
+    return jsonOk(res, { ok: true });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // —— Export ——
 orgsRouter.get("/v1/orgs/:orgSlug/projects/:projectSlug/export", async (req, res, next) => {
   try {
@@ -1338,6 +1478,9 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects/:projectSlug/export", async (req, res
       filenameMode = req.query.filename;
     }
 
+    const fallbackMt =
+      req.query.fallbackMt === "1" || req.query.fallbackMt === "true";
+
     if (!localeRaw) return jsonError(res, "缺少 locale 参数");
     const localeParsed = localeSchema.safeParse(localeRaw);
     if (!localeParsed.success) return jsonError(res, t('无效语言代码'));
@@ -1379,11 +1522,13 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects/:projectSlug/export", async (req, res
 
     const payload = await buildProjectExport({
       files,
+      projectId: access.project.id,
       locale,
       mode,
       pack,
       filenameMode,
       projectSlug: req.params.projectSlug,
+      fallbackMt,
     });
 
     if ("error" in payload) return jsonError(res, payload.error, 400);

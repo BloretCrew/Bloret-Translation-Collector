@@ -264,6 +264,8 @@
     glossaryList: document.getElementById("editor-glossary-list"),
     tm: document.getElementById("editor-tm"),
     tmList: document.getElementById("editor-tm-list"),
+    mt: document.getElementById("editor-mt"),
+    mtList: document.getElementById("editor-mt-list"),
     contexts: document.getElementById("editor-contexts"),
     contextsList: document.getElementById("editor-contexts-list"),
     contextFile: document.getElementById("editor-context-file"),
@@ -822,6 +824,7 @@
       renderComments(data.comments || [], data);
       renderGlossary(data.glossaryHits || []);
       renderTm(data.tmHits || []);
+      renderMt(data.mt);
       renderContexts(data.contexts || [], data);
       updateExtrasUi(data);
     } catch {
@@ -1107,6 +1110,37 @@
       }
       els.tmList.appendChild(row);
     });
+  }
+
+  /** Render the machine-translation reference for the active string. */
+  function renderMt(mt) {
+    if (!els.mtList) return;
+    els.mtList.innerHTML = "";
+    if (!mt || !mt.text || !mt.text.trim()) {
+      els.mtList.innerHTML = `<div class="blora-text-faint u-text-sm">${BTC.t('暂无机器翻译参考')}</div>`;
+      return;
+    }
+    const row = document.createElement("div");
+    row.className = "mt-hit";
+    row.innerHTML = `
+      <div class="mt-hit__body">
+        <div class="mt-hit__label blora-text-caps blora-text-faint u-text-xs">${BTC.t('机器翻译')}</div>
+        <div class="mt-hit__text"></div>
+      </div>
+      <button type="button" class="blora-btn blora-btn--ghost blora-btn--xs" data-use>${BTC.t('采用')}</button>
+    `;
+    row.querySelector(".mt-hit__text").textContent = mt.text;
+    const use = row.querySelector("[data-use]");
+    if (!effectiveCanSuggest()) {
+      use.hidden = true;
+    } else {
+      use.addEventListener("click", () => {
+        els.draft.value = mt.text;
+        els.draft.focus();
+        toast?.("success", BTC.t('已填入机器翻译译文，请检查后保存建议'));
+      });
+    }
+    els.mtList.appendChild(row);
   }
 
   function renderGlossary(hits) {

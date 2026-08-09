@@ -183,6 +183,40 @@ export const sourceFiles = pgTable(
   ],
 );
 
+/**
+ * Machine-translation file entries (project-owner uploaded).
+ * One row per string key × locale, used as a reference translation in the
+ * workbench and as an optional fallback during export. Stored separately
+ * from source_files so MT data never collides with source uploads.
+ */
+export const machineTranslations = pgTable(
+  "machine_translations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    projectId: uuid("project_id")
+      .notNull()
+      .references(() => projects.id, { onDelete: "cascade" }),
+    fileId: uuid("file_id").references(() => sourceFiles.id, { onDelete: "cascade" }),
+    locale: text("locale").notNull(),
+    keyPath: text("key_path").notNull(),
+    text: text("text").notNull().default(""),
+    /** Original MT file content that produced these rows (for reference). */
+    raw: jsonb("raw").$type<Record<string, unknown> | null>(),
+    updatedBy: uuid("updated_by").references(() => users.id),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    uniqueIndex("machine_translations_project_file_locale_key_uidx").on(
+      t.projectId,
+      t.fileId,
+      t.locale,
+      t.keyPath,
+    ),
+    index("machine_translations_project_locale_idx").on(t.projectId, t.locale),
+    index("machine_translations_file_idx").on(t.fileId),
+  ],
+);
+
 export const stringUnits = pgTable(
   "string_units",
   {
@@ -524,6 +558,20 @@ export const sourceFilesRelations = relations(sourceFiles, ({ one, many }) => ({
   strings: many(stringUnits),
 }));
 
+export const machineTranslationsRelations = relations(
+  machineTranslations,
+  ({ one }) => ({
+    project: one(projects, {
+      fields: [machineTranslations.projectId],
+      references: [projects.id],
+    }),
+    file: one(sourceFiles, {
+      fields: [machineTranslations.fileId],
+      references: [sourceFiles.id],
+    }),
+  }),
+);
+
 export const stringUnitsRelations = relations(stringUnits, ({ one, many }) => ({
   file: one(sourceFiles, {
     fields: [stringUnits.fileId],
@@ -618,6 +666,7 @@ export type Organization = typeof organizations.$inferSelect;
 export type OrganizationMember = typeof organizationMembers.$inferSelect;
 export type Project = typeof projects.$inferSelect;
 export type SourceFile = typeof sourceFiles.$inferSelect;
+export type MachineTranslation = typeof machineTranslations.$inferSelect;
 export type StringUnit = typeof stringUnits.$inferSelect;
 export type Translation = typeof translations.$inferSelect;
 export type TranslationSuggestion = typeof translationSuggestions.$inferSelect;

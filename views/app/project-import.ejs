@@ -43,7 +43,7 @@
             </details>
             <p class="blora-text-muted u-text-xs">
               <%= t('支持') %> <code>.json</code><%= t('（嵌套 / 扁平 i18n）与') %> <code>.properties</code>。
-              导出会尽量按上传原文的缩进、键序与格式写出。
+              <%= t('导出会尽量按上传原文的缩进、键序与格式写出。') %>
             </p>
             <div class="blora-row">
               <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('icloud.and.arrow.up') %><%= t('上传 / 更新') %></button>
@@ -65,8 +65,49 @@
             </ul>
           </div>
         <% } %>
+
+        <% if (typeof canManageSettings !== 'undefined' && canManageSettings) { %>
+        <section class="app-section u-mt-6">
+          <div class="app-section-head">
+            <div>
+              <h3 class="blora-h3"><%- sfIcon('globe') %><%= t('机器翻译文件') %></h3>
+              <p class="blora-text-muted u-text-sm u-mt-1">
+                <%= t('上传目标语言的机器翻译 JSON，作为工作台参考译文与导出兜底。') %>
+              </p>
+            </div>
+          </div>
+
+          <div class="blora-panel">
+            <form id="mt-upload-form" class="blora-stack" data-org-slug="<%= orgSlug %>" data-project-slug="<%= projectSlug %>">
+              <div id="mt-form-error" class="blora-alert blora-alert--danger" hidden></div>
+              <div class="blora-row u-gap-3">
+                <label class="blora-field" style="flex:1">
+                  <span class="blora-field__label"><%= t('目标语言') %></span>
+                  <select class="blora-select" id="mt-locale" required>
+                    <% (targetLanguages || targetLocales.map(function (l) { return { locale: l, displayName: null }; })).forEach(function (lang) { %>
+                      <option value="<%= lang.locale %>"><%= languageLabel(lang.locale, lang.displayName) %> (<%= lang.locale %>)</option>
+                    <% }) %>
+                  </select>
+                </label>
+                <label class="blora-field" style="flex:2">
+                  <span class="blora-field__label"><%= t('机器翻译 JSON 文件') %></span>
+                  <input class="blora-input" type="file" id="mt-file-pick" accept=".json,application/json,text/plain" />
+                </label>
+              </div>
+              <label class="blora-field">
+                <span class="blora-field__label"><%= t('高级：直接粘贴内容') %></span>
+                <textarea class="blora-textarea blora-text-mono" id="mt-content" rows="8" placeholder='{ "设置": "Настройки", ... }' style="font-size:13px"></textarea>
+              </label>
+              <div class="blora-row">
+                <button class="blora-btn blora-btn--primary" type="submit"><%- sfIcon('icloud.and.arrow.up') %><%= t('上传机器翻译') %></button>
+                <button class="blora-btn blora-btn--ghost" type="button" id="mt-clear"><%- sfIcon('trash') %><%= t('清空该语言机器翻译') %></button>
+              </div>
+            </form>
+          </div>
+        </section>
+        <% } %>
       </section>
     </div>
   </div>
 </main>
-<%- include('../partials/foot', { scripts: ['/js/forms.js'] }) %>
+<%- include('../partials/foot', { scripts: ['/js/forms.js', '/js/mt-upload.js'] }) %>

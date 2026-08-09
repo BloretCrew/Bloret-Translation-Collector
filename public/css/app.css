@@ -1515,6 +1515,40 @@ html.is-translation-editor .app-main--editor {
   font-weight: 500;
 }
 
+.mt-hits__list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--blora-space-2);
+  margin-top: var(--blora-space-2);
+}
+
+.mt-hit {
+  display: flex;
+  gap: var(--blora-space-2);
+  align-items: flex-start;
+  padding: var(--blora-space-2) var(--blora-space-3);
+  border: var(--blora-border);
+  border-radius: var(--blora-radius-md);
+  background: var(--blora-surface-2);
+  font-size: var(--blora-text-sm);
+}
+
+.mt-hit__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.mt-hit__label {
+  margin-bottom: 2px;
+}
+
+.mt-hit__text {
+  color: var(--blora-ink);
+  font-weight: 500;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
 .context-shots__list {
   display: flex;
   flex-direction: column;
@@ -2187,6 +2221,22 @@ button.is-btc-busy .loading-spinner {
   margin-top: 0.35rem;
   font-size: var(--blora-text-xs);
   color: var(--blora-ink-mist);
+}
+
+.blora-field--check {
+  gap: var(--blora-space-1);
+  justify-content: flex-end;
+}
+
+.blora-field__check-row {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--blora-space-2);
+  cursor: pointer;
+}
+
+.blora-field__check-row .blora-field__label {
+  margin: 0;
 }
 
 .app-advanced {

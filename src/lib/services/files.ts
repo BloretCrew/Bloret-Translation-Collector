@@ -17,6 +17,7 @@ import {
 import { basenamePath, localeSuffixPath } from "@/lib/i18n-formats/filename";
 import { buildZip } from "@/lib/i18n-formats/zip";
 import { serializeJson } from "@/lib/i18n-formats/json";
+import { getProjectMachineTranslations } from "@/lib/services/mt-file";
 
 export async function upsertSourceFile(params: {
   projectId: string;
@@ -243,6 +244,7 @@ export async function exportFileLocale(
   fileId: string,
   locale: string,
   modeOrFallback: boolean | ExportMode = "source",
+  opts?: { mtMap?: Map<string, string> | null; fallbackMt?: boolean },
 ) {
   const mode: ExportMode =
     typeof modeOrFallback === "boolean"
@@ -256,6 +258,16 @@ export async function exportFileLocale(
   if (!file) return null;
 
   const map = (await buildTranslationMap(fileId, locale, mode)) ?? new Map();
+
+  // Machine-translation fallback: for any key without an approved translation
+  // (or, for top_voted, without a chosen suggestion), use the MT value. This
+  // sits below real translations but above source/empty fallback.
+  if (opts?.fallbackMt && opts.mtMap) {
+    for (const [keyPath, text] of opts.mtMap) {
+      if (text && text.trim() && !map.has(keyPath)) map.set(keyPath, text);
+    }
+  }
+
   const handler = getFormatHandler(file.format) ?? inferFormatFromPath(file.path);
   const body = handler.export(
     file.rawContent ?? null,
@@ -288,11 +300,13 @@ export function exportEntryPath(
 
 export async function buildProjectExport(params: {
   files: { id: string; path: string; format: string }[];
+  projectId: string;
   locale: string;
   mode: ExportMode;
   pack: ExportPack;
   filenameMode: ExportFilenameMode;
   projectSlug: string;
+  fallbackMt?: boolean;
 }): Promise<
   | {
       kind: "file";
@@ -323,8 +337,12 @@ export async function buildProjectExport(params: {
     }
   | { error: string }
 > {
-  const { files, locale, mode, pack, filenameMode, projectSlug } = params;
+  const { files, projectId, locale, mode, pack, filenameMode, projectSlug, fallbackMt } = params;
   if (files.length === 0) return { error: "项目中没有源文件" };
+
+  const mtMap = fallbackMt
+    ? await getProjectMachineTranslations(projectId, locale)
+    : null;
 
   const exported: {
     path: string;
@@ -336,7 +354,7 @@ export async function buildProjectExport(params: {
   }[] = [];
 
   for (const f of files) {
-    const result = await exportFileLocale(f.id, locale, mode);
+    const result = await exportFileLocale(f.id, locale, mode, { mtMap, fallbackMt });
     if (!result) continue;
     exported.push({
       path: result.path,
