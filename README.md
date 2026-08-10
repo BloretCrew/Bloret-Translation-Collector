@@ -3,6 +3,7 @@
 类似 Crowdin 的翻译收集平台：**组织 → 项目 → 文件 → 语言**。
 
 - 登录： [Bloret PassPort](https://passport.bloret.net/) OAuth（见 `docs/OauthAPI.md`）
+- 公开 API（Manifest / 实时译文文件）：[`docs/PublicAPI.md`](./docs/PublicAPI.md)
 - UI： [Blora Design 2](./docs/blora-design-2/)
 - 栈：**Express + EJS** · TypeScript · PostgreSQL · Drizzle ORM
 - 日志：遵循 [CONSOLE-LOG-SPEC](https://github.com/BloretCrew/CONSOLE-LOG-SPEC)（`Logger` + `./log/BTC-*.log`）
@@ -112,7 +113,7 @@ bash start.sh
 | `/app/o/[org]/p/[project]/translate` | 翻译工作台 |
 | `/app/settings` | 用户设置（翻译快捷键等） |
 | `/api/health` | 健康检查 |
-| `/api/v1/*` | JSON API |
+| `/api/v1/*` | JSON API（含公开接口，见 [`docs/PublicAPI.md`](./docs/PublicAPI.md)） |
 
 ## 界面国际化（UI i18n）
 
