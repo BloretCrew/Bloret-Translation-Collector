@@ -52,6 +52,7 @@ import {
 } from "@/lib/permissions/roles";
 import {
   buildProjectExport,
+  exportFileLocale,
   type ExportFilenameMode,
   type ExportMode,
   type ExportPack,
@@ -62,6 +63,7 @@ import {
 import {
   countMachineTranslationsByLocale,
   deleteMachineTranslations,
+  getProjectMachineTranslations,
   parseMtFile,
   upsertMachineTranslations,
 } from "@/lib/services/mt-file";
@@ -195,6 +197,118 @@ publicOrgsRouter.get(
           orgSlug: org.slug,
         },
       });
+    } catch (e) {
+      next(e);
+    }
+  },
+);
+
+/**
+ * Real-time translated file body for one source file × locale.
+ * Public projects: anonymous OK. Private: login + project access required.
+ * Response body is the raw file text (not attachment, not JSON-wrapped).
+ */
+publicOrgsRouter.get(
+  "/v1/orgs/:orgSlug/projects/:projectSlug/files/:fileId/translated",
+  async (req, res, next) => {
+    try {
+      const orgSlug = req.params.orgSlug;
+      const projectSlug = req.params.projectSlug;
+      const fileId = req.params.fileId;
+
+      const localeRaw = typeof req.query.locale === "string" ? req.query.locale : null;
+      if (!localeRaw) return jsonError(res, t("缺少 locale"));
+      const localeParsed = localeSchema.safeParse(localeRaw);
+      if (!localeParsed.success) return jsonError(res, t("无效语言代码"));
+      const locale = localeParsed.data;
+
+      let mode: ExportMode = "top_voted";
+      if (typeof req.query.mode === "string") {
+        const m = req.query.mode;
+        if (m === "approved" || m === "top_voted" || m === "source" || m === "empty") mode = m;
+      }
+      const fallbackMt =
+        req.query.fallbackMt === "1" || req.query.fallbackMt === "true";
+
+      const [org] = await db
+        .select({
+          id: organizations.id,
+          slug: organizations.slug,
+          visibility: organizations.visibility,
+        })
+        .from(organizations)
+        .where(eq(organizations.slug, orgSlug))
+        .limit(1);
+      if (!org) return notFound(res);
+
+      const [project] = await db
+        .select({
+          id: projects.id,
+          slug: projects.slug,
+          visibility: projects.visibility,
+          orgId: projects.orgId,
+        })
+        .from(projects)
+        .where(and(eq(projects.orgId, org.id), eq(projects.slug, projectSlug)))
+        .limit(1);
+      if (!project) return notFound(res);
+
+      const isPublic = project.visibility === "public";
+      if (!isPublic) {
+        const session = requireSession(req);
+        if (!session) return unauthorized(res);
+        const access = await requireProjectAccess(
+          orgSlug,
+          projectSlug,
+          session.userId!,
+        );
+        if ("error" in access) {
+          if (access.error === "not_found") return notFound(res);
+          return forbidden(res);
+        }
+      }
+
+      const [lang] = await db
+        .select({ locale: projectLanguages.locale })
+        .from(projectLanguages)
+        .where(
+          and(
+            eq(projectLanguages.projectId, project.id),
+            eq(projectLanguages.locale, locale),
+            eq(projectLanguages.enabled, true),
+          ),
+        )
+        .limit(1);
+      if (!lang) return jsonError(res, t("无效语言"), 400);
+
+      const [file] = await db
+        .select({
+          id: sourceFiles.id,
+          path: sourceFiles.path,
+          format: sourceFiles.format,
+        })
+        .from(sourceFiles)
+        .where(and(eq(sourceFiles.id, fileId), eq(sourceFiles.projectId, project.id)))
+        .limit(1);
+      if (!file) return notFound(res, t("文件不存在"));
+
+      const mtMap = fallbackMt
+        ? await getProjectMachineTranslations(project.id, locale)
+        : null;
+
+      const payload = await exportFileLocale(file.id, locale, mode, {
+        mtMap,
+        fallbackMt,
+      });
+      if (!payload) return notFound(res, t("文件不存在"));
+
+      res.setHeader("Content-Type", payload.contentType);
+      res.setHeader("X-File-Path", payload.path);
+      res.setHeader("X-Locale", locale);
+      res.setHeader("X-Export-Mode", payload.mode);
+      res.setHeader("X-Export-Fidelity", payload.fidelity);
+      res.setHeader("Cache-Control", "no-store");
+      return res.status(200).send(payload.body);
     } catch (e) {
       next(e);
     }
