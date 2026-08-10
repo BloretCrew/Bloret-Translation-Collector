@@ -180,7 +180,7 @@ collaborationRouter.get(
         limit: 6,
       });
       const contexts = await listContexts(unit.id);
-      const mt = await lookupStringMt(
+      const mtText = await lookupStringMt(
         access.project.id,
         unit.fileId,
         localeParsed.data,
@@ -208,7 +208,8 @@ collaborationRouter.get(
         glossaryHits,
         tmHits,
         contexts,
-        mt,
+        /** Uploaded MT reference for this string × locale (sidebar). */
+        mt: mtText ? { text: mtText } : null,
         mtEnabled: isMtEnabled(),
         sourceLocale: access.project.sourceLocale,
         canSuggest: canSuggestTranslations(access.role),

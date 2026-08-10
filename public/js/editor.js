@@ -1116,7 +1116,14 @@
   function renderMt(mt) {
     if (!els.mtList) return;
     els.mtList.innerHTML = "";
-    if (!mt || !mt.text || !mt.text.trim()) {
+    // API returns `{ text }` after fix; tolerate legacy bare string payloads.
+    const text =
+      typeof mt === "string"
+        ? mt
+        : mt && typeof mt === "object" && typeof mt.text === "string"
+          ? mt.text
+          : "";
+    if (!text || !String(text).trim()) {
       els.mtList.innerHTML = `<div class="blora-text-faint u-text-sm">${BTC.t('暂无机器翻译参考')}</div>`;
       return;
     }
@@ -1129,13 +1136,13 @@
       </div>
       <button type="button" class="blora-btn blora-btn--ghost blora-btn--xs" data-use>${BTC.t('采用')}</button>
     `;
-    row.querySelector(".mt-hit__text").textContent = mt.text;
+    row.querySelector(".mt-hit__text").textContent = text;
     const use = row.querySelector("[data-use]");
     if (!effectiveCanSuggest()) {
       use.hidden = true;
     } else {
       use.addEventListener("click", () => {
-        els.draft.value = mt.text;
+        els.draft.value = text;
         els.draft.focus();
         toast?.("success", BTC.t('已填入机器翻译译文，请检查后保存建议'));
       });
