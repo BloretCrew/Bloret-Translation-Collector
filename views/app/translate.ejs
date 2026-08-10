@@ -156,6 +156,22 @@
               <div class="blora-text-caps blora-text-faint"><%= t('术语') %></div>
               <div id="editor-glossary-list" class="glossary-hits__list"></div>
             </div>
+
+            <div class="editor-refs" id="editor-refs" aria-label="<%= t('参考译文') %>">
+              <section class="editor-ref-panel editor-ref-panel--mt" id="editor-mt" aria-labelledby="editor-mt-heading">
+                <div class="editor-ref-panel__head">
+                  <h3 class="editor-ref-panel__title blora-text-caps blora-text-faint" id="editor-mt-heading"><%- sfIcon('globe', { className: 'sf-icon--sm' }) %><%= t('机器翻译 · MT') %></h3>
+                  <button type="button" class="blora-btn blora-btn--ghost blora-btn--xs" id="editor-mt-run" hidden title="<%= t('调用在线机器翻译') %>"><%- sfIcon('sparkles') %><%= t('在线翻译') %></button>
+                </div>
+                <div id="editor-mt-list" class="mt-hits__list"></div>
+              </section>
+              <section class="editor-ref-panel editor-ref-panel--tm" id="editor-tm" aria-labelledby="editor-tm-heading">
+                <div class="editor-ref-panel__head">
+                  <h3 class="editor-ref-panel__title blora-text-caps blora-text-faint" id="editor-tm-heading"><%- sfIcon('rectangle.stack', { className: 'sf-icon--sm' }) %><%= t('翻译记忆 · TM') %></h3>
+                </div>
+                <div id="editor-tm-list" class="tm-hits__list"></div>
+              </section>
+            </div>
           </div>
 
           <div class="editor-compose" id="editor-compose">
@@ -192,7 +208,6 @@
                 <div class="blora-dropdown editor-compose__more">
                   <button class="blora-btn blora-btn--ghost blora-btn--sm blora-btn--icon" type="button" data-blora-dropdown-trigger aria-label="<%= t('更多操作') %>"><%- sfIcon('ellipsis') %></button>
                   <div class="blora-dropdown-menu">
-                    <button type="button" class="blora-dropdown-menu__item" id="editor-mt" hidden><%- sfIcon('globe') %><%= t('机器翻译') %></button>
                     <button type="button" class="blora-dropdown-menu__item" id="editor-delete-suggestion"><%- sfIcon('trash') %><%= t('删除建议') %></button>
                     <button type="button" class="blora-dropdown-menu__item" id="editor-assign-task" hidden><%- sfIcon('person.badge.plus') %><%= t('指派任务') %></button>
                   </div>
@@ -210,24 +225,12 @@
         <div class="blora-tabs editor-side-tabs" data-blora-tabs id="editor-side-tabs">
           <div class="blora-tabs__nav editor-side-tabs__nav">
             <button type="button" class="blora-tabs__tab is-active" data-tab="0"><%- sfIcon('list.bullet', { className: 'sf-icon--sm' }) %><%= t('建议') %></button>
-            <button type="button" class="blora-tabs__tab" data-tab="1"><%- sfIcon('globe', { className: 'sf-icon--sm' }) %>MT</button>
-            <button type="button" class="blora-tabs__tab" data-tab="2"><%- sfIcon('rectangle.stack', { className: 'sf-icon--sm' }) %>TM</button>
-            <button type="button" class="blora-tabs__tab" data-tab="3"><%- sfIcon('photo', { className: 'sf-icon--sm' }) %><%= t('语境') %></button>
-            <button type="button" class="blora-tabs__tab" data-tab="4"><%- sfIcon('bubble.left', { className: 'sf-icon--sm' }) %><%= t('讨论') %></button>
+            <button type="button" class="blora-tabs__tab" data-tab="1"><%- sfIcon('photo', { className: 'sf-icon--sm' }) %><%= t('语境') %></button>
+            <button type="button" class="blora-tabs__tab" data-tab="2"><%- sfIcon('bubble.left', { className: 'sf-icon--sm' }) %><%= t('讨论') %></button>
           </div>
           <div class="editor-side-tabs__body">
             <div class="blora-tabs__panel editor-side-panel" data-panel="suggestions">
               <div id="editor-suggestions" class="collab-suggestions__list"></div>
-            </div>
-            <div class="blora-tabs__panel editor-side-panel blora-hide" data-panel="mt">
-              <div id="editor-mt" class="mt-hits">
-                <div id="editor-mt-list" class="mt-hits__list"></div>
-              </div>
-            </div>
-            <div class="blora-tabs__panel editor-side-panel blora-hide" data-panel="tm">
-              <div id="editor-tm" class="tm-hits">
-                <div id="editor-tm-list" class="tm-hits__list"></div>
-              </div>
             </div>
             <div class="blora-tabs__panel editor-side-panel blora-hide" data-panel="contexts">
               <div id="editor-contexts" class="context-shots">

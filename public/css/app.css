@@ -614,6 +614,16 @@ html.is-translation-editor .app-main--editor {
     padding: var(--blora-space-3) var(--blora-space-3) var(--blora-space-2);
   }
 
+  .editor-refs {
+    grid-template-columns: 1fr;
+    gap: var(--blora-space-2);
+  }
+
+  .editor-ref-panel {
+    min-height: 0;
+    padding: var(--blora-space-2) var(--blora-space-3);
+  }
+
   .editor-compose {
     padding: var(--blora-space-2) var(--blora-space-3)
       max(var(--blora-space-2), env(safe-area-inset-bottom, 0px));
@@ -883,6 +893,75 @@ html.is-translation-editor .app-main--editor {
   word-break: break-word;
   line-height: var(--blora-leading-loose);
   font-size: var(--blora-text-base);
+}
+
+/* MT + TM live in the main column (not the side inspector) */
+.editor-refs {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: var(--blora-space-3);
+  margin-top: var(--blora-space-1);
+  flex: 1 1 auto;
+  min-height: 0;
+  align-content: start;
+}
+
+.editor-ref-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--blora-space-2);
+  min-width: 0;
+  min-height: 6rem;
+  padding: var(--blora-space-3);
+  border: var(--blora-border);
+  border-radius: var(--blora-radius-lg);
+  background: var(--blora-surface-1);
+}
+
+.editor-ref-panel__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--blora-space-2);
+  flex: 0 0 auto;
+}
+
+.editor-ref-panel__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35em;
+  margin: 0;
+  font-size: var(--blora-text-xs);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.editor-ref-panel .mt-hits__list,
+.editor-ref-panel .tm-hits__list {
+  margin-top: 0;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.editor-ref-empty {
+  padding: var(--blora-space-2) 0;
+  line-height: 1.45;
+}
+
+.editor-ref-panel .mt-hit,
+.editor-ref-panel .tm-hit {
+  background: var(--blora-surface-0, var(--blora-surface-2));
+}
+
+.editor-ref-panel--mt .mt-hit__text {
+  font-size: var(--blora-text-base);
+  line-height: var(--blora-leading-loose);
+}
+
+@media (max-width: 1100px) {
+  .editor-refs {
+    grid-template-columns: 1fr;
+  }
 }
 
 .editor-compose {
@@ -1482,7 +1561,8 @@ html.is-translation-editor .app-main--editor {
 }
 
 .tm-hit {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto auto;
   gap: var(--blora-space-2);
   align-items: flex-start;
   padding: var(--blora-space-2) var(--blora-space-3);
@@ -1503,6 +1583,7 @@ html.is-translation-editor .app-main--editor {
 .tm-hit__body {
   flex: 1;
   min-width: 0;
+  grid-column: 2;
 }
 
 .tm-hit__src {
@@ -1515,6 +1596,10 @@ html.is-translation-editor .app-main--editor {
   font-weight: 500;
 }
 
+.tm-hit__src-tag {
+  align-self: center;
+}
+
 .mt-hits__list {
   display: flex;
   flex-direction: column;
@@ -1524,9 +1609,9 @@ html.is-translation-editor .app-main--editor {
 
 .mt-hit {
   display: flex;
-  gap: var(--blora-space-2);
+  gap: var(--blora-space-3);
   align-items: flex-start;
-  padding: var(--blora-space-2) var(--blora-space-3);
+  padding: var(--blora-space-3);
   border: var(--blora-border);
   border-radius: var(--blora-radius-md);
   background: var(--blora-surface-2);

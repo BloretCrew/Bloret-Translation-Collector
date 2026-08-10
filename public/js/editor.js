@@ -251,7 +251,7 @@
     saveOnlyBtn: document.getElementById("editor-save-only"),
     insertSourceBtn: document.getElementById("editor-insert-source"),
     deleteBtn: document.getElementById("editor-delete-suggestion"),
-    mtBtn: document.getElementById("editor-mt"),
+    mtBtn: document.getElementById("editor-mt-run"),
     assignBtn: document.getElementById("editor-assign-task"),
     prev: document.getElementById("editor-prev"),
     next: document.getElementById("editor-next"),
@@ -262,6 +262,7 @@
     commentSend: document.getElementById("editor-comment-send"),
     glossary: document.getElementById("editor-glossary"),
     glossaryList: document.getElementById("editor-glossary-list"),
+    refs: document.getElementById("editor-refs"),
     tm: document.getElementById("editor-tm"),
     tmList: document.getElementById("editor-tm-list"),
     mt: document.getElementById("editor-mt"),
@@ -992,7 +993,7 @@
     } finally {
       mtBusy = false;
       if (els.mtBtn) {
-        window.BTC?.setButtonBusy?.(els.mtBtn, false, { idleLabel: BTC.t('机器翻译') });
+        window.BTC?.setButtonBusy?.(els.mtBtn, false, { idleLabel: BTC.t('在线翻译') });
       }
     }
   }
@@ -1068,8 +1069,9 @@
 
   function renderTm(hits) {
     if (!els.tmList) return;
+    if (els.tm) els.tm.classList.toggle("is-empty", !hits.length);
     if (!hits.length) {
-      els.tmList.innerHTML = `<div class="blora-text-faint u-text-sm">${BTC.t('暂无翻译记忆匹配')}</div>`;
+      els.tmList.innerHTML = `<div class="editor-ref-empty blora-text-faint u-text-sm">${BTC.t('暂无翻译记忆匹配')}</div>`;
       return;
     }
     els.tmList.innerHTML = "";
@@ -1123,18 +1125,19 @@
         : mt && typeof mt === "object" && typeof mt.text === "string"
           ? mt.text
           : "";
-    if (!text || !String(text).trim()) {
-      els.mtList.innerHTML = `<div class="blora-text-faint u-text-sm">${BTC.t('暂无机器翻译参考')}</div>`;
+    const hasText = Boolean(text && String(text).trim());
+    if (els.mt) els.mt.classList.toggle("is-empty", !hasText);
+    if (!hasText) {
+      els.mtList.innerHTML = `<div class="editor-ref-empty blora-text-faint u-text-sm">${BTC.t('暂无机器翻译参考。可在「导入」页上传目标语言 MT 文件。')}</div>`;
       return;
     }
     const row = document.createElement("div");
     row.className = "mt-hit";
     row.innerHTML = `
       <div class="mt-hit__body">
-        <div class="mt-hit__label blora-text-caps blora-text-faint u-text-xs">${BTC.t('机器翻译')}</div>
         <div class="mt-hit__text"></div>
       </div>
-      <button type="button" class="blora-btn blora-btn--ghost blora-btn--xs" data-use>${BTC.t('采用')}</button>
+      <button type="button" class="blora-btn blora-btn--primary blora-btn--xs" data-use>${BTC.t('采用')}</button>
     `;
     row.querySelector(".mt-hit__text").textContent = text;
     const use = row.querySelector("[data-use]");
