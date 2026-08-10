@@ -20,6 +20,9 @@
         </div>
         <div class="app-page-header__actions">
           <a class="blora-btn blora-btn--ghost" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/sources"><%- sfIcon('arrow.left') %><%= t('源文件') %></a>
+          <% if (canUpload) { %>
+            <a class="blora-btn blora-btn--secondary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/import?path=<%= encodeURIComponent(file.path) %>" title="<%= t('按相同路径合并键，已有译文与建议会保留') %>"><%- sfIcon('arrow.triangle.2.circlepath') %><%= t('更新源文件') %></a>
+          <% } %>
           <% if (defaultLocale && canEdit) { %>
             <a class="blora-btn blora-btn--primary" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= file.id %>&locale=<%= defaultLocale %>"><%- sfIcon('translate') %><%= t('开始翻译') %></a>
           <% } %>

@@ -19,13 +19,43 @@ import { buildZip } from "@/lib/i18n-formats/zip";
 import { serializeJson } from "@/lib/i18n-formats/json";
 import { getProjectMachineTranslations } from "@/lib/services/mt-file";
 
+/** Strip leading slashes and collapse repeated `/` so the same file is less likely to split. */
+export function normalizeSourcePath(path: string): string {
+  return path
+    .trim()
+    .replace(/\\/g, "/")
+    .replace(/^\/+/, "")
+    .replace(/\/{2,}/g, "/");
+}
+
+export type UpsertSourceFileResult = {
+  fileId: string;
+  path: string;
+  revision: number;
+  stringCount: number;
+  /** New keys inserted this upload. */
+  addedCount: number;
+  /** Existing keys whose sourceText changed. */
+  updatedCount: number;
+  /** Alias of updatedCount for UI copy. */
+  sourceTextChangedCount: number;
+  /** Existing keys whose sourceText was unchanged (sortOrder/orphaned may still update). */
+  reusedCount: number;
+  /** Keys present before but missing from the new file (marked orphaned, not deleted). */
+  orphanedCount: number;
+  warnings: string[];
+  unchanged: boolean;
+  format: string;
+};
+
 export async function upsertSourceFile(params: {
   projectId: string;
   path: string;
   content: string;
   userId: string;
-}) {
-  const handler = inferFormatFromPath(params.path);
+}): Promise<UpsertSourceFileResult | { error: string; warnings?: string[] }> {
+  const path = normalizeSourcePath(params.path);
+  const handler = inferFormatFromPath(path);
   const parsed = handler.parse(params.content);
   if (parsed.error) {
     return { error: parsed.error as string };
@@ -42,21 +72,25 @@ export async function upsertSourceFile(params: {
     const [existing] = await tx
       .select()
       .from(sourceFiles)
-      .where(and(eq(sourceFiles.projectId, params.projectId), eq(sourceFiles.path, params.path)))
+      .where(and(eq(sourceFiles.projectId, params.projectId), eq(sourceFiles.path, path)))
       .limit(1);
 
     // Unchanged content: skip revision bump and unit rewrites
     if (existing && existing.contentHash === hash) {
       return {
         fileId: existing.id,
-        path: params.path,
+        path,
         revision: existing.sourceRevision,
         stringCount: entries.length,
+        addedCount: 0,
+        updatedCount: 0,
+        sourceTextChangedCount: 0,
+        reusedCount: entries.length,
         orphanedCount: 0,
         warnings,
         unchanged: true as const,
         format: existing.format,
-      };
+      } satisfies UpsertSourceFileResult;
     }
 
     let fileId: string;
@@ -84,7 +118,7 @@ export async function upsertSourceFile(params: {
         .insert(sourceFiles)
         .values({
           projectId: params.projectId,
-          path: params.path,
+          path,
           format: handler.id,
           rawSource: data,
           rawContent: params.content,
@@ -105,11 +139,17 @@ export async function upsertSourceFile(params: {
 
     const byKey = new Map(existingStrings.map((s) => [s.keyPath, s]));
     const seen = new Set<string>();
+    let addedCount = 0;
+    let updatedCount = 0;
+    let reusedCount = 0;
 
     for (const entry of entries) {
       seen.add(entry.keyPath);
       const prev = byKey.get(entry.keyPath);
       if (prev) {
+        const sourceChanged = prev.sourceText !== entry.sourceText;
+        if (sourceChanged) updatedCount += 1;
+        else reusedCount += 1;
         await tx
           .update(stringUnits)
           .set({
@@ -119,6 +159,7 @@ export async function upsertSourceFile(params: {
           })
           .where(eq(stringUnits.id, prev.id));
       } else {
+        addedCount += 1;
         await tx.insert(stringUnits).values({
           fileId,
           keyPath: entry.keyPath,
@@ -140,14 +181,18 @@ export async function upsertSourceFile(params: {
     const stringCount = entries.length;
     return {
       fileId,
-      path: params.path,
+      path,
       revision,
       stringCount,
+      addedCount,
+      updatedCount,
+      sourceTextChangedCount: updatedCount,
+      reusedCount,
       orphanedCount: orphanIds.length,
       warnings,
       unchanged: false as const,
       format: handler.id,
-    };
+    } satisfies UpsertSourceFileResult;
   });
 }
 

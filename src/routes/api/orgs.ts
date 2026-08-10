@@ -1269,7 +1269,6 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/files/batch", async (re
     const parsed = uploadBatchSchema.safeParse(req.body);
     if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
 
-    // Validate all first (fail fast on parse errors)
     const results: Array<
       | {
           path: string;
@@ -1277,6 +1276,10 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/files/batch", async (re
           fileId: string;
           revision: number;
           stringCount: number;
+          addedCount: number;
+          updatedCount: number;
+          sourceTextChangedCount: number;
+          reusedCount: number;
           orphanedCount: number;
           warnings: string[];
           unchanged?: boolean;
@@ -1305,17 +1308,25 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/files/batch", async (re
           path: string;
           revision: number;
           stringCount: number;
+          addedCount: number;
+          updatedCount: number;
+          sourceTextChangedCount: number;
+          reusedCount: number;
           orphanedCount: number;
           warnings: string[];
           unchanged?: boolean;
           format?: string;
         };
         results.push({
-          path: file.path,
+          path: ok.path,
           ok: true,
           fileId: ok.fileId,
           revision: ok.revision,
           stringCount: ok.stringCount,
+          addedCount: ok.addedCount,
+          updatedCount: ok.updatedCount,
+          sourceTextChangedCount: ok.sourceTextChangedCount,
+          reusedCount: ok.reusedCount,
           orphanedCount: ok.orphanedCount,
           warnings: ok.warnings ?? [],
           unchanged: ok.unchanged,

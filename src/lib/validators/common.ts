@@ -130,12 +130,24 @@ export const setLanguagesSchema = z.object({
 /** Safe project-relative path with a known i18n extension. */
 const sourcePathRegex = /^[a-zA-Z0-9_./-]+\.(json|properties)$/;
 
+/** Normalize then validate so leading slashes / doubled separators still upload cleanly. */
+function normalizeUploadPath(path: string): string {
+  return path
+    .trim()
+    .replace(/\\/g, "/")
+    .replace(/^\/+/, "")
+    .replace(/\/{2,}/g, "/");
+}
+
 export const uploadFileSchema = z.object({
   path: z
     .string()
     .min(1)
     .max(256)
-    .regex(sourcePathRegex, '路径须为 .json / .properties 且仅含安全字符'),
+    .transform(normalizeUploadPath)
+    .refine((p) => sourcePathRegex.test(p), {
+      message: '路径须为 .json / .properties 且仅含安全字符',
+    }),
   content: z.string().min(1).max(2 * 1024 * 1024),
 });
 

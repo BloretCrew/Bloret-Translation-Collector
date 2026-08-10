@@ -242,7 +242,10 @@
       if (missingNames.length) {
         showError(
           err,
-          `请为自定义语言填写显示名（不可与代码相同）：${missingNames.map((l) => l.locale).join("、")}。打开「选择语言…」→ 底部「添加自定义语言」重新填写后确定`,
+          BTC.t(
+            '请为自定义语言填写显示名（不可与代码相同）：{list}。打开「选择语言…」→ 底部「添加自定义语言」重新填写后确定',
+            { list: missingNames.map((l) => l.locale).join("、") },
+          ),
         );
         return;
       }
@@ -294,7 +297,10 @@
       if (missingNames.length) {
         showError(
           err,
-          `请为自定义语言填写显示名（不可与代码相同）：${missingNames.map((l) => l.locale).join("、")}。打开「选择语言…」→ 底部填写代码与显示名后点「添加」，再确定并保存`,
+          BTC.t(
+            '请为自定义语言填写显示名（不可与代码相同）：{list}。打开「选择语言…」→ 底部填写代码与显示名后点「添加」，再确定并保存',
+            { list: missingNames.map((l) => l.locale).join("、") },
+          ),
         );
         return;
       }
@@ -353,7 +359,7 @@
   if (deleteProjectBtn) {
     deleteProjectBtn.addEventListener("click", async () => {
       const name = deleteProjectBtn.dataset.name;
-      if (!confirm(`确定删除项目「${name}」？所有文件与译文将不可恢复。`)) return;
+      if (!confirm(BTC.t('确定删除项目「{name}」？所有文件与译文将不可恢复。', { name }))) return;
       const orgSlug = deleteProjectBtn.dataset.orgSlug;
       const projectSlug = deleteProjectBtn.dataset.projectSlug;
       setButtonBusy(deleteProjectBtn, true, { busyLabel: BTC.t('删除中...') });
@@ -382,14 +388,105 @@
     const contentEl = document.getElementById("file-content");
     const listEl = document.getElementById("upload-file-list");
     const singlePathField = document.getElementById("single-path-field");
+    const resultEl = document.getElementById("upload-result");
     /** @type {{ path: string, content: string, name: string }[]} */
     let pendingFiles = [];
+
+    function escapeHtml(s) {
+      return String(s)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/"/g, "&quot;");
+    }
 
     function safePathFromName(name) {
       const base = name.replace(/\\/g, "/").split("/").pop() || name;
       const cleaned = base.replace(/[^a-zA-Z0-9_./-]/g, "_");
       if (/\.(json|properties)$/i.test(cleaned)) return cleaned;
       return `${cleaned}.json`;
+    }
+
+    function normalizePathClient(p) {
+      return String(p || "")
+        .trim()
+        .replace(/\\/g, "/")
+        .replace(/^\/+/, "")
+        .replace(/\/{2,}/g, "/");
+    }
+
+    /** True after user/query prefilled a project path — picking a file must not clobber it. */
+    let pathLocked = false;
+
+    function prefillPath(path) {
+      const cleaned = normalizePathClient(path);
+      if (!cleaned || !pathEl) return;
+      pathEl.value = cleaned;
+      pathLocked = true;
+      pathEl.focus();
+      pathEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      toast("info", BTC.t('已预填路径 {path}，请选择新源文件后上传', { path: cleaned }));
+    }
+
+    // ?path= from file detail / sources list
+    try {
+      const qPath = new URLSearchParams(location.search).get("path");
+      if (qPath) prefillPath(qPath);
+    } catch {
+      /* ignore */
+    }
+
+    document.querySelectorAll("[data-prefill-path]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        prefillPath(btn.getAttribute("data-prefill-path") || "");
+      });
+    });
+
+    function formatMergeStats(data) {
+      const parts = [];
+      const rev = data.revision != null ? data.revision : "?";
+      if (data.unchanged) {
+        return BTC.t('内容未变化，已跳过 (r{revision})', { revision: rev });
+      }
+      parts.push(BTC.t('已同步 {count} 条 (r{revision})', {
+        count: data.stringCount ?? 0,
+        revision: rev,
+      }));
+      if (data.addedCount > 0) {
+        parts.push(BTC.t('新增 {n}', { n: data.addedCount }));
+      }
+      if ((data.updatedCount ?? data.sourceTextChangedCount) > 0) {
+        parts.push(
+          BTC.t('源文变更 {n}', {
+            n: data.updatedCount ?? data.sourceTextChangedCount,
+          }),
+        );
+      }
+      if (data.reusedCount > 0) {
+        parts.push(BTC.t('未变 {n}', { n: data.reusedCount }));
+      }
+      if (data.orphanedCount > 0) {
+        parts.push(BTC.t('孤立 {n}', { n: data.orphanedCount }));
+      }
+      return parts.join(" · ");
+    }
+
+    function showUploadResult(html, kind) {
+      if (!resultEl) return;
+      resultEl.hidden = false;
+      resultEl.className =
+        "blora-alert blora-alert--" + (kind === "warning" ? "warning" : kind === "info" ? "info" : "success");
+      resultEl.innerHTML = html;
+      resultEl.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function clearUploadResult() {
+      if (!resultEl) return;
+      resultEl.hidden = true;
+      resultEl.innerHTML = "";
+    }
+
+    function sourcesHref(orgSlug, projectSlug) {
+      return `/app/o/${orgSlug}/p/${projectSlug}/sources`;
     }
 
     function renderFileList() {
@@ -425,13 +522,6 @@
       });
     }
 
-    function escapeHtml(s) {
-      return String(s)
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/"/g, "&quot;");
-    }
-
     pick?.addEventListener("change", async () => {
       const files = pick.files ? Array.from(pick.files) : [];
       pendingFiles = [];
@@ -446,25 +536,25 @@
       if (pendingFiles.length === 1) {
         const f = pendingFiles[0];
         if (contentEl) contentEl.value = f.content;
-        if (pathEl) {
+        if (pathEl && !pathLocked) {
+          // Prefer picked filename when default / empty path
           if (!pathEl.value || pathEl.value === "locales/common.json") {
-            pathEl.value = f.path.startsWith("locales/") ? f.path : f.path;
-          } else {
-            // keep user path if customized; still update content
-          }
-          // Prefer picked filename when default path
-          if (pathEl.value === "locales/common.json" || !pathEl.value) {
             pathEl.value = f.path.includes("/") ? f.path : `locales/${f.path}`;
           }
         }
       } else if (pendingFiles.length > 1) {
         if (contentEl) contentEl.value = "";
+        // Multi-file: each row has its own path; keep locked single-path only for one-file flow
         pendingFiles = pendingFiles.map((f) => ({
           ...f,
           path: f.path.includes("/") ? f.path : f.path,
         }));
       }
       renderFileList();
+    });
+
+    pathEl?.addEventListener("input", () => {
+      pathLocked = Boolean(pathEl.value && pathEl.value !== "locales/common.json");
     });
 
     uploadForm.addEventListener("submit", async (e) => {
@@ -518,11 +608,12 @@
           return;
         }
         if (!f.content.trim()) {
-          showError(err, `文件 ${f.path} 内容为空`);
+          showError(err, BTC.t('文件 {path} 内容为空', { path: f.path }));
           return;
         }
       }
 
+      clearUploadResult();
       setButtonBusy(btn, true, { busyLabel: BTC.t('上传中...') });
       try {
         if (payloadFiles.length === 1) {
@@ -530,7 +621,10 @@
             `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/files`,
             {
               method: "POST",
-              body: JSON.stringify(payloadFiles[0]),
+              body: JSON.stringify({
+                ...payloadFiles[0],
+                path: normalizePathClient(payloadFiles[0].path),
+              }),
             },
           );
           if (!res.ok) {
@@ -544,12 +638,25 @@
               data.warnings.map((w) => `<li>${w}</li>`).join("") +
               "</ul>";
           }
+          const statsLine = formatMergeStats(data);
+          const orphanNote =
+            data.orphanedCount > 0
+              ? `<p class="u-mt-2 u-text-sm">${BTC.t('{n} 个键已标记为孤立（已隐藏，译文仍保留；键再次出现时可恢复）', { n: data.orphanedCount })}</p>`
+              : "";
+          const changedNote =
+            !data.unchanged && (data.updatedCount ?? data.sourceTextChangedCount) > 0
+              ? `<p class="u-mt-1 u-text-sm">${BTC.t('源文已变更的条目仍保留原译文，建议人工复核。')}</p>`
+              : "";
+          const link = `<p class="u-mt-2"><a class="blora-link" href="${sourcesHref(orgSlug, projectSlug)}">${BTC.t('查看源文件')}</a></p>`;
+          showUploadResult(
+            `<strong>${escapeHtml(data.path || payloadFiles[0].path)}</strong><br/>${escapeHtml(statsLine)}${orphanNote}${changedNote}${link}`,
+            data.orphanedCount > 0 ? "warning" : data.unchanged ? "info" : "success",
+          );
           if (data.unchanged) {
-            toast("info", `内容未变化，已跳过 (r${data.revision})`);
+            toast("info", statsLine);
           } else {
-            toast("success", `已同步 ${data.stringCount} 条字符串 (r${data.revision})`);
+            toast("success", statsLine);
           }
-          location.reload();
           return;
         }
 
@@ -557,7 +664,12 @@
           `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/files/batch`,
           {
             method: "POST",
-            body: JSON.stringify({ files: payloadFiles }),
+            body: JSON.stringify({
+              files: payloadFiles.map((f) => ({
+                path: normalizePathClient(f.path),
+                content: f.content,
+              })),
+            }),
           },
         );
         if (!res.ok) {
@@ -565,21 +677,43 @@
           return;
         }
         const summary = data.summary || {};
-        const failed = (data.results || []).filter((r) => !r.ok);
+        const results = data.results || [];
+        const failed = results.filter((r) => !r.ok);
         if (failed.length && warn) {
           warn.hidden = false;
           warn.innerHTML =
             BTC.t('<strong>部分失败：</strong><ul style=\'margin:8px 0 0;padding-left:18px\'>') +
-            failed.map((r) => `<li>${r.path}: ${r.error}</li>`).join("") +
+            failed.map((r) => `<li>${escapeHtml(r.path)}: ${escapeHtml(r.error)}</li>`).join("") +
             "</ul>";
         }
         if (summary.ok > 0) {
+          const okRows = results.filter((r) => r.ok);
+          const listHtml = okRows
+            .map(
+              (r) =>
+                `<li><span class="blora-text-mono">${escapeHtml(r.path)}</span> — ${escapeHtml(formatMergeStats(r))}</li>`,
+            )
+            .join("");
+          const totalOrphan = okRows.reduce((n, r) => n + (r.orphanedCount || 0), 0);
+          const orphanNote =
+            totalOrphan > 0
+              ? `<p class="u-mt-2 u-text-sm">${BTC.t('共 {n} 个键已标记为孤立（译文仍保留）', { n: totalOrphan })}</p>`
+              : "";
+          const link = `<p class="u-mt-2"><a class="blora-link" href="${sourcesHref(orgSlug, projectSlug)}">${BTC.t('查看源文件')}</a></p>`;
+          showUploadResult(
+            `<strong>${BTC.t('已处理 {ok}/{total} 个文件', {
+              ok: summary.ok,
+              total: summary.total,
+            })}</strong><ul style="margin:8px 0 0;padding-left:18px">${listHtml}</ul>${orphanNote}${link}`,
+            totalOrphan > 0 || failed.length ? "warning" : "success",
+          );
           toast(
             "success",
-            `已处理 ${summary.ok}/${summary.total} 个文件` +
-              (summary.failed ? `，${summary.failed} 个失败` : ""),
+            BTC.t('已处理 {ok}/{total} 个文件', {
+              ok: summary.ok,
+              total: summary.total,
+            }) + (summary.failed ? BTC.t('，{failed} 个失败', { failed: summary.failed }) : ""),
           );
-          if (!summary.failed) location.reload();
         } else {
           showError(err, BTC.t('全部文件上传失败'));
         }
@@ -611,7 +745,7 @@
   if (deleteFileBtn) {
     deleteFileBtn.addEventListener("click", async () => {
       const path = deleteFileBtn.dataset.path;
-      if (!confirm(`确定删除源文件 ${path}？相关字符串与译文将一并删除。`)) return;
+      if (!confirm(BTC.t('确定删除源文件 {path}？相关字符串与译文将一并删除。', { path }))) return;
       const orgSlug = deleteFileBtn.dataset.orgSlug;
       const projectSlug = deleteFileBtn.dataset.projectSlug;
       const fileId = deleteFileBtn.dataset.fileId;
@@ -666,7 +800,7 @@
 
     memberList.querySelectorAll(".member-remove").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (!confirm(`确定移除成员 ${btn.dataset.username}？`)) return;
+        if (!confirm(BTC.t('确定移除成员 {username}？', { username: btn.dataset.username }))) return;
         showError(err, "");
         setButtonBusy(btn, true, { busyLabel: BTC.t('移除中...') });
         try {
@@ -678,7 +812,7 @@
             showError(err, data.error || BTC.t('移除失败'));
             return;
           }
-          toast("success", `已移除 ${btn.dataset.username}`);
+          toast("success", BTC.t('已移除 {username}', { username: btn.dataset.username }));
           location.reload();
         } catch {
           showError(err, BTC.t('网络错误'));
@@ -711,7 +845,7 @@
           showError(err, data.error || BTC.t('添加失败'));
           return;
         }
-        toast("success", `已添加 ${data.username}`);
+        toast("success", BTC.t('已添加 {username}', { username: data.username }));
         location.reload();
       } catch {
         showError(err, BTC.t('网络错误'));

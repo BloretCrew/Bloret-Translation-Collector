@@ -56,6 +56,9 @@
                         <% if (defaultLocale && canEdit) { %>
                           <a class="blora-btn blora-btn--primary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/translate?file=<%= f.id %>&locale=<%= defaultLocale %>"><%- sfIcon('translate') %><%= t('翻译') %></a>
                         <% } %>
+                        <% if (canUpload) { %>
+                          <a class="blora-btn blora-btn--secondary blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/import?path=<%= encodeURIComponent(f.path) %>" title="<%= t('按相同路径合并，保留已有译文') %>"><%- sfIcon('arrow.triangle.2.circlepath') %><%= t('更新') %></a>
+                        <% } %>
                         <a class="blora-btn blora-btn--ghost blora-btn--xs" href="/app/o/<%= orgSlug %>/p/<%= projectSlug %>/files/<%= f.id %>"><%- sfIcon('info.circle') %><%= t('详情') %></a>
                       </div>
                     </td>
