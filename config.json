@@ -15,6 +15,21 @@
     "appId": "bp_cf505bdc5bb83be6",
     "appSecret": "bs_988f0fc459295dc361f2d80d5222982496508ae91ca37f46",
     "baseUrl": "https://passport.bloret.net",
-    "redirectUri": "http://100.64.0.6:20005/auth/callback"
+    "redirectUri": "https://tr.bloret.net/auth/callback"
+  },
+  "uiI18n": {
+    "enabled": true,
+    "baseUrl": "http://127.0.0.1:20005",
+    "orgSlug": "bloret",
+    "projectSlug": "bloret-translation-collector",
+    "fileId": "bb217f41-ae04-4677-8d62-7fffd1622cbe",
+    "localeMap": {
+      "en": "en",
+      "ru": "ru"
+    },
+    "mode": "top_voted",
+    "fallbackMt": false,
+    "cacheTtlMs": 60000,
+    "timeoutMs": 8000
   }
 }

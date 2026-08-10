@@ -295,6 +295,10 @@ curl -sS -D - -o /dev/null \
 
 可选：`fallbackMt=1` 在人工译文不全时用项目方上传的机器翻译补洞。
 
+### 本站 UI 自用（dogfood）
+
+`tr.bloret.net` 自身界面文案也走上述两接口：在 `config.json` 中配置 `uiI18n`（`orgSlug` / `projectSlug` / `fileId` / `localeMap`），由 `src/lib/ui-i18n-live.ts` 在请求中间件中按 TTL 刷新 `en`/`ru` 等目录并与磁盘 `lang/*.json` 合并。这保证公开 API 与站内体验同源。
+
 ---
 
 ## 版本与变更

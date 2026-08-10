@@ -117,11 +117,22 @@ bash start.sh
 
 ## 界面国际化（UI i18n）
 
-- 语言文件：`lang/zh.json`、`lang/en.json`（**source-as-key**，中文原文为 key）
+- 语言文件：`lang/zh.json`、`lang/en.json`、`lang/ru.json`（**source-as-key**，中文原文为 key）
 - 服务端：`src/lib/i18n.ts`（`t()` / `i18nMiddleware` / `?lang=` → cookie `btc_lang`）
 - 模板：EJS 用 `<%= t('…') %>`；`res.locals.t` / `htmlLang` / `i18nCatalog`
 - 浏览器：`public/js/app.js` 的 `BTC.t()`，由 `views/partials/foot.ejs` 注入当前语言目录
 - 顶栏地球图标可切换 **中文 / English / Русский**（`?lang=zh|en|ru`）
+
+### 实时译文（dogfood 公开 API）
+
+开启 `config.json` → `uiI18n.enabled` 后，站点自身 UI 会通过与第三方相同的公开接口拉取译文：
+
+1. `GET /api/v1/orgs/{org}/projects/{project}/manifest`
+2. `GET /api/v1/orgs/{org}/projects/{project}/files/{fileId}/translated?locale=…&mode=top_voted`
+
+实现：`src/lib/ui-i18n-live.ts`（内存 TTL 缓存；失败时回退磁盘 `lang/*.json`）。  
+`zh` 仍用磁盘源文；`en` / `ru` 等由 `localeMap` 映射到项目目标语言。  
+`baseUrl` 建议填本机回环（如 `http://127.0.0.1:20005`），避免经公网自调用。详见 [`docs/PublicAPI.md`](./docs/PublicAPI.md)。
 
 ```
 lang/
@@ -129,6 +140,7 @@ lang/
   en.json
   ru.json
 src/lib/i18n.ts
+src/lib/ui-i18n-live.ts
 ```
 
 ## 目录结构

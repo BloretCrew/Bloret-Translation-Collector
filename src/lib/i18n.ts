@@ -2,6 +2,9 @@
  * Bloret Translation Collector UI i18n
  * 语言文件：lang/zh.json、lang/en.json、lang/ru.json（source-as-key，中文原文为 key）
  *
+ * 可选：config.uiI18n.enabled 时，通过公开 Manifest + Translated 接口拉取
+ * 实时译文并覆盖磁盘目录（见 src/lib/ui-i18n-live.ts）。
+ *
  * 用法：
  *   import { t, i18nMiddleware, htmlLang } from '@/lib/i18n';
  *   app.use(i18nMiddleware());
@@ -13,6 +16,11 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { NextFunction, Request, Response } from "express";
+import {
+  ensureLiveCatalog,
+  getCachedLiveCatalog,
+  mergeCatalogs,
+} from "@/lib/ui-i18n-live";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -40,7 +48,8 @@ type Catalog = Record<string, string>;
 type Vars = Record<string, string | number>;
 
 const als = new AsyncLocalStorage<{ lang: LangCode }>();
-const catalogs: Record<string, Catalog> = {};
+/** Disk-only catalogs (boot / reload). Live overlays applied in getCatalog. */
+const diskCatalogs: Record<string, Catalog> = {};
 
 function isLang(code: string): code is LangCode {
   return (SUPPORTED as readonly string[]).includes(code);
@@ -68,7 +77,7 @@ function loadCatalog(lang: string): Catalog {
 
 export function reload(): void {
   for (const lang of SUPPORTED) {
-    catalogs[lang] = loadCatalog(lang);
+    diskCatalogs[lang] = loadCatalog(lang);
   }
 }
 
@@ -104,13 +113,20 @@ export function detectLang(req: {
   return DEFAULT_LANG;
 }
 
+function catalogFor(lang: LangCode): Catalog {
+  const disk = diskCatalogs[lang] || diskCatalogs[DEFAULT_LANG] || {};
+  if (lang === "zh") return disk;
+  const live = getCachedLiveCatalog(lang);
+  return mergeCatalogs(disk, live);
+}
+
 export function translate(key: string, lang?: string, vars?: Vars): string {
   if (key == null || key === "") return key;
   const L: LangCode = lang && isLang(lang) ? lang : DEFAULT_LANG;
-  const catalog = catalogs[L] || catalogs[DEFAULT_LANG] || {};
+  const catalog = catalogFor(L);
   let out = catalog[key];
   if (out == null) {
-    out = (catalogs[DEFAULT_LANG] && catalogs[DEFAULT_LANG][key]) || key;
+    out = (diskCatalogs[DEFAULT_LANG] && diskCatalogs[DEFAULT_LANG][key]) || key;
   }
   if (typeof out === "string" && out.startsWith("[EN] ")) {
     out = out.slice(5);
@@ -156,11 +172,21 @@ export function t(key: string, langOrVars?: string | Vars, vars?: Vars): string 
 
 export function getCatalog(lang?: string): Catalog {
   const L = lang && isLang(lang) ? lang : currentLang();
-  return catalogs[L] || catalogs[DEFAULT_LANG] || {};
+  return catalogFor(L);
 }
 
 export function getCatalogs(): Record<string, Catalog> {
-  return catalogs;
+  const out: Record<string, Catalog> = {};
+  for (const lang of SUPPORTED) {
+    out[lang] = catalogFor(lang);
+  }
+  return out;
+}
+
+/** Disk catalogs only (no live merge) — useful for tests. */
+export function getDiskCatalog(lang?: string): Catalog {
+  const L = lang && isLang(lang) ? lang : currentLang();
+  return diskCatalogs[L] || diskCatalogs[DEFAULT_LANG] || {};
 }
 
 declare global {
@@ -178,7 +204,8 @@ export type I18nMiddlewareOptions = {
 };
 
 /**
- * Express 中间件：req.lang / req.t / res.locals.t，?lang= 写 cookie
+ * Express 中间件：req.lang / req.t / res.locals.t，?lang= 写 cookie。
+ * 若启用 uiI18n，在进入路由前异步刷新当前语言的 live catalog（带 TTL 缓存）。
  */
 export function i18nMiddleware(options: I18nMiddlewareOptions = {}) {
   const cookieMaxAge = options.cookieMaxAge ?? 365 * 24 * 3600;
@@ -193,23 +220,44 @@ export function i18nMiddleware(options: I18nMiddlewareOptions = {}) {
     }
 
     const lang = detectLang(req);
-    req.lang = lang;
-    req.t = (key: string, vars?: Vars) => translate(key, lang, vars);
-    req.htmlLang = htmlLang(lang);
 
-    res.locals.lang = lang;
-    res.locals.htmlLang = req.htmlLang;
-    res.locals.t = req.t;
-    res.locals.SUPPORTED_LANGS = SUPPORTED;
-    res.locals.i18nCatalog = getCatalog(lang);
+    const finish = () => {
+      req.lang = lang;
+      req.t = (key: string, vars?: Vars) => translate(key, lang, vars);
+      req.htmlLang = htmlLang(lang);
 
-    if (setCookie) {
-      const prev = res.getHeader("Set-Cookie");
-      if (!prev) res.setHeader("Set-Cookie", setCookie);
-      else if (Array.isArray(prev)) res.setHeader("Set-Cookie", [...prev, setCookie]);
-      else res.setHeader("Set-Cookie", [String(prev), setCookie]);
+      res.locals.lang = lang;
+      res.locals.htmlLang = req.htmlLang;
+      res.locals.t = req.t;
+      res.locals.SUPPORTED_LANGS = SUPPORTED;
+      res.locals.i18nCatalog = getCatalog(lang);
+
+      if (setCookie) {
+        const prev = res.getHeader("Set-Cookie");
+        if (!prev) res.setHeader("Set-Cookie", setCookie);
+        else if (Array.isArray(prev)) res.setHeader("Set-Cookie", [...prev, setCookie]);
+        else res.setHeader("Set-Cookie", [String(prev), setCookie]);
+      }
+
+      als.run({ lang }, () => next());
+    };
+
+    // Skip live refresh for pure static/health noise? Still cheap with cache.
+    // Avoid recursive self-fetch storms on the live i18n endpoints themselves.
+    const p = req.path || "";
+    const skipLive =
+      p.includes("/translated") ||
+      p.endsWith("/manifest") ||
+      p === "/api/health" ||
+      p.startsWith("/api/health");
+
+    if (skipLive || lang === "zh") {
+      finish();
+      return;
     }
 
-    als.run({ lang }, () => next());
+    void ensureLiveCatalog(lang)
+      .catch(() => null)
+      .then(() => finish());
   };
 }

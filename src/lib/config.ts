@@ -68,6 +68,52 @@ const configSchema = z.object({
     .default({
       baseUrl: "https://img.bloret.net",
     }),
+  /**
+   * Live UI i18n: pull site chrome strings from the public Manifest +
+   * Translated-file APIs of a public project (dogfood). When disabled,
+   * only disk lang/*.json catalogs are used.
+   */
+  uiI18n: z
+    .object({
+      enabled: z.boolean().default(false),
+      /**
+       * API origin for self-calls (e.g. http://127.0.0.1:20005).
+       * Empty → derive from passport.redirectUri via publicBaseUrl().
+       */
+      baseUrl: z.string().default(""),
+      orgSlug: z.string().default("bloret"),
+      projectSlug: z.string().default("bloret-translation-collector"),
+      /** Source file UUID (zh.json) in that project */
+      fileId: z.string().default("bb217f41-ae04-4677-8d62-7fffd1622cbe"),
+      /**
+       * Map UI lang code (zh|en|ru) → project target locale.
+       * `zh` is source-as-key and stays on disk; only en/ru are fetched live.
+       */
+      localeMap: z
+        .record(z.string())
+        .default({ en: "en", ru: "ru" }),
+      /** Export mode for live catalogs */
+      mode: z
+        .enum(["top_voted", "approved", "source", "empty"])
+        .default("top_voted"),
+      fallbackMt: z.boolean().default(false),
+      /** How long a successful live catalog is reused (ms) */
+      cacheTtlMs: z.number().int().positive().default(60_000),
+      /** HTTP timeout for manifest / translated fetches */
+      timeoutMs: z.number().int().positive().default(8_000),
+    })
+    .default({
+      enabled: false,
+      baseUrl: "",
+      orgSlug: "bloret",
+      projectSlug: "bloret-translation-collector",
+      fileId: "bb217f41-ae04-4677-8d62-7fffd1622cbe",
+      localeMap: { en: "en", ru: "ru" },
+      mode: "top_voted",
+      fallbackMt: false,
+      cacheTtlMs: 60_000,
+      timeoutMs: 8_000,
+    }),
 });
 
 export type DatabaseConfig = z.infer<typeof databaseSchema>;
