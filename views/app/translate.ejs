@@ -95,7 +95,7 @@
         <span class="editor-chrome__count blora-text-mono u-text-xs" id="editor-count" title="<%= t('当前列表 / 总数') %>">0/0</span>
         <a class="blora-btn blora-btn--ghost blora-btn--sm editor-chrome__settings" href="/app/settings" title="<%= t('用户设置 · 快捷键') %>"><%- sfIcon('gearshape') %><span class="editor-chrome__btn-label"><%= t('设置') %></span></a>
         <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm editor-chrome__toggle" id="editor-toggle-list" aria-label="<%= t('切换字符串列表') %>" aria-expanded="false" aria-controls="editor-list-col"><%- sfIcon('list.bullet') %><span class="editor-chrome__btn-label"><%= t('列表') %></span></button>
-        <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm editor-chrome__toggle" id="editor-toggle-side" aria-label="<%= t('切换辅助面板') %>" aria-expanded="false" aria-controls="editor-side-col"><%- sfIcon('sidebar.right') %><span class="editor-chrome__btn-label"><%= t('辅助') %></span></button>
+        <button type="button" class="blora-btn blora-btn--ghost blora-btn--sm editor-chrome__toggle" id="editor-toggle-side" aria-label="<%= t('切换讨论面板') %>" aria-expanded="false" aria-controls="editor-side-col"><%- sfIcon('sidebar.right') %><span class="editor-chrome__btn-label"><%= t('讨论') %></span></button>
       </div>
     </header>
 
@@ -157,6 +157,28 @@
               <div id="editor-glossary-list" class="glossary-hits__list"></div>
             </div>
 
+            <div class="editor-main-extras" id="editor-main-extras" aria-label="<%= t('建议与语境') %>">
+              <section class="editor-main-panel editor-main-panel--suggestions" aria-labelledby="editor-suggestions-heading">
+                <div class="editor-main-panel__head">
+                  <h3 class="editor-main-panel__title blora-text-caps blora-text-faint" id="editor-suggestions-heading"><%- sfIcon('list.bullet', { className: 'sf-icon--sm' }) %><%= t('建议') %></h3>
+                </div>
+                <div id="editor-suggestions" class="collab-suggestions__list"></div>
+              </section>
+              <section class="editor-main-panel editor-main-panel--contexts" aria-labelledby="editor-contexts-heading">
+                <div class="editor-main-panel__head">
+                  <h3 class="editor-main-panel__title blora-text-caps blora-text-faint" id="editor-contexts-heading"><%- sfIcon('photo', { className: 'sf-icon--sm' }) %><%= t('语境') %></h3>
+                </div>
+                <div id="editor-contexts" class="context-shots">
+                  <div id="editor-contexts-list" class="context-shots__list"></div>
+                  <div class="context-shots__upload u-mt-2">
+                    <input type="file" id="editor-context-file" accept="image/*" class="blora-input blora-input--sm" />
+                    <input type="text" id="editor-context-caption" class="blora-input blora-input--sm" placeholder="<%= t('说明（可选）') %>" />
+                    <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" id="editor-context-upload"><%- sfIcon('photo') %><%= t('上传截图') %></button>
+                  </div>
+                </div>
+              </section>
+            </div>
+
             <div class="editor-refs" id="editor-refs" aria-label="<%= t('参考译文') %>">
               <section class="editor-ref-panel editor-ref-panel--mt" id="editor-mt" aria-labelledby="editor-mt-heading">
                 <div class="editor-ref-panel__head">
@@ -176,7 +198,7 @@
 
           <div class="editor-compose" id="editor-compose">
             <p class="editor-compose__mode-hint blora-text-muted u-text-sm" id="editor-mode-hint" hidden>
-              <%= t('当前为') %><strong><%= t('审核') %></strong><%= t('身份：请在右侧建议列表中批准或取消批准。写译文请切换到「翻译」。') %>
+              <%= t('当前为') %><strong><%= t('审核') %></strong><%= t('身份：请在主区域建议列表中批准或取消批准。写译文请切换到「翻译」。') %>
             </p>
             <label class="blora-field editor-compose__field">
               <span class="blora-field__label editor-compose__label">
@@ -221,34 +243,17 @@
         </div>
       </section>
 
-      <aside class="editor-col editor-col--side" id="editor-side-col" aria-label="<%= t('辅助信息') %>">
-        <div class="blora-tabs editor-side-tabs" data-blora-tabs id="editor-side-tabs">
-          <div class="blora-tabs__nav editor-side-tabs__nav">
-            <button type="button" class="blora-tabs__tab is-active" data-tab="0"><%- sfIcon('list.bullet', { className: 'sf-icon--sm' }) %><%= t('建议') %></button>
-            <button type="button" class="blora-tabs__tab" data-tab="1"><%- sfIcon('photo', { className: 'sf-icon--sm' }) %><%= t('语境') %></button>
-            <button type="button" class="blora-tabs__tab" data-tab="2"><%- sfIcon('bubble.left', { className: 'sf-icon--sm' }) %><%= t('讨论') %></button>
+      <aside class="editor-col editor-col--side" id="editor-side-col" aria-label="<%= t('讨论') %>">
+        <div class="editor-side-discussion">
+          <div class="editor-side-discussion__head">
+            <h3 class="editor-side-discussion__title blora-text-caps blora-text-faint"><%- sfIcon('bubble.left', { className: 'sf-icon--sm' }) %><%= t('讨论') %></h3>
           </div>
-          <div class="editor-side-tabs__body">
-            <div class="blora-tabs__panel editor-side-panel" data-panel="suggestions">
-              <div id="editor-suggestions" class="collab-suggestions__list"></div>
-            </div>
-            <div class="blora-tabs__panel editor-side-panel blora-hide" data-panel="contexts">
-              <div id="editor-contexts" class="context-shots">
-                <div id="editor-contexts-list" class="context-shots__list"></div>
-                <div class="context-shots__upload u-mt-2">
-                  <input type="file" id="editor-context-file" accept="image/*" class="blora-input blora-input--sm" />
-                  <input type="text" id="editor-context-caption" class="blora-input blora-input--sm" placeholder="<%= t('说明（可选）') %>" />
-                  <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" id="editor-context-upload"><%- sfIcon('photo') %><%= t('上传截图') %></button>
-                </div>
-              </div>
-            </div>
-            <div class="blora-tabs__panel editor-side-panel blora-hide" data-panel="comments">
-              <div class="collab-comments">
-                <div id="editor-comments" class="collab-comments__list"></div>
-                <div class="collab-comments__compose">
-                  <textarea class="blora-textarea" id="editor-comment-body" rows="2" placeholder="<%= t('讨论语境、术语…') %>"></textarea>
-                  <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" id="editor-comment-send"><%- sfIcon('paperplane') %><%= t('发送') %></button>
-                </div>
+          <div class="editor-side-discussion__body">
+            <div class="collab-comments">
+              <div id="editor-comments" class="collab-comments__list"></div>
+              <div class="collab-comments__compose">
+                <textarea class="blora-textarea" id="editor-comment-body" rows="2" placeholder="<%= t('讨论语境、术语…') %>"></textarea>
+                <button type="button" class="blora-btn blora-btn--secondary blora-btn--sm" id="editor-comment-send"><%- sfIcon('paperplane') %><%= t('发送') %></button>
               </div>
             </div>
           </div>

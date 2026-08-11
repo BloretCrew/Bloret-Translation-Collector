@@ -132,7 +132,7 @@
       els.draft.placeholder = suggest
         ? BTC.t('输入译文…')
         : workMode === "proofread"
-          ? BTC.t('审核模式：在右侧建议中批准')
+          ? BTC.t('审核模式：在主区域建议中批准')
           : BTC.t('只读');
     }
     if (els.saveBtn) els.saveBtn.hidden = !suggest;
