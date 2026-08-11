@@ -49,9 +49,11 @@ import {
   deleteMySuggestion,
   deleteSuggestionComment,
   listComments,
+  listEmojiShortcuts,
   listStringsWithWorkflow,
   listSuggestionComments,
   listSuggestionsForString,
+  toggleReaction,
   toggleVote,
   unapproveLocale,
   upsertMySuggestion,
@@ -214,9 +216,11 @@ collaborationRouter.get(
         mt: mtText ? { text: mtText } : null,
         mtEnabled: isMtEnabled(),
         sourceLocale: access.project.sourceLocale,
+        viewerUsername: session.username ?? null,
         canSuggest: canSuggestTranslations(access.role),
         canVote: canVoteSuggestions(access.role),
         canApprove,
+        canReact: true,
         canComment: true,
         canManage: canManageProjects(access.role),
       });
@@ -689,6 +693,71 @@ collaborationRouter.post(
     }
   },
 );
+
+/**
+ * Toggle emoji reaction (BBS-style) on a suggestion, suggestion comment, or string comment.
+ * Body: { type, targetId, emoji }
+ */
+collaborationRouter.post(
+  "/v1/orgs/:orgSlug/projects/:projectSlug/react",
+  async (req, res, next) => {
+    try {
+      const session = requireSession(req);
+      if (!session) return unauthorized(res);
+      if (!session.username) return unauthorized(res, t('请先登录'));
+
+      const body = z
+        .object({
+          type: z.enum(["suggestion", "suggestion_comment", "string_comment"]),
+          targetId: z.string().uuid(),
+          emoji: z.string().min(1).max(32),
+        })
+        .safeParse(req.body ?? {});
+      if (!body.success) return jsonError(res, t('无效的回应参数'));
+
+      const access = await requireProjectAccess(
+        req.params.orgSlug,
+        req.params.projectSlug,
+        session.userId!,
+        "viewer",
+      );
+      if ("error" in access) {
+        if (access.error === "not_found") return notFound(res);
+        return forbidden(res);
+      }
+
+      const result = await toggleReaction({
+        type: body.data.type,
+        targetId: body.data.targetId,
+        projectId: access.project.id,
+        userId: session.userId!,
+        username: session.username,
+        emoji: body.data.emoji,
+      });
+      if (!result.ok) {
+        if (result.error === "invalid_emoji") return jsonError(res, t('无效的表情'));
+        return notFound(res);
+      }
+      return jsonOk(res, {
+        ok: true,
+        reactions: result.reactions,
+        added: result.added,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+collaborationRouter.get("/v1/me/emoji-shortcuts", async (req, res, next) => {
+  try {
+    const session = requireSession(req);
+    const list = await listEmojiShortcuts(session?.userId ?? null);
+    return jsonOk(res, { emojis: list });
+  } catch (err) {
+    next(err);
+  }
+});
 
 collaborationRouter.post(
   "/v1/orgs/:orgSlug/projects/:projectSlug/suggestions/:suggestionId/approve",

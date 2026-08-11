@@ -23,6 +23,13 @@
     root.dataset.canModeTranslate === "1" || canEdit;
   let canModeProofread =
     root.dataset.canModeProofread === "1" || canApprove;
+  /** Current viewer username (from detail payload); used to highlight own reactions. */
+  let viewerUsername = null;
+  const DEFAULT_QUICK_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "😡"];
+  /** @type {Array<{name:string, icons:string[]}>} */
+  let emojiLibrary = [];
+  /** @type {Record<string, {name?: string, category?: string}>} */
+  let emojiMap = {};
   const MODE_STORAGE_KEY = `btc-editor-mode:${orgSlug}/${projectSlug}`;
   const urlFocus =
     root.dataset.focusString ||
@@ -1215,12 +1222,20 @@
           <span class="collab-card__badges"></span>
         </div>
         <div class="collab-card__actions blora-row u-gap-1"></div>
+        <div class="collab-card__reactions comment-reactions"></div>
         <div class="collab-card__comments"></div>
       `;
       card.querySelector(".collab-card__text").textContent = s.text;
       card.querySelector(".collab-card__author").textContent = s.authorUsername;
       card.querySelector(".collab-card__votes").textContent = `★ ${s.voteCount}`;
       card.querySelector(".collab-card__time").textContent = formatTime(s.updatedAt);
+      if (typeof data.viewerUsername === "string") viewerUsername = data.viewerUsername;
+      mountReactions(card.querySelector(".collab-card__reactions"), {
+        type: "suggestion",
+        targetId: s.id,
+        reactions: s.reactions || {},
+        canReact: data.canReact !== false,
+      });
       const badges = card.querySelector(".collab-card__badges");
       if (s.isApproved) {
         const b = document.createElement("span");
@@ -1356,6 +1371,7 @@
           isReply: false,
           onChanged,
           canModerate: Boolean(data.canManage || data.canApprove),
+          canReact: data.canReact !== false,
         });
         const replies = byParent.get(c.id) || [];
         if (replies.length) {
@@ -1367,6 +1383,7 @@
                 isReply: true,
                 onChanged,
                 canModerate: Boolean(data.canManage || data.canApprove),
+                canReact: data.canReact !== false,
               }),
             ),
           );
@@ -1415,11 +1432,18 @@
       </div>
       <div class="suggestion-comment__body"></div>
       <div class="suggestion-comment__actions"></div>
+      <div class="suggestion-comment__reactions comment-reactions"></div>
     `;
     item.querySelector(".suggestion-comment__author").textContent = c.authorUsername;
     item.querySelector(".suggestion-comment__time").textContent = formatTime(c.createdAt);
     item.querySelector(".suggestion-comment__body").textContent = c.body;
     const actions = item.querySelector(".suggestion-comment__actions");
+    mountReactions(item.querySelector(".suggestion-comment__reactions"), {
+      type: "suggestion_comment",
+      targetId: c.id,
+      reactions: c.reactions || {},
+      canReact: opts.canReact !== false,
+    });
 
     if (!opts.isReply) {
       const replyBtn = document.createElement("button");
@@ -1536,7 +1560,7 @@
   /**
    * Build one comment card (top-level or reply).
    * @param {object} c
-   * @param {{ isReply?: boolean }} [opts]
+   * @param {{ isReply?: boolean, canReact?: boolean }} [opts]
    */
   function buildCommentNode(c, opts = {}) {
     const item = document.createElement("div");
@@ -1549,6 +1573,7 @@
       </div>
       <div class="collab-comment__body"></div>
       <div class="collab-comment__actions"></div>
+      <div class="collab-comment__reactions comment-reactions"></div>
     `;
     item.querySelector(".collab-comment__author").textContent = c.authorUsername;
     item.querySelector(".collab-comment__time").textContent = formatTime(c.createdAt);
@@ -1571,7 +1596,320 @@
     del.textContent = BTC.t('删除');
     del.addEventListener("click", () => deleteComment(c.id));
     actions.appendChild(del);
+
+    mountReactions(item.querySelector(".collab-comment__reactions"), {
+      type: "string_comment",
+      targetId: c.id,
+      reactions: c.reactions || {},
+      canReact: opts.canReact !== false,
+    });
     return item;
+  }
+
+  /**
+   * Render BBS-style reaction pills + add button into a host element.
+   * @param {HTMLElement|null} host
+   * @param {{ type: string, targetId: string, reactions: Record<string, string[]>, canReact?: boolean }} opts
+   */
+  function mountReactions(host, opts) {
+    if (!host) return;
+    host.innerHTML = "";
+    host.dataset.reactType = opts.type;
+    host.dataset.reactTarget = opts.targetId;
+    const reactions = opts.reactions && typeof opts.reactions === "object" ? opts.reactions : {};
+    const canReact = opts.canReact !== false;
+
+    Object.entries(reactions).forEach(([emoji, users]) => {
+      if (!Array.isArray(users) || !users.length) return;
+      const pill = document.createElement("button");
+      pill.type = "button";
+      pill.className =
+        "comment-reaction-pill" +
+        (viewerUsername && users.includes(viewerUsername) ? " is-mine" : "");
+      const shown = users.slice(0, 20).join(", ");
+      const extra =
+        users.length > 20
+          ? BTC.t(" 等 {count} 人", { count: users.length })
+          : "";
+      pill.title = BTC.t("{users} 对这条内容发出了表情 {emoji}", {
+        users: shown + extra,
+        emoji,
+      });
+      pill.textContent = `${emoji} ${users.length}`;
+      if (canReact) {
+        pill.addEventListener("click", () =>
+          reactToTarget(opts.type, opts.targetId, emoji, host),
+        );
+      } else {
+        pill.disabled = true;
+      }
+      host.appendChild(pill);
+    });
+
+    if (canReact) {
+      const addBtn = document.createElement("button");
+      addBtn.type = "button";
+      addBtn.className = "comment-react-btn";
+      addBtn.title = BTC.t("添加表情回应");
+      addBtn.setAttribute("aria-label", BTC.t("添加表情回应"));
+      addBtn.textContent = "☺+";
+      addBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        showEmojiQuickMenu(addBtn, opts.type, opts.targetId, host);
+      });
+      host.appendChild(addBtn);
+    }
+  }
+
+  function removeEmojiMenu() {
+    document.getElementById("btc-emoji-menu")?.remove();
+    document.querySelector(".btc-emoji-mask")?.remove();
+    document.getElementById("btc-emoji-picker")?.remove();
+    document.querySelector(".btc-emoji-picker-overlay")?.remove();
+  }
+
+  async function fetchEmojiShortcuts() {
+    try {
+      const { res, data } = await json("/api/v1/me/emoji-shortcuts");
+      if (res.ok && Array.isArray(data.emojis) && data.emojis.length) {
+        return data.emojis;
+      }
+    } catch {
+      /* fall through */
+    }
+    return DEFAULT_QUICK_EMOJIS.slice();
+  }
+
+  async function loadEmojiLibrary() {
+    if (emojiLibrary.length) return true;
+    try {
+      const res = await fetch("/res/emojis.json");
+      if (!res.ok) return false;
+      const data = await res.json();
+      emojiLibrary = Object.entries(data).map(([catName, emojis]) => {
+        const icons = Object.keys(emojis || {});
+        icons.forEach((icon) => {
+          emojiMap[icon] = { ...(emojis[icon] || {}), category: catName };
+        });
+        return { name: catName, icons };
+      });
+      return emojiLibrary.length > 0;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * @param {HTMLElement} btn
+   * @param {string} type
+   * @param {string} targetId
+   * @param {HTMLElement} host
+   */
+  async function showEmojiQuickMenu(btn, type, targetId, host) {
+    removeEmojiMenu();
+    const menu = document.createElement("div");
+    menu.className = "btc-emoji-quick-menu";
+    menu.id = "btc-emoji-menu";
+    const emojis = await fetchEmojiShortcuts();
+    emojis.forEach((emoji) => {
+      const span = document.createElement("button");
+      span.type = "button";
+      span.className = "btc-emoji-btn";
+      span.textContent = emoji;
+      span.addEventListener("click", (e) => {
+        e.stopPropagation();
+        removeEmojiMenu();
+        reactToTarget(type, targetId, emoji, host);
+      });
+      menu.appendChild(span);
+    });
+    const more = document.createElement("button");
+    more.type = "button";
+    more.className = "btc-emoji-more-btn";
+    more.textContent = "+";
+    more.title = BTC.t("更多表情");
+    more.addEventListener("click", (e) => {
+      e.stopPropagation();
+      removeEmojiMenu();
+      showFullEmojiPicker(type, targetId, host);
+    });
+    menu.appendChild(more);
+
+    document.body.appendChild(menu);
+    const rect = btn.getBoundingClientRect();
+    const mw = menu.offsetWidth || 200;
+    const mh = menu.offsetHeight || 40;
+    let left = rect.left + rect.width / 2 - mw / 2;
+    left = Math.max(8, Math.min(left, window.innerWidth - mw - 8));
+    let top = rect.top - mh - 10;
+    if (top < 8) top = rect.bottom + 8;
+    menu.style.left = `${left}px`;
+    menu.style.top = `${top}px`;
+
+    const mask = document.createElement("div");
+    mask.className = "btc-emoji-mask";
+    mask.addEventListener("click", removeEmojiMenu);
+    document.body.appendChild(mask);
+  }
+
+  /**
+   * @param {string} type
+   * @param {string} targetId
+   * @param {HTMLElement} host
+   */
+  async function showFullEmojiPicker(type, targetId, host) {
+    removeEmojiMenu();
+    if (!(await loadEmojiLibrary())) {
+      toast?.("error", BTC.t("表情库加载失败"));
+      return;
+    }
+    const overlay = document.createElement("div");
+    overlay.className = "btc-emoji-picker-overlay";
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) removeEmojiMenu();
+    });
+
+    const container = document.createElement("div");
+    container.className = "btc-emoji-picker";
+    container.id = "btc-emoji-picker";
+
+    const searchWrap = document.createElement("div");
+    searchWrap.className = "btc-emoji-search";
+    const searchInput = document.createElement("input");
+    searchInput.type = "search";
+    searchInput.className = "blora-input blora-input--sm";
+    searchInput.placeholder = BTC.t("搜索表情…");
+    searchWrap.appendChild(searchInput);
+    container.appendChild(searchWrap);
+
+    const header = document.createElement("div");
+    header.className = "btc-emoji-picker__header";
+    const body = document.createElement("div");
+    body.className = "btc-emoji-picker__body";
+
+    const pick = (emoji) => {
+      removeEmojiMenu();
+      reactToTarget(type, targetId, emoji, host);
+    };
+
+    const renderCategory = (idx) => {
+      const cat = emojiLibrary[idx];
+      if (!cat) return;
+      body.innerHTML = "";
+      const title = document.createElement("div");
+      title.className = "btc-emoji-grid-title";
+      title.textContent = cat.name;
+      body.appendChild(title);
+      const grid = document.createElement("div");
+      grid.className = "btc-emoji-grid";
+      cat.icons.forEach((emoji) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "btc-emoji-picker-item";
+        item.textContent = emoji;
+        if (emojiMap[emoji]?.name) item.title = emojiMap[emoji].name;
+        item.addEventListener("click", () => pick(emoji));
+        grid.appendChild(item);
+      });
+      body.appendChild(grid);
+    };
+
+    const renderSearch = (q) => {
+      body.innerHTML = "";
+      const query = q.trim().toLowerCase();
+      const found = new Set();
+      emojiLibrary.forEach((cat) => {
+        if (cat.name.toLowerCase().includes(query)) {
+          cat.icons.forEach((i) => found.add(i));
+        }
+      });
+      Object.entries(emojiMap).forEach(([icon, info]) => {
+        if (info.name && info.name.toLowerCase().includes(query)) found.add(icon);
+        if (icon === query) found.add(icon);
+      });
+      const title = document.createElement("div");
+      title.className = "btc-emoji-grid-title";
+      title.textContent = found.size
+        ? BTC.t("搜索结果：{q}", { q: query })
+        : BTC.t("未找到相关表情");
+      body.appendChild(title);
+      if (!found.size) return;
+      const grid = document.createElement("div");
+      grid.className = "btc-emoji-grid";
+      Array.from(found).forEach((emoji) => {
+        const item = document.createElement("button");
+        item.type = "button";
+        item.className = "btc-emoji-picker-item";
+        item.textContent = emoji;
+        if (emojiMap[emoji]?.name) item.title = emojiMap[emoji].name;
+        item.addEventListener("click", () => pick(emoji));
+        grid.appendChild(item);
+      });
+      body.appendChild(grid);
+    };
+
+    emojiLibrary.forEach((cat, idx) => {
+      const tab = document.createElement("button");
+      tab.type = "button";
+      tab.className = "btc-emoji-category-tab" + (idx === 0 ? " is-active" : "");
+      tab.textContent = cat.name.split("/")[0];
+      tab.addEventListener("click", () => {
+        searchInput.value = "";
+        header
+          .querySelectorAll(".btc-emoji-category-tab")
+          .forEach((t) => t.classList.remove("is-active"));
+        tab.classList.add("is-active");
+        renderCategory(idx);
+      });
+      header.appendChild(tab);
+    });
+
+    searchInput.addEventListener("input", () => {
+      const q = searchInput.value.trim();
+      if (q) renderSearch(q);
+      else renderCategory(0);
+    });
+
+    container.appendChild(header);
+    container.appendChild(body);
+    overlay.appendChild(container);
+    document.body.appendChild(overlay);
+    renderCategory(0);
+    setTimeout(() => searchInput.focus(), 50);
+  }
+
+  /**
+   * @param {string} type
+   * @param {string} targetId
+   * @param {string} emoji
+   * @param {HTMLElement|null} host
+   */
+  async function reactToTarget(type, targetId, emoji, host) {
+    try {
+      const { res, data } = await json(
+        `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/react`,
+        {
+          method: "POST",
+          body: JSON.stringify({ type, targetId, emoji }),
+        },
+      );
+      if (!res.ok) {
+        toast?.("error", data.error || BTC.t("回应失败"));
+        return;
+      }
+      if (host && data.reactions) {
+        mountReactions(host, {
+          type,
+          targetId,
+          reactions: data.reactions,
+          canReact: true,
+        });
+      } else if (activeId) {
+        await loadDetail(activeId);
+      }
+    } catch {
+      toast?.("error", BTC.t("网络错误"));
+    }
   }
 
   function toggleReplyForm(rootItem, parentComment) {
@@ -1647,13 +1985,19 @@
       }
     }
 
+    if (data && typeof data.viewerUsername === "string") {
+      viewerUsername = data.viewerUsername;
+    }
+    const canReact = !data || data.canReact !== false;
     roots.forEach((c) => {
-      const item = buildCommentNode(c, { isReply: false });
+      const item = buildCommentNode(c, { isReply: false, canReact });
       const replies = byParent.get(c.id) || [];
       if (replies.length) {
         const wrap = document.createElement("div");
         wrap.className = "collab-comment__replies";
-        replies.forEach((r) => wrap.appendChild(buildCommentNode(r, { isReply: true })));
+        replies.forEach((r) =>
+          wrap.appendChild(buildCommentNode(r, { isReply: true, canReact })),
+        );
         item.appendChild(wrap);
       }
       els.comments.appendChild(item);

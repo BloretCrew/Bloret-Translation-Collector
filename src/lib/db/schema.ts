@@ -45,10 +45,18 @@ export const translationStatusEnum = pgEnum("translation_status", [
   "translated",
 ]);
 
+/** Emoji → count of times this user has added that reaction (BBS-style shortcuts). */
+export type EmojiStats = Record<string, number>;
+
+/** Emoji → usernames who reacted (BBS comment reaction map). */
+export type ReactionMap = Record<string, string[]>;
+
 export const users = pgTable("users", {
   id: uuid("id").defaultRandom().primaryKey(),
   username: text("username").notNull().unique(),
   avatarUrl: text("avatar_url"),
+  /** Frequency of emoji reactions used by this user (for shortcut ranking). */
+  emojiStats: jsonb("emoji_stats").$type<EmojiStats>().default({}).notNull(),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
 });
@@ -275,6 +283,8 @@ export const translationSuggestions = pgTable(
     authorId: uuid("author_id")
       .notNull()
       .references(() => users.id, { onDelete: "cascade" }),
+    /** BBS-style emoji reactions: { emoji: [usernames] }. */
+    reactions: jsonb("reactions").$type<ReactionMap>().default({}).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -317,6 +327,8 @@ export const suggestionComments = pgTable(
     /** Optional reply under another comment on the same suggestion (one-level). */
     parentId: uuid("parent_id"),
     body: text("body").notNull(),
+    /** BBS-style emoji reactions: { emoji: [usernames] }. */
+    reactions: jsonb("reactions").$type<ReactionMap>().default({}).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },
@@ -366,6 +378,8 @@ export const stringComments = pgTable(
     /** When set, this row is a reply under another comment (one-level thread). */
     parentId: uuid("parent_id"),
     body: text("body").notNull(),
+    /** BBS-style emoji reactions: { emoji: [usernames] }. */
+    reactions: jsonb("reactions").$type<ReactionMap>().default({}).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
   },

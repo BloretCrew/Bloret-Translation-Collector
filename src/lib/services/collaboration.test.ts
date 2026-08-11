@@ -21,8 +21,10 @@ import {
   approveAllSuggestionsByAuthor,
   approveSuggestion,
   listComments,
+  listEmojiShortcuts,
   listStringsWithWorkflow,
   listSuggestionsForString,
+  toggleReaction,
   toggleVote,
   upsertMySuggestion,
 } from "./collaboration";
@@ -475,5 +477,167 @@ describe("collaboration workflow", () => {
       .where(and(eq(translations.stringId, ua!.id), eq(translations.locale, "en")))
       .limit(1);
     expect(finalA2?.text).toBe("Alpha by Other");
+  });
+
+  it("toggles emoji reactions on suggestions and comments (BBS-style)", async () => {
+    const stamp = Date.now().toString(36);
+    const [userA] = await db
+      .insert(users)
+      .values({ username: `react-a-${stamp}` })
+      .returning();
+    const [userB] = await db
+      .insert(users)
+      .values({ username: `react-b-${stamp}` })
+      .returning();
+    cleanup.userIds.push(userA!.id, userB!.id);
+
+    const [org] = await db
+      .insert(organizations)
+      .values({ name: "React Org", slug: `react-org-${stamp}`, createdBy: userA!.id })
+      .returning();
+    cleanup.orgIds.push(org!.id);
+
+    await db.insert(organizationMembers).values([
+      { orgId: org!.id, userId: userA!.id, role: "owner" },
+      { orgId: org!.id, userId: userB!.id, role: "translator" },
+    ]);
+
+    const [project] = await db
+      .insert(projects)
+      .values({
+        orgId: org!.id,
+        slug: `react-p-${stamp}`,
+        name: "React P",
+        sourceLocale: "zh-CN",
+        createdBy: userA!.id,
+      })
+      .returning();
+
+    const [file] = await db
+      .insert(sourceFiles)
+      .values({
+        projectId: project!.id,
+        path: "react.json",
+        rawSource: { hello: "你好" },
+        updatedBy: userA!.id,
+      })
+      .returning();
+
+    const [unit] = await db
+      .insert(stringUnits)
+      .values({
+        fileId: file!.id,
+        keyPath: "hello",
+        sourceText: "你好",
+        sortOrder: 0,
+      })
+      .returning();
+
+    const sug = await upsertMySuggestion({
+      stringId: unit!.id,
+      locale: "en",
+      userId: userB!.id,
+      text: "Hello",
+    });
+
+    const sc = await addSuggestionComment({
+      suggestionId: sug.id,
+      userId: userA!.id,
+      body: "nice",
+    });
+    expect(sc.ok).toBe(true);
+    if (!sc.ok) throw new Error("sc failed");
+
+    const disc = await addComment({
+      stringId: unit!.id,
+      locale: "en",
+      userId: userB!.id,
+      body: "context note",
+    });
+    expect(disc.ok).toBe(true);
+    if (!disc.ok) throw new Error("disc failed");
+
+    // Add reaction on suggestion
+    const r1 = await toggleReaction({
+      type: "suggestion",
+      targetId: sug.id,
+      projectId: project!.id,
+      userId: userA!.id,
+      username: userA!.username,
+      emoji: "👍",
+    });
+    expect(r1.ok).toBe(true);
+    if (!r1.ok) throw new Error("r1 failed");
+    expect(r1.added).toBe(true);
+    expect(r1.reactions["👍"]).toEqual([userA!.username]);
+
+    // Second user same emoji
+    const r2 = await toggleReaction({
+      type: "suggestion",
+      targetId: sug.id,
+      projectId: project!.id,
+      userId: userB!.id,
+      username: userB!.username,
+      emoji: "👍",
+    });
+    expect(r2.ok && r2.reactions["👍"]?.length).toBe(2);
+
+    // Toggle off
+    const r3 = await toggleReaction({
+      type: "suggestion",
+      targetId: sug.id,
+      projectId: project!.id,
+      userId: userA!.id,
+      username: userA!.username,
+      emoji: "👍",
+    });
+    expect(r3.ok).toBe(true);
+    if (!r3.ok) throw new Error("r3 failed");
+    expect(r3.added).toBe(false);
+    expect(r3.reactions["👍"]).toEqual([userB!.username]);
+
+    // Suggestion comment reaction
+    const rc = await toggleReaction({
+      type: "suggestion_comment",
+      targetId: sc.row.id,
+      projectId: project!.id,
+      userId: userB!.id,
+      username: userB!.username,
+      emoji: "❤️",
+    });
+    expect(rc.ok).toBe(true);
+    if (!rc.ok) throw new Error("rc failed");
+    expect(rc.reactions["❤️"]).toEqual([userB!.username]);
+
+    // String discussion comment reaction
+    const rd = await toggleReaction({
+      type: "string_comment",
+      targetId: disc.row.id,
+      projectId: project!.id,
+      userId: userA!.id,
+      username: userA!.username,
+      emoji: "😂",
+    });
+    expect(rd.ok).toBe(true);
+    if (!rd.ok) throw new Error("rd failed");
+    expect(rd.reactions["😂"]).toEqual([userA!.username]);
+
+    // Listed payloads include reactions
+    const listed = await listSuggestionsForString(unit!.id, "en", userA!.id);
+    const view = listed.suggestions.find((s) => s.id === sug.id)!;
+    expect(view.reactions["👍"]).toEqual([userB!.username]);
+    const cView = view.comments.find((c) => c.id === sc.row.id)!;
+    expect(cView.reactions["❤️"]).toEqual([userB!.username]);
+
+    const comments = await listComments(unit!.id, "en");
+    expect(comments.find((c) => c.id === disc.row.id)?.reactions["😂"]).toEqual([
+      userA!.username,
+    ]);
+
+    // Shortcuts prefer frequently used emojis
+    const shortcuts = await listEmojiShortcuts(userA!.id);
+    expect(shortcuts[0]).toBe("👍");
+    expect(shortcuts).toContain("😂");
+    expect(shortcuts.length).toBeLessThanOrEqual(6);
   });
 });
