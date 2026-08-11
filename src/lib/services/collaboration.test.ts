@@ -18,6 +18,7 @@ import {
 import {
   addComment,
   addSuggestionComment,
+  approveAllSuggestionsByAuthor,
   approveSuggestion,
   listComments,
   listStringsWithWorkflow,
@@ -328,5 +329,151 @@ describe("collaboration workflow", () => {
     });
     expect(pending.total).toBe(1);
     expect(pending.strings[0]!.id).toBe(ub!.id);
+  });
+
+  it("bulk-approves all suggestions by one author for a project locale", async () => {
+    const stamp = Date.now().toString(36);
+    const [owner] = await db
+      .insert(users)
+      .values({ username: `bulk-owner-${stamp}` })
+      .returning();
+    const [translator] = await db
+      .insert(users)
+      .values({ username: `bulk-tr-${stamp}` })
+      .returning();
+    const [other] = await db
+      .insert(users)
+      .values({ username: `bulk-other-${stamp}` })
+      .returning();
+    cleanup.userIds.push(owner!.id, translator!.id, other!.id);
+
+    const [org] = await db
+      .insert(organizations)
+      .values({ name: "Bulk Org", slug: `bulk-org-${stamp}`, createdBy: owner!.id })
+      .returning();
+    cleanup.orgIds.push(org!.id);
+
+    await db.insert(organizationMembers).values([
+      { orgId: org!.id, userId: owner!.id, role: "owner" },
+      { orgId: org!.id, userId: translator!.id, role: "translator" },
+      { orgId: org!.id, userId: other!.id, role: "translator" },
+    ]);
+
+    const [project] = await db
+      .insert(projects)
+      .values({
+        orgId: org!.id,
+        slug: `bulk-p-${stamp}`,
+        name: "Bulk P",
+        sourceLocale: "zh-CN",
+        createdBy: owner!.id,
+      })
+      .returning();
+
+    const [file] = await db
+      .insert(sourceFiles)
+      .values({
+        projectId: project!.id,
+        path: "bulk.json",
+        rawSource: { a: "甲", b: "乙", c: "丙" },
+        updatedBy: owner!.id,
+      })
+      .returning();
+
+    const [ua] = await db
+      .insert(stringUnits)
+      .values({ fileId: file!.id, keyPath: "a", sourceText: "甲", sortOrder: 0 })
+      .returning();
+    const [ub] = await db
+      .insert(stringUnits)
+      .values({ fileId: file!.id, keyPath: "b", sourceText: "乙", sortOrder: 1 })
+      .returning();
+    const [uc] = await db
+      .insert(stringUnits)
+      .values({ fileId: file!.id, keyPath: "c", sourceText: "丙", sortOrder: 2 })
+      .returning();
+
+    // translator: a + b (non-empty); empty on c should be ignored
+    await upsertMySuggestion({
+      stringId: ua!.id,
+      locale: "en",
+      userId: translator!.id,
+      text: "Alpha by T",
+    });
+    await upsertMySuggestion({
+      stringId: ub!.id,
+      locale: "en",
+      userId: translator!.id,
+      text: "Beta by T",
+    });
+    await upsertMySuggestion({
+      stringId: uc!.id,
+      locale: "en",
+      userId: translator!.id,
+      text: "   ",
+    });
+    // other author on a — must not be bulk-approved for translator
+    await upsertMySuggestion({
+      stringId: ua!.id,
+      locale: "en",
+      userId: other!.id,
+      text: "Alpha by Other",
+    });
+    // pre-approve b so second bulk run reports alreadyApproved
+    const listedB = await listSuggestionsForString(ub!.id, "en", owner!.id);
+    const tb = listedB.suggestions.find((s) => s.authorId === translator!.id)!;
+    await approveSuggestion(tb.id, owner!.id);
+
+    const first = await approveAllSuggestionsByAuthor({
+      projectId: project!.id,
+      locale: "en",
+      authorId: translator!.id,
+      approverId: owner!.id,
+    });
+    // a newly approved; b already that author's approved; empty c skipped
+    expect(first.approved).toBe(1);
+    expect(first.alreadyApproved).toBe(1);
+    expect(first.total).toBe(2);
+
+    const [finalA] = await db
+      .select()
+      .from(translations)
+      .where(and(eq(translations.stringId, ua!.id), eq(translations.locale, "en")))
+      .limit(1);
+    expect(finalA?.text).toBe("Alpha by T");
+    expect(finalA?.status).toBe("translated");
+
+    const [finalB] = await db
+      .select()
+      .from(translations)
+      .where(and(eq(translations.stringId, ub!.id), eq(translations.locale, "en")))
+      .limit(1);
+    expect(finalB?.text).toBe("Beta by T");
+
+    const second = await approveAllSuggestionsByAuthor({
+      projectId: project!.id,
+      locale: "en",
+      authorId: translator!.id,
+      approverId: owner!.id,
+    });
+    expect(second.approved).toBe(0);
+    expect(second.alreadyApproved).toBe(2);
+    expect(second.total).toBe(2);
+
+    // other author's bulk approve should only touch their rows
+    const otherBulk = await approveAllSuggestionsByAuthor({
+      projectId: project!.id,
+      locale: "en",
+      authorId: other!.id,
+      approverId: owner!.id,
+    });
+    expect(otherBulk.approved).toBe(1);
+    expect(otherBulk.total).toBe(1);
+    const [finalA2] = await db
+      .select()
+      .from(translations)
+      .where(and(eq(translations.stringId, ua!.id), eq(translations.locale, "en")))
+      .limit(1);
+    expect(finalA2?.text).toBe("Alpha by Other");
   });
 });

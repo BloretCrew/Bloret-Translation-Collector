@@ -1,6 +1,7 @@
 import { and, asc, desc, eq, inArray, sql } from "drizzle-orm";
 import { db } from "@/lib/db";
 import {
+  sourceFiles,
   stringComments,
   stringLocaleStates,
   stringUnits,
@@ -403,6 +404,142 @@ export async function approveSuggestion(suggestionId: string, approverId: string
   });
 
   return { ok: true as const, suggestion: s };
+}
+
+/**
+ * Approve every non-empty suggestion by one author for a project × locale.
+ * One author has at most one suggestion per string × locale; each is applied
+ * as the approved mirror (overwriting a previous approval from another author).
+ * Already-approved suggestions by the same author are skipped.
+ */
+export async function approveAllSuggestionsByAuthor(params: {
+  projectId: string;
+  locale: string;
+  authorId: string;
+  approverId: string;
+}) {
+  const candidates = await db
+    .select({
+      id: translationSuggestions.id,
+      stringId: translationSuggestions.stringId,
+      locale: translationSuggestions.locale,
+      text: translationSuggestions.text,
+    })
+    .from(translationSuggestions)
+    .innerJoin(stringUnits, eq(translationSuggestions.stringId, stringUnits.id))
+    .innerJoin(sourceFiles, eq(stringUnits.fileId, sourceFiles.id))
+    .where(
+      and(
+        eq(sourceFiles.projectId, params.projectId),
+        eq(translationSuggestions.locale, params.locale),
+        eq(translationSuggestions.authorId, params.authorId),
+        // Match single approve: whitespace-only text is not approvable
+        sql`btrim(coalesce(${translationSuggestions.text}, '')) <> ''`,
+      ),
+    );
+
+  if (!candidates.length) {
+    return { ok: true as const, approved: 0, alreadyApproved: 0, total: 0 };
+  }
+
+  const stringIds = candidates.map((c) => c.stringId);
+  const states = await db
+    .select({
+      stringId: stringLocaleStates.stringId,
+      status: stringLocaleStates.status,
+      approvedSuggestionId: stringLocaleStates.approvedSuggestionId,
+    })
+    .from(stringLocaleStates)
+    .where(
+      and(
+        inArray(stringLocaleStates.stringId, stringIds),
+        eq(stringLocaleStates.locale, params.locale),
+      ),
+    );
+  const stateByString = new Map(states.map((s) => [s.stringId, s]));
+
+  const toApprove = candidates.filter((c) => {
+    const st = stateByString.get(c.stringId);
+    return !(st?.status === "approved" && st.approvedSuggestionId === c.id);
+  });
+  const alreadyApproved = candidates.length - toApprove.length;
+
+  if (!toApprove.length) {
+    return {
+      ok: true as const,
+      approved: 0,
+      alreadyApproved,
+      total: candidates.length,
+    };
+  }
+
+  const now = new Date();
+  await db.transaction(async (tx) => {
+    for (const s of toApprove) {
+      const [existing] = await tx
+        .select()
+        .from(translations)
+        .where(and(eq(translations.stringId, s.stringId), eq(translations.locale, s.locale)))
+        .limit(1);
+
+      if (existing) {
+        await tx
+          .update(translations)
+          .set({
+            text: s.text,
+            status: "translated",
+            updatedBy: params.approverId,
+            updatedAt: now,
+          })
+          .where(eq(translations.id, existing.id));
+      } else {
+        await tx.insert(translations).values({
+          stringId: s.stringId,
+          locale: s.locale,
+          text: s.text,
+          status: "translated",
+          updatedBy: params.approverId,
+        });
+      }
+
+      const [state] = await tx
+        .select()
+        .from(stringLocaleStates)
+        .where(
+          and(eq(stringLocaleStates.stringId, s.stringId), eq(stringLocaleStates.locale, s.locale)),
+        )
+        .limit(1);
+
+      if (state) {
+        await tx
+          .update(stringLocaleStates)
+          .set({
+            status: "approved",
+            approvedSuggestionId: s.id,
+            approvedBy: params.approverId,
+            approvedAt: now,
+            updatedAt: now,
+          })
+          .where(eq(stringLocaleStates.id, state.id));
+      } else {
+        await tx.insert(stringLocaleStates).values({
+          stringId: s.stringId,
+          locale: s.locale,
+          status: "approved",
+          approvedSuggestionId: s.id,
+          approvedBy: params.approverId,
+          approvedAt: now,
+        });
+      }
+    }
+  });
+
+  return {
+    ok: true as const,
+    approved: toApprove.length,
+    alreadyApproved,
+    total: candidates.length,
+  };
 }
 
 export async function unapproveLocale(stringId: string, locale: string) {

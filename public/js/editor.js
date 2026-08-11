@@ -1266,6 +1266,17 @@
         appr.addEventListener("click", () => approveSuggestion(s.id));
         actions.appendChild(appr);
       }
+      if (effectiveCanApprove() && data.canApprove && s.text.trim()) {
+        const bulk = document.createElement("button");
+        bulk.type = "button";
+        bulk.className = "blora-btn blora-btn--ghost blora-btn--xs";
+        bulk.textContent = BTC.t('全部批准');
+        bulk.title = BTC.t('批准该译者在本项目本语言下的全部建议');
+        bulk.addEventListener("click", () =>
+          approveAllByAuthor(s.authorId, s.authorUsername),
+        );
+        actions.appendChild(bulk);
+      }
       if (effectiveCanApprove() && data.canApprove && s.isApproved) {
         const un = document.createElement("button");
         un.type = "button";
@@ -1752,6 +1763,56 @@
         return;
       }
 
+      await loadList({ quiet: true });
+      if (activeId) await loadDetail(activeId);
+    } catch {
+      toast?.("error", BTC.t('网络错误'));
+    }
+  }
+
+  /**
+   * Approve all non-empty suggestions by one author for the current project × locale.
+   * @param {string} authorId
+   * @param {string} authorUsername
+   */
+  async function approveAllByAuthor(authorId, authorUsername) {
+    if (!effectiveCanApprove() || !authorId) return;
+    const name = authorUsername || BTC.t('该译者');
+    if (
+      !confirm(
+        BTC.t(
+          '确定批准 {user} 在本项目「{locale}」下的全部建议？已批准的将跳过，未批准的会覆盖当前定稿。',
+          { user: name, locale },
+        ),
+      )
+    ) {
+      return;
+    }
+    try {
+      const { res, data } = await json(
+        `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/suggestions/approve-all`,
+        {
+          method: "POST",
+          body: JSON.stringify({ authorId, locale }),
+        },
+      );
+      if (!res.ok) {
+        toast?.("error", data.error || BTC.t('批量批准失败'));
+        return;
+      }
+      const approved = Number(data.approved) || 0;
+      const already = Number(data.alreadyApproved) || 0;
+      if (approved === 0 && already === 0) {
+        toast?.("info", BTC.t('没有可批准的建议'));
+      } else {
+        toast?.(
+          "success",
+          BTC.t('已批准 {approved} 条（另有 {already} 条本已是该译者定稿）', {
+            approved,
+            already,
+          }),
+        );
+      }
       await loadList({ quiet: true });
       if (activeId) await loadDetail(activeId);
     } catch {

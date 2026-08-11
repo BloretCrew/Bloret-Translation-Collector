@@ -657,5 +657,13 @@
   "「{a}」与「{b}」冲突": "“{a}” conflicts with “{b}”",
   "快捷键冲突：{msg}": "Shortcut conflict: {msg}",
   "已批准 {approved}（{approvedPct}%）· 有译文 {suggested}（{suggestedPct}%）· 未翻译 {empty}（{emptyPct}%）· 共 {total}": "Approved {approved} ({approvedPct}%) · translated {suggested} ({suggestedPct}%) · untranslated {empty} ({emptyPct}%) · total {total}",
-  "{done}/{total} · {pct}% 批准": "{done}/{total} · {pct}% approved"
+  "{done}/{total} · {pct}% 批准": "{done}/{total} · {pct}% approved",
+  "请指定译者和目标语言": "Please specify translator and target language",
+  "全部批准": "Approve all",
+  "批准该译者在本项目本语言下的全部建议": "Approve all suggestions by this translator for this project language",
+  "该译者": "this translator",
+  "确定批准 {user} 在本项目「{locale}」下的全部建议？已批准的将跳过，未批准的会覆盖当前定稿。": "Approve all suggestions by {user} for «{locale}» in this project? Already approved ones will be skipped; others will overwrite the current approved text.",
+  "批量批准失败": "Bulk approve failed",
+  "没有可批准的建议": "No suggestions to approve",
+  "已批准 {approved} 条（另有 {already} 条本已是该译者定稿）": "Approved {approved} (another {already} already final by this translator)"
 }

@@ -1,6 +1,7 @@
 import { t } from "@/lib/i18n";
 import { Router } from "express";
 import { and, eq } from "drizzle-orm";
+import { z } from "zod";
 import { requireSession } from "@/lib/auth/session";
 import { requireProjectAccess } from "@/lib/access";
 import {
@@ -42,6 +43,7 @@ import { lookupStringMt } from "@/lib/services/mt-file";
 import {
   addComment,
   addSuggestionComment,
+  approveAllSuggestionsByAuthor,
   approveSuggestion,
   deleteComment,
   deleteMySuggestion,
@@ -740,6 +742,70 @@ collaborationRouter.post(
         stringId: result.suggestion.stringId,
         locale: result.suggestion.locale,
         text: result.suggestion.text,
+      });
+    } catch (err) {
+      next(err);
+    }
+  },
+);
+
+/**
+ * One-click approve: all non-empty suggestions by one author for a project × locale.
+ * Body: { authorId: uuid, locale: string }
+ */
+collaborationRouter.post(
+  "/v1/orgs/:orgSlug/projects/:projectSlug/suggestions/approve-all",
+  async (req, res, next) => {
+    try {
+      const session = requireSession(req);
+      if (!session) return unauthorized(res);
+
+      const body = z
+        .object({
+          authorId: z.string().uuid(),
+          locale: localeSchema,
+        })
+        .safeParse(req.body ?? {});
+      if (!body.success) {
+        return jsonError(res, t('请指定译者和目标语言'));
+      }
+
+      // Min role translator so locale proofreader assignees can reach the check
+      const access = await requireProjectAccess(
+        req.params.orgSlug,
+        req.params.projectSlug,
+        session.userId!,
+        "translator",
+      );
+      if ("error" in access) {
+        if (access.error === "not_found") return notFound(res);
+        return forbidden(res);
+      }
+
+      const localeProofreader = await isLocaleAssignee(
+        access.project.id,
+        body.data.locale,
+        session.userId!,
+        "proofreader",
+      );
+      if (!canApproveTranslations(access.role) && !localeProofreader) {
+        return forbidden(res, t('仅审核员、语言审核指派或管理员可批准译文'));
+      }
+
+      const result = await approveAllSuggestionsByAuthor({
+        projectId: access.project.id,
+        locale: body.data.locale,
+        authorId: body.data.authorId,
+        approverId: session.userId!,
+      });
+
+      return jsonOk(res, {
+        ok: true,
+        approved: result.approved,
+        alreadyApproved: result.alreadyApproved,
+        total: result.total,
+        locale: body.data.locale,
+        authorId: body.data.authorId,
       });
     } catch (err) {
       next(err);

@@ -657,5 +657,13 @@
   "「{a}」与「{b}」冲突": "「{a}」与「{b}」冲突",
   "快捷键冲突：{msg}": "快捷键冲突：{msg}",
   "已批准 {approved}（{approvedPct}%）· 有译文 {suggested}（{suggestedPct}%）· 未翻译 {empty}（{emptyPct}%）· 共 {total}": "已批准 {approved}（{approvedPct}%）· 有译文 {suggested}（{suggestedPct}%）· 未翻译 {empty}（{emptyPct}%）· 共 {total}",
-  "{done}/{total} · {pct}% 批准": "{done}/{total} · {pct}% 批准"
+  "{done}/{total} · {pct}% 批准": "{done}/{total} · {pct}% 批准",
+  "请指定译者和目标语言": "请指定译者和目标语言",
+  "全部批准": "全部批准",
+  "批准该译者在本项目本语言下的全部建议": "批准该译者在本项目本语言下的全部建议",
+  "该译者": "该译者",
+  "确定批准 {user} 在本项目「{locale}」下的全部建议？已批准的将跳过，未批准的会覆盖当前定稿。": "确定批准 {user} 在本项目「{locale}」下的全部建议？已批准的将跳过，未批准的会覆盖当前定稿。",
+  "批量批准失败": "批量批准失败",
+  "没有可批准的建议": "没有可批准的建议",
+  "已批准 {approved} 条（另有 {already} 条本已是该译者定稿）": "已批准 {approved} 条（另有 {already} 条本已是该译者定稿）"
 }
