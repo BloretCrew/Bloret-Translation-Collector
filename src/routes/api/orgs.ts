@@ -153,16 +153,26 @@ publicOrgsRouter.get(
           .limit(1)
           .then((r) => r[0] ?? null),
         db
-          .select({ locale: translationSuggestions.locale, username: users.username })
+          .select({
+            locale: translationSuggestions.locale,
+            username: users.username,
+            updatedAt: translationSuggestions.updatedAt,
+          })
           .from(translationSuggestions)
           .innerJoin(stringUnits, eq(translationSuggestions.stringId, stringUnits.id))
           .innerJoin(sourceFiles, eq(stringUnits.fileId, sourceFiles.id))
           .innerJoin(users, eq(translationSuggestions.authorId, users.id))
-          .where(eq(sourceFiles.projectId, project.id)),
+          .where(
+            and(
+              eq(sourceFiles.projectId, project.id),
+              sql`coalesce(${translationSuggestions.text}, '') <> ''`,
+            ),
+          ),
       ]);
 
-      // Group contributor usernames by locale (distinct).
+      // Group contributor usernames and latest suggestion update by locale.
       const contributorsByLocale = new Map<string, Set<string>>();
+      const updatedAtByLocale = new Map<string, Date>();
       for (const row of contributorRows) {
         let set = contributorsByLocale.get(row.locale);
         if (!set) {
@@ -170,6 +180,10 @@ publicOrgsRouter.get(
           contributorsByLocale.set(row.locale, set);
         }
         set.add(row.username);
+        const previous = updatedAtByLocale.get(row.locale);
+        if (!previous || row.updatedAt > previous) {
+          updatedAtByLocale.set(row.locale, row.updatedAt);
+        }
       }
 
       const baseUrl = publicBaseUrl();
@@ -180,6 +194,7 @@ publicOrgsRouter.get(
           name,
           file: `${l.locale}.json`,
           contributor: [...(contributorsByLocale.get(l.locale) ?? [])],
+          updatedAt: updatedAtByLocale.get(l.locale)?.toISOString() ?? null,
         };
       }
 

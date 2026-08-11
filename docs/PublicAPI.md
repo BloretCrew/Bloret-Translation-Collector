@@ -122,6 +122,7 @@ curl -sS "https://tr.bloret.net/api/v1/orgs/bloret/projects/bloret-launcher/mani
 | `name` | string | 显示名（项目里配置的 `displayName`，否则为 locale 代码） |
 | `file` | string | 约定导出名：`{locale}.json`（展示用，不代表磁盘上真实源路径） |
 | `contributor` | string[] | 该语言下提交过**非空译文建议**的用户名（去重） |
+| `updatedAt` | string \| null | 该语言最新译文建议更新时间（ISO 8601）；尚无建议时为 `null` |
 
 仅包含项目中 **enabled** 的目标语言。
 
