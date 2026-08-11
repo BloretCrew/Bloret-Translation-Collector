@@ -24,6 +24,7 @@ import {
   listEmojiShortcuts,
   listStringsWithWorkflow,
   listSuggestionsForString,
+  normalizeReactionEmoji,
   toggleReaction,
   toggleVote,
   upsertMySuggestion,
@@ -43,6 +44,17 @@ afterAll(async () => {
 });
 
 describe("collaboration workflow", () => {
+  it("normalizes reaction emoji tokens like BBS", () => {
+    expect(normalizeReactionEmoji("👍")).toBe("👍");
+    expect(normalizeReactionEmoji("  ❤️  ")).toBe("❤️");
+    expect(normalizeReactionEmoji("")).toBeNull();
+    expect(normalizeReactionEmoji("   ")).toBeNull();
+    expect(normalizeReactionEmoji(null)).toBeNull();
+    expect(normalizeReactionEmoji(123)).toBeNull();
+    expect(normalizeReactionEmoji("a".repeat(40))).toBeNull();
+    expect(normalizeReactionEmoji("bad\nemoji")).toBeNull();
+  });
+
   it("allows multi-user suggestions, voting, and approval", async () => {
     const stamp = Date.now().toString(36);
     const [userA] = await db

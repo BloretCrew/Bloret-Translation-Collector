@@ -668,13 +668,14 @@
   "已批准 {approved} 条（另有 {already} 条本已是该译者定稿）": "Approved {approved} (another {already} already final by this translator)",
   "无效的回应参数": "Invalid reaction parameters",
   "无效的表情": "Invalid emoji",
-  "添加表情回应": "Add emoji reaction",
+  "添加表情回应": "Add reaction",
   "更多表情": "More emojis",
   "表情库加载失败": "Failed to load emoji library",
   "搜索表情…": "Search emojis…",
-  "搜索结果：{q}": "Results for {q}",
+  "搜索结果：{q}": "Results: {q}",
   "未找到相关表情": "No matching emojis",
   "回应失败": "Reaction failed",
   " 等 {count} 人": " and {count} others",
-  "{users} 对这条内容发出了表情 {emoji}": "{users} reacted with {emoji}"
+  "{users} 对这条内容发出了表情 {emoji}": "{users} reacted with {emoji}",
+  "请先登录": "Please sign in"
 }
