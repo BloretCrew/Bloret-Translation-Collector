@@ -24,15 +24,14 @@ export async function machineTranslate(params: {
   targetLocale: string;
 }): Promise<MtResult> {
   const text = params.text.trim();
-  if (!text) return { ok: false, error: "源文为空", code: "EMPTY" };
+  if (!text) return { ok: false, error: t('源文为空'), code: "EMPTY" };
 
   const cfg = loadConfig();
   const mt = cfg.mt;
   if (!mt?.enabled || !mt.endpoint) {
     return {
       ok: false,
-      error:
-        "机器翻译未启用。请在 config.json 中配置 mt.enabled=true 与 mt.endpoint（LibreTranslate 兼容接口）。",
+      error: t('机器翻译未启用。请在 config.json 中配置 mt.enabled=true 与 mt.endpoint（LibreTranslate 兼容接口）。'),
       code: "DISABLED",
     };
   }
@@ -40,7 +39,7 @@ export async function machineTranslate(params: {
   const source = mtLang(mt.defaultSource || params.sourceLocale || "auto");
   const target = mtLang(params.targetLocale);
   if (!target || target === "auto") {
-    return { ok: false, error: "目标语言无效", code: "BAD_TARGET" };
+    return { ok: false, error: t('目标语言无效'), code: "BAD_TARGET" };
   }
 
   try {

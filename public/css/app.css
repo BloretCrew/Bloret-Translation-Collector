@@ -2428,6 +2428,23 @@ button.is-btc-busy .loading-spinner {
 }
 
 /* —— User settings: editor shortcuts —— */
+.settings-panel .blora-table-wrap {
+  overflow-x: auto;
+  max-width: 100%;
+}
+.settings-shortcuts-table {
+  min-width: 32rem;
+  width: 100%;
+}
+.settings-shortcut__label,
+.settings-shortcut__hint {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+.settings-shortcut__kbd {
+  white-space: nowrap;
+}
+
 .settings-panel__head {
   display: flex;
   flex-wrap: wrap;

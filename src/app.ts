@@ -8,11 +8,11 @@ import { loadConfig } from "@/lib/config";
 import { t, i18nMiddleware } from "@/lib/i18n";
 import { Logger } from "@/lib/logger";
 import {
-  COMMON_LOCALES,
   languageLabel,
   languageShortLabel,
   localeLabel,
   localeShortLabel,
+  localeOptionsWithExtras,
 } from "@/lib/locales";
 import { sfIcon, sfIconUrl } from "@/lib/sf-icon";
 import { authRouter } from "@/routes/auth";
@@ -74,7 +74,7 @@ export function createApp() {
         }
       : { isLoggedIn: false };
     res.locals.path = req.path;
-    res.locals.COMMON_LOCALES = COMMON_LOCALES;
+    res.locals.COMMON_LOCALES = localeOptionsWithExtras();
     res.locals.localeLabel = localeLabel;
     res.locals.localeShortLabel = localeShortLabel;
     res.locals.languageLabel = languageLabel;

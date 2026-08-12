@@ -1,4 +1,5 @@
 import { Router } from "express";
+import { t } from "@/lib/i18n";
 import { eq } from "drizzle-orm";
 import { getOAuthAuthorizeUrl, verifyOAuthCode } from "@/lib/auth/passport";
 import { isPassportConfigured, getEnv } from "@/lib/env";
@@ -59,7 +60,7 @@ authRouter.get("/auth/login", async (req, res, next) => {
     if (!allowDev) {
       return res.status(503).json({
         error:
-          "PassPort OAuth 未配置。请在 config.json 中填写 passport.appId / passport.appSecret，或使用 ?dev=1 开发登录。",
+          t('PassPort OAuth 未配置。请在 config.json 中填写 passport.appId / passport.appSecret，或使用 ?dev=1 开发登录。'),
       });
     }
 

@@ -321,7 +321,7 @@ collaborationRouter.post(
       if (!unit) return notFound(res, t('字符串不存在'));
 
       const parsed = stringCommentSchema.safeParse(req.body);
-      if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
+      if (!parsed.success) return jsonError(res, t(parsed.error.errors[0]?.message ?? '参数错误'));
 
       const result = await addComment({
         stringId: unit.id,
@@ -457,7 +457,7 @@ collaborationRouter.post(
       if (!s) return notFound(res, t('建议不存在'));
 
       const parsed = suggestionCommentSchema.safeParse(req.body);
-      if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
+      if (!parsed.success) return jsonError(res, t(parsed.error.errors[0]?.message ?? '参数错误'));
 
       const result = await addSuggestionComment({
         suggestionId: s.id,
@@ -563,7 +563,7 @@ async function putSuggestion(req: import("express").Request, res: import("expres
   if (!unit) return notFound(res, t('字符串不存在'));
 
   const parsed = saveSuggestionSchema.safeParse(req.body);
-  if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
+  if (!parsed.success) return jsonError(res, t(parsed.error.errors[0]?.message ?? '参数错误'));
 
   const row = await upsertMySuggestion({
     stringId: unit.id,

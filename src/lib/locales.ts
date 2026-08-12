@@ -63,18 +63,21 @@ export function languageLabel(
   displayName?: string | null,
   opts?: { withCode?: boolean },
 ): string {
-  if (!locale) return (displayName || "").trim();
+  if (!locale) return t((displayName || "").trim()) || (displayName || "").trim();
   const custom = (displayName || "").trim();
   const known = byCode.get(locale.toLowerCase());
   const withCode = opts?.withCode !== false;
 
-  // Distinct human name from project settings / custom language.
-  if (custom && custom.toLowerCase() !== locale.toLowerCase()) {
-    return withCode ? `${custom} (${locale})` : custom;
-  }
+  // Known catalog locales always use i18n labels (ignore stored Chinese displayName).
   if (known) {
     const label = t(known.label);
     return withCode ? `${label} (${known.code})` : label;
+  }
+
+  // Custom / unknown locale: translate displayName when it is a source-as-key string.
+  if (custom && custom.toLowerCase() !== locale.toLowerCase()) {
+    const label = t(custom);
+    return withCode ? `${label} (${locale})` : label;
   }
   // Custom locale without a usable display name — last resort is the code.
   return custom || locale;
@@ -103,7 +106,7 @@ export function localeOptionsWithExtras(
       labelByCode[code] ||
       labelByCode[code.toLowerCase()] ||
       Object.entries(labelByCode).find(([k]) => k.toLowerCase() === code.toLowerCase())?.[1];
-    const label = (fromMap || "").trim() || code;
+    const label = t(((fromMap || "").trim() || code));
     extras.push({ code, label });
   }
   // Return copies with translated labels for current request

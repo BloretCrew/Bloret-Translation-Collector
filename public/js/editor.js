@@ -1798,7 +1798,7 @@
       body.innerHTML = "";
       const title = document.createElement("div");
       title.className = "btc-emoji-grid-title";
-      title.textContent = cat.name;
+      title.textContent = BTC.t(cat.name);
       body.appendChild(title);
       const grid = document.createElement("div");
       grid.className = "btc-emoji-grid";

@@ -219,7 +219,7 @@ extrasRouter.post(
       if (!canManageProjects(access.role)) return forbidden(res);
 
       const parsed = createTaskSchema.safeParse(req.body);
-      if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
+      if (!parsed.success) return jsonError(res, t(parsed.error.errors[0]?.message ?? '参数错误'));
 
       const [user] = await db
         .select()

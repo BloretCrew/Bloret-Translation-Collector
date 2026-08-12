@@ -383,7 +383,7 @@ export async function buildProjectExport(params: {
   | { error: string }
 > {
   const { files, projectId, locale, mode, pack, filenameMode, projectSlug, fallbackMt } = params;
-  if (files.length === 0) return { error: "项目中没有源文件" };
+  if (files.length === 0) return { error: t('项目中没有源文件') };
 
   const mtMap = fallbackMt
     ? await getProjectMachineTranslations(projectId, locale)
@@ -411,7 +411,7 @@ export async function buildProjectExport(params: {
     });
   }
 
-  if (exported.length === 0) return { error: "没有可导出的文件" };
+  if (exported.length === 0) return { error: t('没有可导出的文件') };
 
   const fidelity = exported.every((e) => e.fidelity === "exact")
     ? ("exact" as const)
@@ -454,7 +454,7 @@ export async function buildProjectExport(params: {
   // bundle: JSON only
   if (exported.some((e) => e.format !== "json")) {
     return {
-      error: "Bundle 导出仅支持 JSON 源文件；请改用 pack=zip",
+      error: t('Bundle 导出仅支持 JSON 源文件；请改用 pack=zip'),
     };
   }
 

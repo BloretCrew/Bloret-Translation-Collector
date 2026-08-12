@@ -1,6 +1,7 @@
 /**
  * Bloret Image Host client (https://img.bloret.net/api/doc).
  * All app image uploads should go through this module.
+ * Error messages are Chinese source-as-key strings; callers run t() at the API boundary.
  */
 import { loadConfig } from "@/lib/config";
 import { Logger } from "@/lib/logger";

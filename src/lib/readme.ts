@@ -1,3 +1,4 @@
+import { t } from "@/lib/i18n";
 import { marked } from "marked";
 
 const MAX_BYTES = 512 * 1024;
@@ -148,10 +149,10 @@ export async function fetchReadmeUrl(
 
       if ([301, 302, 303, 307, 308].includes(res.status)) {
         const loc = res.headers.get("location");
-        if (!loc) return { ok: false, error: "重定向缺少 Location" };
+        if (!loc) return { ok: false, error: t('重定向缺少 Location') };
         const next = new URL(loc, current).toString();
         const safe = normalizeUrl(next);
-        if (!safe) return { ok: false, error: "重定向目标不安全或非 HTTPS" };
+        if (!safe) return { ok: false, error: t('重定向目标不安全或非 HTTPS') };
         current = safe;
         continue;
       }
@@ -183,14 +184,14 @@ export async function fetchReadmeUrl(
       return ok;
     } catch (e) {
       if (e instanceof Error && e.name === "AbortError") {
-        return { ok: false, error: "请求超时" };
+        return { ok: false, error: t('请求超时') };
       }
-      return { ok: false, error: e instanceof Error ? e.message : "网络错误" };
+      return { ok: false, error: e instanceof Error ? e.message : t('网络错误') };
     } finally {
       clearTimeout(timer);
     }
   }
-  return { ok: false, error: "重定向次数过多" };
+  return { ok: false, error: t('重定向次数过多') };
 }
 
 export function renderMarkdown(md: string): string {

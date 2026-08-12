@@ -25,12 +25,12 @@ describe("locales", () => {
   });
 
   it("prefers project displayName for custom languages", () => {
-    expect(languageShortLabel("gt", "赣语")).toBe("赣语");
+    expect(languageShortLabel("gt", "赣语")).toBe("赣语"); // custom: t() falls back to key
     expect(languageLabel("gt", "赣语")).toBe("赣语 (gt)");
     expect(languageShortLabel("gt", null)).toBe("gt");
     expect(languageShortLabel("gt", "gt")).toBe("gt");
     expect(languageShortLabel("en", null)).toBe("英语");
-    expect(languageShortLabel("en", "English")).toBe("English");
+    expect(languageShortLabel("en", "English")).toBe("英语"); // catalog wins over stored displayName
   });
 
   it("uses label map for extras", () => {

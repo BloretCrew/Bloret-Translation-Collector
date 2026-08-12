@@ -375,7 +375,7 @@ orgsRouter.post("/v1/orgs", async (req, res, next) => {
 
     const parsed = createOrgSchema.safeParse(rawBody);
     if (!parsed.success) {
-      return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
+      return jsonError(res, t(parsed.error.errors[0]?.message ?? '参数错误'));
     }
 
     const { name, slug, description, visibility } = parsed.data;
@@ -413,10 +413,10 @@ orgsRouter.post("/v1/orgs", async (req, res, next) => {
     } catch (e) {
       const msg = e instanceof Error ? e.message : "";
       if (msg.includes("unique") || msg.includes("duplicate")) {
-        return jsonError(res, "组织 slug 已存在", 409);
+        return jsonError(res, t('组织 slug 已存在'), 409);
       }
       Logger.error(e);
-      return jsonError(res, "创建失败", 500);
+      return jsonError(res, t('创建失败'), 500);
     }
   } catch (err) {
     next(err);
@@ -431,7 +431,7 @@ orgsRouter.get("/v1/orgs/:orgSlug", async (req, res, next) => {
 
     const access = await requireOrgAccess(req.params.orgSlug, session.userId!);
     if ("error" in access) {
-      if (access.error === "not_found") return notFound(res, "组织不存在");
+      if (access.error === "not_found") return notFound(res, t('组织不存在'));
       return forbidden(res);
     }
 
@@ -458,15 +458,15 @@ orgsRouter.patch("/v1/orgs/:orgSlug", async (req, res, next) => {
 
     const access = await requireOrgAccess(req.params.orgSlug, session.userId!);
     if ("error" in access) {
-      if (access.error === "not_found") return notFound(res, "组织不存在");
+      if (access.error === "not_found") return notFound(res, t('组织不存在'));
       return forbidden(res);
     }
     if (!canManageOrg(access.role) || !access.membership) {
-      return forbidden(res, "仅所有者可修改组织");
+      return forbidden(res, t('仅所有者可修改组织'));
     }
 
     const parsed = updateOrgSchema.safeParse(req.body);
-    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
+    if (!parsed.success) return jsonError(res, t(parsed.error.errors[0]?.message ?? '参数错误'));
 
     const [updated] = await db
       .update(organizations)
@@ -514,11 +514,11 @@ orgsRouter.post("/v1/orgs/:orgSlug/icon", async (req, res, next) => {
 
     const access = await requireOrgAccess(req.params.orgSlug, session.userId!);
     if ("error" in access) {
-      if (access.error === "not_found") return notFound(res, "组织不存在");
+      if (access.error === "not_found") return notFound(res, t('组织不存在'));
       return forbidden(res);
     }
     if (!canManageOrg(access.role) || !access.membership) {
-      return forbidden(res, "仅所有者可修改组织图标");
+      return forbidden(res, t('仅所有者可修改组织图标'));
     }
 
     const dataUrl = typeof req.body?.imageBase64 === "string" ? req.body.imageBase64 : "";
@@ -534,8 +534,8 @@ orgsRouter.post("/v1/orgs/:orgSlug/icon", async (req, res, next) => {
         contentType: parsed.contentType,
       });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : t('图床上传失败');
-      return jsonError(res, msg, 502);
+      const msg = e instanceof Error ? e.message : '图床上传失败';
+      return jsonError(res, t(msg), 502);
     }
 
     const iconUrl = absoluteImageUrl(uploaded.url);
@@ -562,11 +562,11 @@ orgsRouter.delete("/v1/orgs/:orgSlug/icon", async (req, res, next) => {
 
     const access = await requireOrgAccess(req.params.orgSlug, session.userId!);
     if ("error" in access) {
-      if (access.error === "not_found") return notFound(res, "组织不存在");
+      if (access.error === "not_found") return notFound(res, t('组织不存在'));
       return forbidden(res);
     }
     if (!canManageOrg(access.role) || !access.membership) {
-      return forbidden(res, "仅所有者可修改组织图标");
+      return forbidden(res, t('仅所有者可修改组织图标'));
     }
 
     await db
@@ -588,7 +588,7 @@ orgsRouter.get("/v1/orgs/:orgSlug/members", async (req, res, next) => {
 
     const access = await requireOrgAccess(req.params.orgSlug, session.userId!);
     if ("error" in access) {
-      if (access.error === "not_found") return notFound(res, "组织不存在");
+      if (access.error === "not_found") return notFound(res, t('组织不存在'));
       return forbidden(res);
     }
 
@@ -618,13 +618,13 @@ orgsRouter.post("/v1/orgs/:orgSlug/members", async (req, res, next) => {
 
     const access = await requireOrgAccess(req.params.orgSlug, session.userId!);
     if ("error" in access) {
-      if (access.error === "not_found") return notFound(res, "组织不存在");
+      if (access.error === "not_found") return notFound(res, t('组织不存在'));
       return forbidden(res);
     }
-    if (!canManageOrg(access.role)) return forbidden(res, "仅所有者可管理成员");
+    if (!canManageOrg(access.role)) return forbidden(res, t('仅所有者可管理成员'));
 
     const parsed = addMemberSchema.safeParse(req.body);
-    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
+    if (!parsed.success) return jsonError(res, t(parsed.error.errors[0]?.message ?? '参数错误'));
 
     const { username, role } = parsed.data;
 
@@ -653,7 +653,7 @@ orgsRouter.post("/v1/orgs/:orgSlug/members", async (req, res, next) => {
     } catch (e) {
       const msg = e instanceof Error ? e.message : "";
       if (msg.includes("unique") || msg.includes("duplicate")) {
-        return jsonError(res, "该用户已是成员", 409);
+        return jsonError(res, t('该用户已是成员'), 409);
       }
       throw e;
     }
@@ -669,13 +669,13 @@ orgsRouter.patch("/v1/orgs/:orgSlug/members/:userId", async (req, res, next) => 
 
     const access = await requireOrgAccess(req.params.orgSlug, session.userId!);
     if ("error" in access) {
-      if (access.error === "not_found") return notFound(res, "组织不存在");
+      if (access.error === "not_found") return notFound(res, t('组织不存在'));
       return forbidden(res);
     }
-    if (!canManageOrg(access.role)) return forbidden(res, "仅所有者可修改角色");
+    if (!canManageOrg(access.role)) return forbidden(res, t('仅所有者可修改角色'));
 
     const parsed = updateMemberSchema.safeParse(req.body);
-    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
+    if (!parsed.success) return jsonError(res, t(parsed.error.errors[0]?.message ?? '参数错误'));
 
     const [target] = await db
       .select()
@@ -688,8 +688,8 @@ orgsRouter.patch("/v1/orgs/:orgSlug/members/:userId", async (req, res, next) => 
       )
       .limit(1);
 
-    if (!target) return notFound(res, "成员不存在");
-    if (target.role === "owner") return jsonError(res, "不能修改所有者角色");
+    if (!target) return notFound(res, t('成员不存在'));
+    if (target.role === "owner") return jsonError(res, t('不能修改所有者角色'));
 
     const [updated] = await db
       .update(organizationMembers)
@@ -710,10 +710,10 @@ orgsRouter.delete("/v1/orgs/:orgSlug/members/:userId", async (req, res, next) =>
 
     const access = await requireOrgAccess(req.params.orgSlug, session.userId!);
     if ("error" in access) {
-      if (access.error === "not_found") return notFound(res, "组织不存在");
+      if (access.error === "not_found") return notFound(res, t('组织不存在'));
       return forbidden(res);
     }
-    if (!canManageOrg(access.role)) return forbidden(res, "仅所有者可移除成员");
+    if (!canManageOrg(access.role)) return forbidden(res, t('仅所有者可移除成员'));
 
     const [target] = await db
       .select()
@@ -726,8 +726,8 @@ orgsRouter.delete("/v1/orgs/:orgSlug/members/:userId", async (req, res, next) =>
       )
       .limit(1);
 
-    if (!target) return notFound(res, "成员不存在");
-    if (target.role === "owner") return jsonError(res, "不能移除所有者");
+    if (!target) return notFound(res, t('成员不存在'));
+    if (target.role === "owner") return jsonError(res, t('不能移除所有者'));
 
     await db.delete(organizationMembers).where(eq(organizationMembers.id, target.id));
     return jsonOk(res, { ok: true });
@@ -744,7 +744,7 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects", async (req, res, next) => {
 
     const access = await requireOrgAccess(req.params.orgSlug, session.userId!);
     if ("error" in access) {
-      if (access.error === "not_found") return notFound(res, "组织不存在");
+      if (access.error === "not_found") return notFound(res, t('组织不存在'));
       return forbidden(res);
     }
 
@@ -801,7 +801,7 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects", async (req, res, next) => {
 
     const access = await requireOrgAccess(req.params.orgSlug, session.userId!, "manager");
     if ("error" in access) {
-      if (access.error === "not_found") return notFound(res, "组织不存在");
+      if (access.error === "not_found") return notFound(res, t('组织不存在'));
       return forbidden(res);
     }
     if (!canManageProjects(access.role)) return forbidden(res);
@@ -816,7 +816,7 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects", async (req, res, next) => {
     }
 
     const parsed = createProjectSchema.safeParse(rawBody);
-    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
+    if (!parsed.success) return jsonError(res, t(parsed.error.errors[0]?.message ?? '参数错误'));
 
     const data = parsed.data;
 
@@ -863,10 +863,10 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects", async (req, res, next) => {
     } catch (e) {
       const msg = e instanceof Error ? e.message : "";
       if (msg.includes("unique") || msg.includes("duplicate")) {
-        return jsonError(res, "项目 slug 已存在", 409);
+        return jsonError(res, t('项目 slug 已存在'), 409);
       }
       Logger.error(e);
-      return jsonError(res, "创建失败", 500);
+      return jsonError(res, t('创建失败'), 500);
     }
   } catch (err) {
     next(err);
@@ -932,7 +932,7 @@ orgsRouter.patch("/v1/orgs/:orgSlug/projects/:projectSlug", async (req, res, nex
     if (!canManageProjects(access.role)) return forbidden(res);
 
     const parsed = updateProjectSchema.safeParse(req.body);
-    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
+    if (!parsed.success) return jsonError(res, t(parsed.error.errors[0]?.message ?? '参数错误'));
 
     const [updated] = await db
       .update(projects)
@@ -1007,8 +1007,8 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/icon", async (req, res,
         contentType: parsed.contentType,
       });
     } catch (e) {
-      const msg = e instanceof Error ? e.message : t('图床上传失败');
-      return jsonError(res, msg, 502);
+      const msg = e instanceof Error ? e.message : '图床上传失败';
+      return jsonError(res, t(msg), 502);
     }
 
     const iconUrl = absoluteImageUrl(uploaded.url);
@@ -1102,7 +1102,7 @@ orgsRouter.put("/v1/orgs/:orgSlug/projects/:projectSlug/languages", async (req, 
     if (!canManageProjects(access.role)) return forbidden(res);
 
     const parsed = setLanguagesSchema.safeParse(req.body);
-    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
+    if (!parsed.success) return jsonError(res, t(parsed.error.errors[0]?.message ?? '参数错误'));
 
     const languageRows = parsed.data.languages
       ? parsed.data.languages.map((language) => ({
@@ -1244,7 +1244,7 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/files", async (req, res
     if (!canUploadFiles(access.role)) return forbidden(res);
 
     const parsed = uploadFileSchema.safeParse(req.body);
-    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
+    if (!parsed.success) return jsonError(res, t(parsed.error.errors[0]?.message ?? '参数错误'));
 
     const result = await upsertSourceFile({
       projectId: access.project.id,
@@ -1254,7 +1254,7 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/files", async (req, res
     });
 
     if ("error" in result && result.error) {
-      return jsonError(res, result.error, 400);
+      return jsonError(res, t(result.error), 400);
     }
 
     return jsonCreated(res, result);
@@ -1282,7 +1282,7 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/files/batch", async (re
     if (!canUploadFiles(access.role)) return forbidden(res);
 
     const parsed = uploadBatchSchema.safeParse(req.body);
-    if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
+    if (!parsed.success) return jsonError(res, t(parsed.error.errors[0]?.message ?? '参数错误'));
 
     const results: Array<
       | {
@@ -1314,7 +1314,7 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/files/batch", async (re
         results.push({
           path: file.path,
           ok: false,
-          error: result.error,
+          error: t(result.error),
           warnings: "warnings" in result ? (result.warnings as string[]) : undefined,
         });
       } else {
@@ -1470,7 +1470,7 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/mt-files", async (req, 
 
     const parsed = mtFileSchema.safeParse(req.body);
     if (!parsed.success) {
-      return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
+      return jsonError(res, t(parsed.error.errors[0]?.message ?? '参数错误'));
     }
     const { locale, fileId, content } = parsed.data;
 
@@ -1486,7 +1486,7 @@ orgsRouter.post("/v1/orgs/:orgSlug/projects/:projectSlug/mt-files", async (req, 
     }
 
     const parsedMt = parseMtFile(content);
-    if (parsedMt.error) return jsonError(res, parsedMt.error);
+    if (parsedMt.error) return jsonError(res, t(parsedMt.error));
 
     const result = await upsertMachineTranslations({
       projectId: access.project.id,
@@ -1621,7 +1621,7 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects/:projectSlug/export", async (req, res
     const fallbackMt =
       req.query.fallbackMt === "1" || req.query.fallbackMt === "true";
 
-    if (!localeRaw) return jsonError(res, "缺少 locale 参数");
+    if (!localeRaw) return jsonError(res, t('缺少 locale 参数'));
     const localeParsed = localeSchema.safeParse(localeRaw);
     if (!localeParsed.success) return jsonError(res, t('无效语言代码'));
     const locale = localeParsed.data;
@@ -1633,7 +1633,7 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects/:projectSlug/export", async (req, res
         and(eq(projectLanguages.projectId, access.project.id), eq(projectLanguages.locale, locale)),
       )
       .limit(1);
-    if (!lang) return jsonError(res, "语言未在项目中启用");
+    if (!lang) return jsonError(res, t('语言未在项目中启用'));
 
     let files = await db
       .select({
@@ -1649,7 +1649,7 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects/:projectSlug/export", async (req, res
       if (!files.length) return notFound(res, t('文件不存在'));
     }
 
-    if (files.length === 0) return jsonError(res, "项目中没有源文件");
+    if (files.length === 0) return jsonError(res, t('项目中没有源文件'));
 
     // Multi-file: default to zip when pack not specified
     if (files.length > 1 && typeof req.query.pack !== "string") {
@@ -1671,7 +1671,7 @@ orgsRouter.get("/v1/orgs/:orgSlug/projects/:projectSlug/export", async (req, res
       fallbackMt,
     });
 
-    if ("error" in payload) return jsonError(res, payload.error, 400);
+    if ("error" in payload) return jsonError(res, t(payload.error), 400);
 
     res.setHeader("Content-Type", payload.contentType);
     res.setHeader(

@@ -119,7 +119,7 @@ glossaryRouter.post(
       if (!canSuggestTranslations(access.role)) return forbidden(res);
 
       const parsed = createTermSchema.safeParse(req.body);
-      if (!parsed.success) return jsonError(res, parsed.error.errors[0]?.message ?? t('参数错误'));
+      if (!parsed.success) return jsonError(res, t(parsed.error.errors[0]?.message ?? '参数错误'));
 
       try {
         const term = await createGlossaryTerm({
