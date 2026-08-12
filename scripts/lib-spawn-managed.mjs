@@ -17,11 +17,20 @@ import { spawn } from "child_process";
  */
 export function spawnManaged(command, args, options = {}) {
   const useGroup = process.platform !== "win32";
+  // MCSM / process supervisors track the direct child PID. Detaching into a new
+  // session makes them think the instance exited immediately ("实例已停止") and
+  // burn through autoRestartMaxTimes. Keep the child in the same group by default;
+  // pass detached:true only for rare cases that need a new session.
+  const detached =
+    options.detached === true
+      ? true
+      : options.detached === false
+        ? false
+        : false;
 
   const child = spawn(command, args, {
     ...options,
-    // New session/process group leader so we can signal -pid
-    detached: useGroup ? true : Boolean(options.detached),
+    detached,
     stdio: options.stdio ?? "inherit",
   });
 
@@ -34,9 +43,9 @@ export function spawnManaged(command, args, options = {}) {
 
   function killTree(signal) {
     if (!child.pid) return;
-    if (useGroup) {
+    // Only signal the process group when we actually detached as group leader
+    if (useGroup && detached) {
       try {
-        // Negative PID = process group
         process.kill(-child.pid, signal);
         return;
       } catch {
@@ -79,7 +88,7 @@ export function spawnManaged(command, args, options = {}) {
   process.on("exit", () => {
     if (!exited && child.pid) {
       try {
-        if (useGroup) process.kill(-child.pid, "SIGKILL");
+        if (useGroup && detached) process.kill(-child.pid, "SIGKILL");
         else child.kill("SIGKILL");
       } catch {
         /* */

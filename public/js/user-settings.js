@@ -175,9 +175,14 @@
     const conflicts = api.findConflicts(draft);
     if (conflicts.length) {
       const msg = conflicts
-        .map(({ a, b }) => `「${api.ACTIONS[a].label}」与「${api.ACTIONS[b].label}」冲突`)
+        .map(({ a, b }) =>
+          BTC.t('「{a}」与「{b}」冲突', {
+            a: api.ACTIONS[a].label,
+            b: api.ACTIONS[b].label,
+          }),
+        )
         .join("；");
-      showAlert(`快捷键冲突：${msg}`);
+      showAlert(BTC.t('快捷键冲突：{msg}', { msg }));
       return;
     }
     api.save(draft);

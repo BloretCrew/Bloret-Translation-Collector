@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bloret BBS · 圆环加载动画设计</title>
+  <script>
+    (function () {
+      var theme = localStorage.getItem('bb-spinner-doc-theme') || 'dark';
+      document.documentElement.classList.add(theme);
+    })();
+  </script>
+  <style>
+    :root {
+      --bg: #f6f7f9;
+      --bg-elevated: #ffffff;
+      --fg: #1a1a1a;
+      --fg-muted: #6b7280;
+      --border: #e5e7eb;
+      --primary: #0078d4;
+      --primary-soft: rgba(0, 120, 212, 0.12);
+      --code-bg: #f3f4f6;
+      --shadow: 0 8px 28px rgba(15, 23, 42, 0.08);
+      --radius: 12px;
+      --font: "SF Pro Display", "SF Pro Text", "PingFang SC", "Microsoft YaHei",
+        "Segoe UI", system-ui, sans-serif;
+      --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
+    }
+    html.dark {
+      --bg: #0f1114;
+      --bg-elevated: #1a1d22;
+      --fg: #e8eaed;
+      --fg-muted: #9aa0a6;
+      --border: rgba(255, 255, 255, 0.08);
+      --primary: #4fc3f7;
+      --primary-soft: rgba(79, 195, 247, 0.12);
+      --code-bg: #12151a;
+      --shadow: 0 12px 40px rgba(0, 0, 0, 0.45);
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: var(--font);
+      font-size: 15px;
+      line-height: 1.65;
+      color: var(--fg);
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, var(--primary-soft), transparent),
+        var(--bg);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border);
+      background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+      backdrop-filter: blur(12px);
+    }
+    .topbar-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+    .topbar-brand .dot {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: var(--primary);
+      box-shadow: 0 0 0 4px var(--primary-soft);
+    }
+    .btn {
+      appearance: none;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      color: var(--fg);
+      border-radius: 8px;
+      padding: 6px 12px;
+      font-size: 13px;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .btn:hover { border-color: var(--primary); color: var(--primary); }
+
+    main {
+      max-width: 720px;
+      margin: 0 auto;
+      padding: 36px 20px 72px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 1.85rem;
+      font-weight: 700;
+      letter-spacing: -0.03em;
+      line-height: 1.2;
+    }
+    .subtitle {
+      margin: 0 0 24px;
+      color: var(--fg-muted);
+      font-size: 1.05rem;
+    }
+    h2 {
+      margin: 40px 0 12px;
+      padding-top: 8px;
+      font-size: 1.25rem;
+      letter-spacing: -0.02em;
+      border-top: 1px solid var(--border);
+    }
+    h2:first-of-type { border-top: none; margin-top: 20px; }
+    h3 { margin: 24px 0 10px; font-size: 1.02rem; }
+    p { margin: 0 0 14px; }
+    ul { margin: 0 0 16px; padding-left: 1.35em; }
+    li { margin-bottom: 6px; }
+    strong { font-weight: 600; }
+
+    .meta-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 24px;
+    }
+    .tag {
+      display: inline-flex;
+      padding: 4px 10px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+      background: var(--bg-elevated);
+      font-size: 12px;
+      color: var(--fg-muted);
+    }
+    .tag strong { color: var(--fg); }
+
+    .card {
+      background: var(--bg-elevated);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin: 16px 0 20px;
+    }
+    .card-title {
+      margin: 0 0 12px;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--fg-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+    }
+
+    table.spec {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13.5px;
+      margin: 12px 0 18px;
+    }
+    table.spec th,
+    table.spec td {
+      text-align: left;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: top;
+    }
+    table.spec th {
+      width: 30%;
+      color: var(--fg-muted);
+      font-weight: 500;
+      background: color-mix(in srgb, var(--bg) 60%, transparent);
+    }
+    table.spec code {
+      font-family: var(--mono);
+      font-size: 12px;
+      background: var(--code-bg);
+      padding: 1px 5px;
+      border-radius: 4px;
+    }
+
+    pre {
+      margin: 12px 0 18px;
+      padding: 14px 16px;
+      overflow-x: auto;
+      background: var(--code-bg);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      font-family: var(--mono);
+      font-size: 12.5px;
+      line-height: 1.55;
+    }
+
+    .callout {
+      border-left: 3px solid var(--primary);
+      background: var(--primary-soft);
+      padding: 12px 14px;
+      border-radius: 0 8px 8px 0;
+      margin: 16px 0;
+      font-size: 14px;
+    }
+    .callout strong { color: var(--primary); }
+
+    .demo-stage {
+      display: flex;
+      flex-direction: row;
+      align-items: center;
+      justify-content: center;
+      gap: 36px;
+      min-height: 140px;
+      border-radius: 10px;
+      margin-bottom: 4px;
+      background: #f0f2f5;
+    }
+    html.dark .demo-stage { background: #16191e; }
+
+    .demo-item { text-align: center; }
+    .demo-item .cap {
+      margin-top: 10px;
+      font-size: 11px;
+      color: var(--fg-muted);
+    }
+
+    /* ===== 圆环 Spinner（与生产一致） ===== */
+    .loading-spinner {
+      width: 32px;
+      height: 32px;
+      border: 3px solid var(--border-ring, #e0e0e0);
+      border-top-color: var(--primary-ring, #0078d4);
+      border-radius: 50%;
+      animation: spin 0.8s linear infinite;
+    }
+    html.dark .loading-spinner {
+      --border-ring: #3a3a3a;
+      --primary-ring: #4fc3f7;
+    }
+    .loading-spinner.sm { width: 16px; height: 16px; border-width: 2px; }
+    .loading-spinner.md { width: 22px; height: 22px; border-width: 3px; }
+    .loading-spinner.lg { width: 38px; height: 38px; border-width: 4px; }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    .page-loading {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+      min-height: 180px;
+      color: var(--fg-muted);
+      font-size: 14px;
+    }
+
+    .footer-note {
+      margin-top: 40px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: 12.5px;
+      color: var(--fg-muted);
+    }
+    .path { font-family: var(--mono); font-size: 12px; }
+  </style>
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-brand">
+      <span class="dot" aria-hidden="true"></span>
+      <span>Bloret BBS · 圆环加载动画</span>
+    </div>
+    <button class="btn" type="button" id="theme-toggle">切换主题</button>
+  </header>
+
+  <main>
+    <h1>圆环加载动画（Spinner）</h1>
+    <p class="subtitle">
+      通用 indeterminate 加载环：圆形描边，仅顶部为品牌主色，整环匀速旋转。
+    </p>
+
+    <div class="meta-row">
+      <span class="tag"><strong>类名</strong> .loading-spinner</span>
+      <span class="tag"><strong>关键帧</strong> spin</span>
+      <span class="tag"><strong>周期</strong> 0.8s</span>
+      <span class="tag"><strong>样式表</strong> public/css/main.css</span>
+    </div>
+
+    <h2 id="preview">1. 实时预览</h2>
+    <div class="card">
+      <div class="card-title">尺寸变体</div>
+      <div class="demo-stage">
+        <div class="demo-item">
+          <div class="loading-spinner sm"></div>
+          <div class="cap">16px · 2px 边<br>行内 / AI</div>
+        </div>
+        <div class="demo-item">
+          <div class="loading-spinner md"></div>
+          <div class="cap">22px · 3px 边<br>管理页</div>
+        </div>
+        <div class="demo-item">
+          <div class="loading-spinner"></div>
+          <div class="cap">32px · 3px 边<br>默认</div>
+        </div>
+        <div class="demo-item">
+          <div class="loading-spinner lg"></div>
+          <div class="cap">38px · 4px 边<br>审核浮层</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">页面加载占位（常用布局）</div>
+      <div class="page-loading">
+        <div class="loading-spinner"></div>
+        <div>加载中...</div>
+      </div>
+    </div>
+
+    <h2 id="design">2. 设计说明</h2>
+    <p>
+      这是 Fluent 风格的 <strong>indeterminate progress ring</strong>：
+      不表示百分比，只表示「系统仍在工作」。实现上不依赖图片或 SVG，
+      用 CSS 圆环 + 单边高亮 + 旋转即可。
+    </p>
+    <ul>
+      <li>完整圆环用浅色描边作轨道。</li>
+      <li>仅 <code>border-top</code> 使用主色，旋转时形成「追逐」感。</li>
+      <li>时长 0.8s、线性、无限循环——比 1s 稍快，反馈更利落，又不过于焦躁。</li>
+    </ul>
+
+    <div class="callout">
+      <strong>原则：</strong>
+      等待态安静、可循环、不抢主内容；错误或超时时应换成文案，不要永久转圈。
+    </div>
+
+    <h2 id="spec">3. 规格</h2>
+    <table class="spec">
+      <tr>
+        <th>默认尺寸</th>
+        <td>32 × 32px</td>
+      </tr>
+      <tr>
+        <th>边框宽度</th>
+        <td>默认 3px；行内常用 2px；审核卡 4px</td>
+      </tr>
+      <tr>
+        <th>轨道色</th>
+        <td><code>var(--border-primary, #e0e0e0)</code></td>
+      </tr>
+      <tr>
+        <th>高亮边</th>
+        <td><code>border-top-color: var(--primary-color, #0078d4)</code></td>
+      </tr>
+      <tr>
+        <th>形状</th>
+        <td><code>border-radius: 50%</code></td>
+      </tr>
+      <tr>
+        <th>动画</th>
+        <td><code>spin 0.8s linear infinite</code> → <code>rotate(360deg)</code></td>
+      </tr>
+      <tr>
+        <th>页面占位</th>
+        <td>垂直居中 · <code>gap: 16px</code> · 文案 14px 次要色「加载中...」</td>
+      </tr>
+    </table>
+
+    <h2 id="css">4. 生产 CSS</h2>
+<pre>.loading-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--border-primary, #e0e0e0);
+  border-top-color: var(--primary-color, #0078d4);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}</pre>
+
+    <h3>行内缩小示例</h3>
+<pre>&lt;div class="loading-spinner" style="width:16px;height:16px;border-width:2px;"&gt;&lt;/div&gt;</pre>
+
+    <h3>页面加载占位示例</h3>
+<pre>&lt;div style="display:flex;flex-direction:column;align-items:center;
+            justify-content:center;height:60vh;gap:16px;"&gt;
+  &lt;div class="loading-spinner"&gt;&lt;/div&gt;
+  &lt;div style="color:var(--text-secondary);font-size:14px;"&gt;加载中...&lt;/div&gt;
+&lt;/div&gt;</pre>
+
+    <h2 id="usage">5. 代码落点</h2>
+    <table class="spec">
+      <tr>
+        <th><code>public/css/main.css</code></th>
+        <td>定义 <code>.loading-spinner</code> 与 <code>@keyframes spin</code></td>
+      </tr>
+      <tr>
+        <th><code>public/index.html</code></th>
+        <td>首屏 <code>#app-loading</code></td>
+      </tr>
+      <tr>
+        <th><code>public/js/app.js</code></th>
+        <td>路由切换占位、AI 审核浮层大 Spinner</td>
+      </tr>
+      <tr>
+        <th><code>public/js/pages/admin.js</code></th>
+        <td>管理页 22px 加载行</td>
+      </tr>
+    </table>
+
+    <h2 id="checklist">6. 使用清单</h2>
+    <div class="card">
+      <ul style="margin-bottom:0;">
+        <li>新加载场景优先复用 <code>.loading-spinner</code>，用 inline 改尺寸，勿再写一套旋转环。</li>
+        <li>默认 32px；紧凑行内 16px / 2px；强调浮层 38px / 4px。</li>
+        <li>周期保持 0.8s，不要随意加快。</li>
+        <li>请求需有超时/Abort，失败用错误文案，禁止无限 Spinner。</li>
+        <li>可选：<code>prefers-reduced-motion: reduce</code> 时停动画，保留静态环或纯文案。</li>
+      </ul>
+    </div>
+
+    <div class="footer-note">
+      文档版本：2026-07-16 · 仅记录圆环 Spinner ·
+      实现见 <span class="path">public/css/main.css</span>
+    </div>
+  </main>
+
+  <script>
+    (function () {
+      var root = document.documentElement;
+      var btn = document.getElementById('theme-toggle');
+      function apply(theme) {
+        root.classList.remove('light', 'dark');
+        root.classList.add(theme);
+        localStorage.setItem('bb-spinner-doc-theme', theme);
+        btn.textContent = theme === 'dark' ? '浅色主题' : '深色主题';
+      }
+      apply(root.classList.contains('light') ? 'light' : 'dark');
+      btn.addEventListener('click', function () {
+        apply(root.classList.contains('dark') ? 'light' : 'dark');
+      });
+    })();
+  </script>
+</body>
+</html>

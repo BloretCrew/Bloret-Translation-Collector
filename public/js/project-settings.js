@@ -32,7 +32,7 @@
         label.className = "blora-field";
         label.style.minWidth = "8rem";
         label.innerHTML = `<span class="blora-field__label">${loc}</span>
-          <input class="blora-input" name="tr_${loc}" placeholder="${loc} 译法" />`;
+          <input class="blora-input" name="tr_${loc}" placeholder="${BTC.t('{locale} 译法', { locale: loc }).replace(/"/g, "&quot;")}" />`;
         trFields.appendChild(label);
       });
     }
@@ -41,7 +41,7 @@
       if (!listEl) return;
       listEl.innerHTML =
         window.BTC?.loadingHtml?.({ size: "md", label: BTC.t('加载中...'), layout: "inline" }) ||
-        `<div class="inline-loading" role="status"><div class="loading-spinner md" aria-hidden="true"></div><div>加载中...</div></div>`;
+        `<div class="inline-loading" role="status"><div class="loading-spinner md" aria-hidden="true"></div><div>${BTC.t('加载中...')}</div></div>`;
       const { res, data } = await json(
         `/api/v1/orgs/${org}/projects/${project}/glossary`,
       );
@@ -51,7 +51,7 @@
       }
       const terms = data.terms || [];
       if (!terms.length) {
-        listEl.innerHTML = `<div class="blora-text-faint">暂无术语</div>`;
+        listEl.innerHTML = `<div class="blora-text-faint">${BTC.t('暂无术语')}</div>`;
         return;
       }
       listEl.innerHTML = "";
@@ -64,7 +64,7 @@
         card.innerHTML = `
           <div class="glossary-item__head">
             <strong class="glossary-item__term"></strong>
-            <button type="button" class="blora-btn blora-btn--danger blora-btn--xs" data-del>删除</button>
+            <button type="button" class="blora-btn blora-btn--danger blora-btn--xs" data-del>${BTC.t('删除')}</button>
           </div>
           <div class="glossary-item__desc blora-text-faint"></div>
           <div class="glossary-item__trs blora-row u-gap-1" style="flex-wrap:wrap"></div>
@@ -72,7 +72,7 @@
         `;
         card.querySelector(".glossary-item__term").textContent = t.sourceTerm;
         card.querySelector(".glossary-item__desc").textContent = t.description || "";
-        card.querySelector(".glossary-item__trs").innerHTML = trs || "<span class='blora-text-faint'>尚未填写目标语言译法</span>";
+        card.querySelector(".glossary-item__trs").innerHTML = trs || `<span class='blora-text-faint'>${BTC.t('尚未填写目标语言译法')}</span>`;
 
         const edit = card.querySelector(".glossary-item__edit");
         locales.forEach((loc) => {
@@ -114,7 +114,7 @@
         edit.appendChild(save);
 
         card.querySelector("[data-del]").addEventListener("click", async () => {
-          if (!confirm(`删除术语「${t.sourceTerm}」？`)) return;
+          if (!confirm(BTC.t('删除术语「{term}」？', { term: t.sourceTerm }))) return;
           const delBtn = card.querySelector("[data-del]");
           window.BTC?.setButtonBusy?.(delBtn, true, { busyLabel: BTC.t('删除中...') });
           try {
@@ -193,7 +193,7 @@
       if (!listEl) return;
       listEl.innerHTML =
         window.BTC?.loadingHtml?.({ size: "md", label: BTC.t('加载中...'), layout: "inline" }) ||
-        `<div class="inline-loading" role="status"><div class="loading-spinner md" aria-hidden="true"></div><div>加载中...</div></div>`;
+        `<div class="inline-loading" role="status"><div class="loading-spinner md" aria-hidden="true"></div><div>${BTC.t('加载中...')}</div></div>`;
       const { res, data } = await json(
         `/api/v1/orgs/${org}/projects/${project}/assignees`,
       );
@@ -203,13 +203,13 @@
       }
       const rows = data.assignees || [];
       if (!rows.length) {
-        listEl.innerHTML = `<div class="blora-text-faint">尚未指派语言负责人</div>`;
+        listEl.innerHTML = `<div class="blora-text-faint">${BTC.t('尚未指派语言负责人')}</div>`;
         return;
       }
       listEl.innerHTML = "";
       const table = document.createElement("table");
       table.className = "blora-table";
-      table.innerHTML = `<thead><tr><th>语言</th><th>用户</th><th>职责</th><th></th></tr></thead><tbody></tbody>`;
+      table.innerHTML = `<thead><tr><th>${BTC.t('语言')}</th><th>${BTC.t('用户')}</th><th>${BTC.t('职责')}</th><th></th></tr></thead><tbody></tbody>`;
       const tbody = table.querySelector("tbody");
       rows.forEach((a) => {
         const tr = document.createElement("tr");
@@ -222,7 +222,7 @@
         btn.className = "blora-btn blora-btn--danger blora-btn--xs";
         btn.textContent = BTC.t('移除');
         btn.addEventListener("click", async () => {
-          if (!confirm(`移除 ${a.username} 的 ${a.locale} 指派？`)) return;
+          if (!confirm(BTC.t('移除 {username} 的 {locale} 指派？', { username: a.username, locale: a.locale }))) return;
           window.BTC?.setButtonBusy?.(btn, true, { busyLabel: BTC.t('移除中...') });
           try {
             const r = await json(

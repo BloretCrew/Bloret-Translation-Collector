@@ -280,7 +280,7 @@
       persistJson();
       if (customCode) customCode.value = "";
       if (customLabel) customLabel.value = "";
-      toast("success", `已添加 ${label}（${canonical}）`);
+      toast("success", BTC.t('已添加 {label}（{code}）', { label, code: canonical }));
     });
 
     modal.querySelector("[data-locale-confirm]")?.addEventListener("click", () => {
