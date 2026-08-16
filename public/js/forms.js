@@ -634,7 +634,7 @@
           if (data.warnings?.length && warn) {
             warn.hidden = false;
             warn.innerHTML =
-              BTC.t('<strong>警告：</strong><ul style=\'margin:8px 0 0;padding-left:18px\'>') +
+              `<strong>${BTC.t('警告：')}</strong><ul style="margin:8px 0 0;padding-left:18px">` +
               data.warnings.map((w) => `<li>${w}</li>`).join("") +
               "</ul>";
           }
@@ -682,7 +682,7 @@
         if (failed.length && warn) {
           warn.hidden = false;
           warn.innerHTML =
-            BTC.t('<strong>部分失败：</strong><ul style=\'margin:8px 0 0;padding-left:18px\'>') +
+            `<strong>${BTC.t('部分失败：')}</strong><ul style="margin:8px 0 0;padding-left:18px">` +
             failed.map((r) => `<li>${escapeHtml(r.path)}: ${escapeHtml(r.error)}</li>`).join("") +
             "</ul>";
         }
