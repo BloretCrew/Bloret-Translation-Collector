@@ -217,3 +217,30 @@ export function _resetLiveI18nCacheForTests(): void {
   lastManifestOkAt = 0;
   lastManifestError = null;
 }
+
+export function invalidateLiveCatalog(uiLang?: LangCode): void {
+  if (!uiLang) {
+    cache.clear();
+    inflight.clear();
+    return;
+  }
+  const c = uiI18nConfig();
+  const pl = c.localeMap[uiLang];
+  if (!pl) return;
+  cache.delete(cacheKey(uiLang, pl));
+  inflight.delete(cacheKey(uiLang, pl));
+}
+
+export function invalidateAllLiveCatalogs(): void {
+  cache.clear();
+  inflight.clear();
+}
+
+/** Map project locale -> uiLang (reverse of localeMap) */
+export function uiLangForLocale(locale: string): LangCode | null {
+  const c = uiI18nConfig();
+  for (const [uiLang, pl] of Object.entries(c.localeMap)) {
+    if (pl.toLowerCase() === locale.toLowerCase()) return uiLang as LangCode;
+  }
+  return null;
+}

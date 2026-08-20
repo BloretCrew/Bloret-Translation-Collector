@@ -88,7 +88,7 @@
                   <span class="blora-field__label"><%= t('目标语言') %></span>
                   <select class="blora-select" id="mt-locale" required>
                     <% (targetLanguages || targetLocales.map(function (l) { return { locale: l, displayName: null }; })).forEach(function (lang) { %>
-                      <option value="<%= lang.locale %>"><%= languageLabel(lang.locale, lang.displayName) %> (<%= lang.locale %>)</option>
+                      <option value="<%= lang.locale %>"><%= languageLabel(lang.locale, lang.displayName) %></option>
                     <% }) %>
                   </select>
                 </label>

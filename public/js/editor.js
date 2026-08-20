@@ -1819,7 +1819,8 @@
       const query = q.trim().toLowerCase();
       const found = new Set();
       emojiLibrary.forEach((cat) => {
-        if (cat.name.toLowerCase().includes(query)) {
+        const tCatName = typeof BTC !== "undefined" && BTC.t ? BTC.t(cat.name.split("/")[0]) : cat.name;
+        if (cat.name.toLowerCase().includes(query) || tCatName.toLowerCase().includes(query)) {
           cat.icons.forEach((i) => found.add(i));
         }
       });
@@ -1852,7 +1853,8 @@
       const tab = document.createElement("button");
       tab.type = "button";
       tab.className = "btc-emoji-category-tab" + (idx === 0 ? " is-active" : "");
-      tab.textContent = cat.name.split("/")[0];
+      const rawCat = cat.name.split("/")[0];
+      tab.textContent = typeof BTC !== "undefined" && BTC.t ? BTC.t(rawCat) : rawCat;
       tab.addEventListener("click", () => {
         searchInput.value = "";
         header

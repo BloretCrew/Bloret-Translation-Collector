@@ -15,6 +15,7 @@ import {
   type ReactionMap,
 } from "@/lib/db/schema";
 import { applyTranslationRules } from "@/lib/services/translation-rules";
+import { invalidateAllLiveCatalogs, invalidateLiveCatalog, uiLangForLocale } from "@/lib/ui-i18n-live";
 
 /** Default quick emojis (same set as Bloret BBS). */
 export const DEFAULT_QUICK_EMOJIS = ["👍", "❤️", "😂", "😮", "😢", "😡"] as const;
@@ -377,7 +378,54 @@ export async function upsertMySuggestion(params: {
       .returning();
   }
 
+  // If this suggestion is the currently approved one, sync the translations mirror
+  // so edits take effect immediately without requiring re-approval.
+  // Also invalidate live i18n cache so the UI picks up the new text within the same request.
+  const [state] = await db
+    .select()
+    .from(stringLocaleStates)
+    .where(and(eq(stringLocaleStates.stringId, params.stringId), eq(stringLocaleStates.locale, params.locale)))
+    .limit(1);
+  if (state?.status === "approved" && state.approvedSuggestionId) {
+    const suggestionIdForState = existing ? existing.id : row!.id;
+    if (state.approvedSuggestionId === suggestionIdForState) {
+      const [existingTranslation] = await db
+        .select()
+        .from(translations)
+        .where(and(eq(translations.stringId, params.stringId), eq(translations.locale, params.locale)))
+        .limit(1);
+      const now = new Date();
+      if (existingTranslation) {
+        await db
+          .update(translations)
+          .set({ text, updatedAt: now, updatedBy: params.userId })
+          .where(eq(translations.id, existingTranslation.id));
+      } else {
+        await db.insert(translations).values({
+          stringId: params.stringId,
+          locale: params.locale,
+          text,
+          status: "translated",
+          updatedBy: params.userId,
+        });
+      }
+      await db
+        .update(stringLocaleStates)
+        .set({ approvedAt: now, updatedAt: now })
+        .where(eq(stringLocaleStates.id, state.id));
+      const uiLang = uiLangForLocale(params.locale);
+      if (uiLang) invalidateLiveCatalog(uiLang);
+      else invalidateAllLiveCatalogs();
+      return row!;
+    }
+  }
+
   await refreshWorkflowStatus(params.stringId, params.locale);
+  {
+    const uiLang = uiLangForLocale(params.locale);
+    if (uiLang) invalidateLiveCatalog(uiLang);
+    else invalidateAllLiveCatalogs();
+  }
   return row!;
 }
 
@@ -518,6 +566,11 @@ export async function approveSuggestion(suggestionId: string, approverId: string
     }
   });
 
+  {
+    const uiLang = uiLangForLocale(s.locale);
+    if (uiLang) invalidateLiveCatalog(uiLang);
+    else invalidateAllLiveCatalogs();
+  }
   return { ok: true as const, suggestion: s };
 }
 
@@ -649,6 +702,11 @@ export async function approveAllSuggestionsByAuthor(params: {
     }
   });
 
+  {
+    const uiLang = uiLangForLocale(params.locale);
+    if (uiLang) invalidateLiveCatalog(uiLang);
+    else invalidateAllLiveCatalogs();
+  }
   return {
     ok: true as const,
     approved: toApprove.length,
@@ -693,6 +751,11 @@ export async function unapproveLocale(stringId: string, locale: string) {
       .where(eq(stringLocaleStates.id, state.id));
   }
 
+  {
+    const uiLang = uiLangForLocale(locale);
+    if (uiLang) invalidateLiveCatalog(uiLang);
+    else invalidateAllLiveCatalogs();
+  }
   return { ok: true as const };
 }
 
