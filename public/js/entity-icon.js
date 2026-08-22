@@ -149,7 +149,7 @@
       clearBtn.addEventListener("click", async function () {
         const endpoint = endpointFor(root);
         if (!endpoint) return;
-        if (!confirm(BTC.t('确定移除图标？'))) return;
+        if (!(await BTC.confirm(BTC.t('确定移除图标？')))) return;
         showErr("");
         clearBtn.disabled = true;
         try {

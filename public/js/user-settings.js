@@ -192,9 +192,9 @@
     render();
   });
 
-  resetBtn?.addEventListener("click", () => {
+  resetBtn?.addEventListener("click", async () => {
     if (capturingId) stopCapture();
-    if (!confirm(BTC.t('恢复全部快捷键为默认？'))) return;
+    if (!(await BTC.confirm(BTC.t('恢复全部快捷键为默认？')))) return;
     draft = api.reset();
     showOk(BTC.t('已恢复默认快捷键。'));
     toast?.("success", BTC.t('已恢复默认'));

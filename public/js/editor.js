@@ -947,7 +947,7 @@
   }
 
   async function deleteContext(id) {
-    if (!confirm(BTC.t('删除这张截图？'))) return;
+    if (!(await BTC.confirm(BTC.t('删除这张截图？')))) return;
     try {
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/contexts/${id}`,
@@ -1541,7 +1541,7 @@
   }
 
   async function deleteSuggestionComment(id, onDone) {
-    if (!confirm(BTC.t('删除这条评论？'))) return;
+    if (!(await BTC.confirm(BTC.t('删除这条评论？')))) return;
     try {
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/suggestion-comments/${id}`,
@@ -2061,7 +2061,7 @@
 
   async function deleteSuggestion() {
     if (!effectiveCanSuggest() || !activeId) return;
-    if (!confirm(BTC.t('删除我的建议？'))) return;
+    if (!(await BTC.confirm(BTC.t('删除我的建议？')))) return;
     try {
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/strings/${activeId}/suggestions/${encodeURIComponent(locale)}`,
@@ -2098,7 +2098,7 @@
 
   async function approveSuggestion(id) {
     if (!effectiveCanApprove()) return;
-    if (!confirm(BTC.t('批准该建议作为定稿译文？导出将使用此文本。'))) return;
+    if (!(await BTC.confirm(BTC.t('批准该建议作为定稿译文？导出将使用此文本。')))) return;
     try {
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/suggestions/${id}/approve`,
@@ -2125,12 +2125,12 @@
     if (!effectiveCanApprove() || !authorId) return;
     const name = authorUsername || BTC.t('该译者');
     if (
-      !confirm(
+      !(await BTC.confirm(
         BTC.t(
           '确定批准 {user} 在本项目「{locale}」下的全部建议？已批准的将跳过，未批准的会覆盖当前定稿。',
           { user: name, locale },
         ),
-      )
+      ))
     ) {
       return;
     }
@@ -2168,7 +2168,7 @@
 
   async function unapprove() {
     if (!effectiveCanApprove() || !activeId) return;
-    if (!confirm(BTC.t('取消批准？定稿将清空（建议仍保留）。'))) return;
+    if (!(await BTC.confirm(BTC.t('取消批准？定稿将清空（建议仍保留）。')))) return;
     try {
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/strings/${activeId}/translations/${encodeURIComponent(locale)}/unapprove`,
@@ -2222,7 +2222,7 @@
   }
 
   async function deleteComment(id) {
-    if (!confirm(BTC.t('删除这条评论？'))) return;
+    if (!(await BTC.confirm(BTC.t('删除这条评论？')))) return;
     try {
       const { res, data } = await json(
         `/api/v1/orgs/${orgSlug}/projects/${projectSlug}/comments/${id}`,

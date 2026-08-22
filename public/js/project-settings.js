@@ -114,7 +114,7 @@
         edit.appendChild(save);
 
         card.querySelector("[data-del]").addEventListener("click", async () => {
-          if (!confirm(BTC.t('删除术语「{term}」？', { term: t.sourceTerm }))) return;
+          if (!(await BTC.confirm(BTC.t('删除术语「{term}」？', { term: t.sourceTerm })))) return;
           const delBtn = card.querySelector("[data-del]");
           window.BTC?.setButtonBusy?.(delBtn, true, { busyLabel: BTC.t('删除中...') });
           try {
@@ -222,7 +222,7 @@
         btn.className = "blora-btn blora-btn--danger blora-btn--xs";
         btn.textContent = BTC.t('移除');
         btn.addEventListener("click", async () => {
-          if (!confirm(BTC.t('移除 {username} 的 {locale} 指派？', { username: a.username, locale: a.locale }))) return;
+          if (!(await BTC.confirm(BTC.t('移除 {username} 的 {locale} 指派？', { username: a.username, locale: a.locale })))) return;
           window.BTC?.setButtonBusy?.(btn, true, { busyLabel: BTC.t('移除中...') });
           try {
             const r = await json(

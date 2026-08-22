@@ -61,7 +61,7 @@
   clearBtn?.addEventListener("click", async () => {
     const locale = localeEl?.value;
     if (!locale) return;
-    if (!confirm(BTC.t('确定清空该语言的机器翻译？'))) return;
+    if (!(await BTC.confirm(BTC.t('确定清空该语言的机器翻译？')))) return;
     setButtonBusy(clearBtn, true, { busyLabel: BTC.t('删除中...') });
     try {
       const { res, data } = await json(

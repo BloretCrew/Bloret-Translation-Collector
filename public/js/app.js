@@ -36,11 +36,57 @@ window.BTC = {
     return { res, data };
   },
   toast(type, message) {
-    if (window.Blora?.toast) {
-      window.Blora.toast({ type, message });
-    } else {
-      console.log(`[${type}] ${message}`);
-    }
+  if (window.Blora?.toast) {
+    window.Blora.toast({ type, message });
+  } else {
+    console.log(`[${type}] ${message}`);
+  }
+  },
+  /**
+  * In-app confirm dialog (native confirm() is silently suppressed by some
+  * browsers after repeated dialogs — "prevent this page from creating more
+  * dialogs" — which made buttons appear dead).
+  * @param {string} message
+  * @param {{ okLabel?: string, cancelLabel?: string, danger?: boolean }} [opts]
+  * @returns {Promise<boolean>} resolves true only when user clicks OK
+  */
+  confirm(message, opts = {}) {
+  return new Promise((resolve) => {
+    const doc = document;
+    let overlay = doc.getElementById("btc-confirm-modal");
+    if (overlay) overlay.remove();
+    overlay = doc.createElement("div");
+    overlay.id = "btc-confirm-modal";
+    overlay.className = "blora-modal is-open";
+    const okLabel = opts.okLabel || this.t("确定");
+    const cancelLabel = opts.cancelLabel || this.t("取消");
+    const esc = (s) =>
+      String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+    overlay.innerHTML = `
+      <div class="blora-modal__mask" data-btc-confirm-cancel></div>
+      <div class="blora-modal__dialog" role="dialog" aria-modal="true" style="max-width: 400px;">
+        <div class="blora-modal__body" style="padding: var(--blora-space-5) var(--blora-space-6);">
+          <p class="blora-text" style="white-space: pre-line;">${esc(message)}</p>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 0.6em; padding: 0 var(--blora-space-6) var(--blora-space-5);">
+          <button type="button" class="blora-btn blora-btn--ghost" data-btc-confirm-cancel>${esc(cancelLabel)}</button>
+          <button type="button" class="blora-btn ${opts.danger === false ? "blora-btn--primary" : "blora-btn--danger"}" data-btc-confirm-ok>${esc(okLabel)}</button>
+        </div>
+      </div>`;
+    const done = (val) => {
+      overlay.remove();
+      resolve(val);
+    };
+    overlay.addEventListener("click", (e) => {
+      if (e.target.closest("[data-btc-confirm-ok]")) done(true);
+      else if (e.target.closest("[data-btc-confirm-cancel]")) done(false);
+    });
+    overlay.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") done(false);
+    });
+    doc.body.appendChild(overlay);
+    overlay.querySelector("[data-btc-confirm-ok]")?.focus();
+  });
   },
   /**
    * Ring spinner markup from LoadingAnimationDesign.

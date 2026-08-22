@@ -359,7 +359,7 @@
   if (deleteProjectBtn) {
     deleteProjectBtn.addEventListener("click", async () => {
       const name = deleteProjectBtn.dataset.name;
-      if (!confirm(BTC.t('确定删除项目「{name}」？所有文件与译文将不可恢复。', { name }))) return;
+      if (!(await BTC.confirm(BTC.t('确定删除项目「{name}」？所有文件与译文将不可恢复。', { name })))) return;
       const orgSlug = deleteProjectBtn.dataset.orgSlug;
       const projectSlug = deleteProjectBtn.dataset.projectSlug;
       setButtonBusy(deleteProjectBtn, true, { busyLabel: BTC.t('删除中...') });
@@ -745,7 +745,7 @@
   if (deleteFileBtn) {
     deleteFileBtn.addEventListener("click", async () => {
       const path = deleteFileBtn.dataset.path;
-      if (!confirm(BTC.t('确定删除源文件 {path}？相关字符串与译文将一并删除。', { path }))) return;
+      if (!(await BTC.confirm(BTC.t('确定删除源文件 {path}？相关字符串与译文将一并删除。', { path })))) return;
       const orgSlug = deleteFileBtn.dataset.orgSlug;
       const projectSlug = deleteFileBtn.dataset.projectSlug;
       const fileId = deleteFileBtn.dataset.fileId;
@@ -800,7 +800,7 @@
 
     memberList.querySelectorAll(".member-remove").forEach((btn) => {
       btn.addEventListener("click", async () => {
-        if (!confirm(BTC.t('确定移除成员 {username}？', { username: btn.dataset.username }))) return;
+        if (!(await BTC.confirm(BTC.t('确定移除成员 {username}？', { username: btn.dataset.username })))) return;
         showError(err, "");
         setButtonBusy(btn, true, { busyLabel: BTC.t('移除中...') });
         try {
@@ -996,7 +996,7 @@
         endpoint = `/api/v1/orgs/${orgSlug}/icon`;
       }
       if (!endpoint) return;
-      if (!confirm(BTC.t('确定移除图标？'))) return;
+      if (!(await BTC.confirm(BTC.t('确定移除图标？')))) return;
       setButtonBusy(clearBtn, true, { busyLabel: BTC.t('移除中...') });
       try {
         const { res, data } = await json(endpoint, {
