@@ -359,7 +359,13 @@
   if (deleteProjectBtn) {
     deleteProjectBtn.addEventListener("click", async () => {
       const name = deleteProjectBtn.dataset.name;
-      if (!(await BTC.confirm(BTC.t('确定删除项目「{name}」？所有文件与译文将不可恢复。', { name })))) return;
+      if (
+        !(await BTC.confirmType(
+          `${BTC.t('确定删除项目「{name}」？所有文件与译文将不可恢复。', { name })}\n${BTC.t('请输入项目名以确认：')}`,
+          String(name || ""),
+        ))
+      )
+        return;
       const orgSlug = deleteProjectBtn.dataset.orgSlug;
       const projectSlug = deleteProjectBtn.dataset.projectSlug;
       setButtonBusy(deleteProjectBtn, true, { busyLabel: BTC.t('删除中...') });

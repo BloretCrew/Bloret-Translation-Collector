@@ -43,50 +43,115 @@ window.BTC = {
   }
   },
   /**
-  * In-app confirm dialog (native confirm() is silently suppressed by some
-  * browsers after repeated dialogs — "prevent this page from creating more
-  * dialogs" — which made buttons appear dead).
-  * @param {string} message
-  * @param {{ okLabel?: string, cancelLabel?: string, danger?: boolean }} [opts]
-  * @returns {Promise<boolean>} resolves true only when user clicks OK
-  */
+   * In-app confirm dialog (native confirm() is silently suppressed by some
+   * browsers after repeated dialogs — "prevent this page from creating more
+   * dialogs" — which made buttons appear dead).
+   * @param {string} message
+   * @param {{ okLabel?: string, cancelLabel?: string, danger?: boolean }} [opts]
+   * @returns {Promise<boolean>} resolves true only when user clicks OK
+   */
   confirm(message, opts = {}) {
-  return new Promise((resolve) => {
-    const doc = document;
-    let overlay = doc.getElementById("btc-confirm-modal");
-    if (overlay) overlay.remove();
-    overlay = doc.createElement("div");
-    overlay.id = "btc-confirm-modal";
-    overlay.className = "blora-modal is-open";
-    const okLabel = opts.okLabel || this.t("确定");
-    const cancelLabel = opts.cancelLabel || this.t("取消");
-    const esc = (s) =>
-      String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
-    overlay.innerHTML = `
-      <div class="blora-modal__mask" data-btc-confirm-cancel></div>
-      <div class="blora-modal__dialog" role="dialog" aria-modal="true" style="max-width: 400px;">
-        <div class="blora-modal__body" style="padding: var(--blora-space-5) var(--blora-space-6);">
-          <p class="blora-text" style="white-space: pre-line;">${esc(message)}</p>
-        </div>
-        <div style="display: flex; justify-content: flex-end; gap: 0.6em; padding: 0 var(--blora-space-6) var(--blora-space-5);">
-          <button type="button" class="blora-btn blora-btn--ghost" data-btc-confirm-cancel>${esc(cancelLabel)}</button>
-          <button type="button" class="blora-btn ${opts.danger === false ? "blora-btn--primary" : "blora-btn--danger"}" data-btc-confirm-ok>${esc(okLabel)}</button>
-        </div>
-      </div>`;
-    const done = (val) => {
-      overlay.remove();
-      resolve(val);
-    };
-    overlay.addEventListener("click", (e) => {
-      if (e.target.closest("[data-btc-confirm-ok]")) done(true);
-      else if (e.target.closest("[data-btc-confirm-cancel]")) done(false);
+    return new Promise((resolve) => {
+      const doc = document;
+      let overlay = doc.getElementById("btc-confirm-modal");
+      if (overlay) overlay.remove();
+      overlay = doc.createElement("div");
+      overlay.id = "btc-confirm-modal";
+      overlay.className = "blora-modal is-open";
+      const okLabel = opts.okLabel || this.t("确定");
+      const cancelLabel = opts.cancelLabel || this.t("取消");
+      const esc = (s) =>
+        String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      overlay.innerHTML = `
+        <div class="blora-modal__mask" data-btc-confirm-cancel></div>
+        <div class="blora-modal__dialog" role="dialog" aria-modal="true" style="max-width: 400px;">
+          <div class="blora-modal__body" style="padding: var(--blora-space-5) var(--blora-space-6);">
+            <p class="blora-text" style="white-space: pre-line;">${esc(message)}</p>
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 0.6em; padding: 0 var(--blora-space-6) var(--blora-space-5);">
+            <button type="button" class="blora-btn blora-btn--ghost" data-btc-confirm-cancel>${esc(cancelLabel)}</button>
+            <button type="button" class="blora-btn ${opts.danger === false ? "blora-btn--primary" : "blora-btn--danger"}" data-btc-confirm-ok>${esc(okLabel)}</button>
+          </div>
+        </div>`;
+      const done = (val) => {
+        overlay.remove();
+        resolve(val);
+      };
+      overlay.addEventListener("click", (e) => {
+        if (e.target.closest("[data-btc-confirm-ok]")) done(true);
+        else if (e.target.closest("[data-btc-confirm-cancel]")) done(false);
+      });
+      overlay.addEventListener("keydown", (e) => {
+        if (e.key === "Escape") done(false);
+      });
+      doc.body.appendChild(overlay);
+      overlay.querySelector("[data-btc-confirm-ok]")?.focus();
     });
-    overlay.addEventListener("keydown", (e) => {
-      if (e.key === "Escape") done(false);
+  },
+  /**
+   * Typed confirmation for destructive actions: the user must re-type an
+   * expected phrase (e.g. the project name) before OK is enabled.
+   * @param {string} message
+   * @param {string} expectedText exact phrase the user must type
+   * @param {{ okLabel?: string, cancelLabel?: string }} [opts]
+   * @returns {Promise<boolean>}
+   */
+  confirmType(message, expectedText, opts = {}) {
+    return new Promise((resolve) => {
+      const doc = document;
+      let overlay = doc.getElementById("btc-confirm-modal");
+      if (overlay) overlay.remove();
+      overlay = doc.createElement("div");
+      overlay.id = "btc-confirm-modal";
+      overlay.className = "blora-modal is-open";
+      const okLabel = opts.okLabel || this.t("删除");
+      const cancelLabel = opts.cancelLabel || this.t("取消");
+      const esc = (s) =>
+        String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+      overlay.innerHTML = `
+        <div class="blora-modal__mask" data-btc-confirm-cancel></div>
+        <div class="blora-modal__dialog" role="dialog" aria-modal="true" style="max-width: 440px;">
+          <div class="blora-modal__body" style="padding: var(--blora-space-5) var(--blora-space-6); display: grid; gap: 0.8em;">
+            <p class="blora-text" style="white-space: pre-line; margin: 0;">${esc(message)}</p>
+            <input type="text" class="blora-input" data-btc-confirm-input autocomplete="off"
+              placeholder="${esc(expectedText)}" aria-label="${esc(expectedText)}" />
+          </div>
+          <div style="display: flex; justify-content: flex-end; gap: 0.6em; padding: 0 var(--blora-space-6) var(--blora-space-5);">
+            <button type="button" class="blora-btn blora-btn--ghost" data-btc-confirm-cancel>${esc(cancelLabel)}</button>
+            <button type="button" class="blora-btn blora-btn--danger" data-btc-confirm-ok disabled>${esc(okLabel)}</button>
+          </div>
+        </div>`;
+      const input = overlay.querySelector("[data-btc-confirm-input]");
+      const okBtn = overlay.querySelector("[data-btc-confirm-ok]");
+      const check = () => {
+        okBtn.disabled = input.value.trim() !== expectedText;
+      };
+      input.addEventListener("input", check);
+      const submit = () => {
+        if (input.value.trim() !== expectedText) return;
+        finish(true);
+      };
+      let settled = false;
+      function finish(val) {
+        if (settled) return;
+        settled = true;
+        overlay.remove();
+        doc.removeEventListener("keydown", onKey, true);
+        resolve(val);
+      }
+      const onKey = (e) => {
+        if (!doc.body.contains(overlay)) return;
+        if (e.key === "Escape") finish(false);
+        else if (e.key === "Enter") submit();
+      };
+      doc.addEventListener("keydown", onKey, true);
+      overlay.addEventListener("click", (e) => {
+        if (e.target.closest("[data-btc-confirm-ok]")) submit();
+        else if (e.target.closest("[data-btc-confirm-cancel]") || e.target.classList.contains("blora-modal__mask")) finish(false);
+      });
+      doc.body.appendChild(overlay);
+      input.focus();
     });
-    doc.body.appendChild(overlay);
-    overlay.querySelector("[data-btc-confirm-ok]")?.focus();
-  });
   },
   /**
    * Ring spinner markup from LoadingAnimationDesign.
