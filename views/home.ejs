@@ -24,13 +24,6 @@
           <a class="blora-btn blora-btn--primary blora-btn--lg" href="/auth/login"><%- sfIcon('person.crop.circle') %><%= t('PassPort 登录') %></a>
         <% } %>
       </div>
-      <% if (typeof isDev !== 'undefined' && isDev) { %>
-      <p class="blora-text-faint landing-hero__hint">
-        <%= t('本地开发：') %>
-        <a href="/auth/login?user=dev-user&dev=1"><%= t('以 dev-user 登录') %></a>
-        <%= t('（未配置 PassPort 时可用）') %>
-      </p>
-      <% } %>
     </section>
 
     <hr class="blora-brush" />

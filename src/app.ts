@@ -82,8 +82,6 @@ export function createApp() {
     /** SF Symbols via same-origin /sf/{name} (proxy) — use <%- sfIcon('name') %> */
     res.locals.sfIcon = sfIcon;
     res.locals.sfIconUrl = sfIconUrl;
-    res.locals.isDev =
-      process.env.NODE_ENV !== "production" || process.env.BTC_SHOW_DEV_LOGIN === "1";
     next();
   });
 

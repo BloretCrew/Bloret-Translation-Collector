@@ -56,33 +56,9 @@ authRouter.get("/auth/login", async (req, res, next) => {
       return res.redirect(url);
     }
 
-    const allowDev = process.env.NODE_ENV !== "production" || req.query.dev !== undefined;
-    if (!allowDev) {
-      return res.status(503).json({
-        error:
-          t('PassPort OAuth 未配置。请在 config.json 中填写 passport.appId / passport.appSecret，或使用 ?dev=1 开发登录。'),
-      });
-    }
-
-    const username =
-      typeof req.query.user === "string" && req.query.user ? req.query.user : "dev-user";
-    let [user] = await db.select().from(users).where(eq(users.username, username)).limit(1);
-    if (!user) {
-      [user] = await db
-        .insert(users)
-        .values({ username, avatarUrl: null, lastLoginAt: new Date() })
-        .returning();
-    } else {
-      await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
-    }
-
-    req.session.userId = user!.id;
-    req.session.username = user!.username;
-    req.session.avatarUrl = user!.avatarUrl ?? undefined;
-    req.session.isLoggedIn = true;
-    await req.session.save();
-
-    return res.redirect(nextPath);
+    return res.status(503).json({
+      error: t('PassPort OAuth 未配置，请在 config.json 中填写 passport.appId / passport.appSecret。'),
+    });
   } catch (err) {
     next(err);
   }
